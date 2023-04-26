@@ -1,0 +1,43 @@
+@use "./globals.scss" as g;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;700&family=JetBrains+Mono:wght@300&display=swap');
+
+* {
+  box-sizing: border-box;
+  // TODO: maybe not the best place for this? It's taking priority in certain spots
+  //  like div.diagnostic-window-content
+  font-family: g.$body-font, sans-serif;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0rem;
+}
+
+p {
+  margin-top: 0rem;
+}
+
+.App {
+  background-color: g.$app-background-color;
+  overflow-y: hidden;
+  padding-top: g.$app-padding-top;
+}
+
+.app-body {
+  display: flex;
+  justify-content: space-between;
+  overflow-x: hidden;
+  padding: g.$app-body-padding;
+  width: 100vw;
+
+  .pane {
+    // width: 100%;
+    // flex-grow: 1;
+    width: 49vw;
+  }
+}
