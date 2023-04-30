@@ -28,3 +28,8 @@ dist-ssr
 
 # random directory for testing things
 sandbox
+
+# firebase stuff
+.firebase/
+.firebaserc
+firebase.json
