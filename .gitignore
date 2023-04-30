@@ -31,5 +31,5 @@ sandbox
 
 # firebase stuff
 .firebase/
-.firebaserc
-firebase.json
+# .firebaserc
+# firebase.json
