@@ -1,0 +1,13 @@
+@use "../../styles/globals.scss" as g;
+
+.menu-screen {
+  @include g.full-screen-panel-styling();
+  // background-color: g.$menu-screen-background-color;
+
+  // // TODO: Figure out how this will actually be hidden
+  // display: none;
+
+  // &.active {
+  //   display: block;
+  // }
+}

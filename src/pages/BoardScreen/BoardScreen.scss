@@ -1,0 +1,29 @@
+@use "../../styles/globals.scss" as g;
+
+.board-screen {
+  background-color: g.$board-screen-background-color;
+  display: flex;
+  flex-direction: column;
+  gap: g.$common-gap;
+  justify-content: space-between;
+}
+
+.board-screen-header, .board-screen-footer {
+  background-color: g.$board-screen-section-temp-background-color;
+}
+
+.board-screen-content-container {
+  // background-color: red;
+  align-items: center;
+  background-color: g.$board-screen-section-temp-background-color;
+  flex-grow: 1;
+}
+
+.board-screen-section {
+  backdrop-filter: blur(8px);
+  border-radius: g.$common-border-radius;  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: g.$common-padding;
+}

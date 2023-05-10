@@ -3,6 +3,7 @@ $common-border-radius: 12px;
 // $common-border-radius: 48px;
 // $common-box-shadow: 0px 4px 4px rgba(25,25,25,0.25);
 $common-box-shadow: 0px 12px 32px #00000033;
+$common-gap: 1rem;
 $common-padding: 1rem;
 $common-margin: 1rem;
 $full-screen-background-opacity: .6;
@@ -32,30 +33,28 @@ $red-100: #ff6666;
 $red-200: #da4c4c;
 $red-300: #de3333;
 
+// colors (temp shades)
+$indigo-dye: #254E70;
+$cerulean: #37718E;
+$silver-lake-blue: #4F86C6;
+$slate-blue: #744FC6;
+
 $square-gray: #35363866;
 
 // colors (role)
-$app-background-color: $light-gray-200;
+
+// pulled from picross-parser
+//  These might not be necessary, but I'm pulling them out of this commented
+//  block if I have a need for them
+/*
 // should be darker than $app-background-color; used for highlighting active areas
-$border-highlight-color: $light-gray-300;
-// $button-background-color: $light-gray-200;
-$button-background-color: transparent;
-$button-border-color: $light-gray-200;
-$button-border-hover-color: $dark-gray-200;
-$button-hover-background-color: transparent;
 // $button-hover-background-color: $light-gray-200;
-$delete-unlocked-fill-color: $red-300;
-$delete-unlocked-font-color: $light-gray-100;
 $diagnostic-button-font-hover-color: $dark-gray-300;
 $diagnostic-window-background-color: $dark-gray-300;
 $diagnostic-button-background-hover-color: $light-gray-100;
 $diagnostic-button-border-hover-color: $dark-gray-300;
 $diagnostic-window-button-hover-color: $dark-gray-200;
 $diagnostic-window-font-color: $light-gray-100;
-$error-message-background-color: $red-100;
-$error-message-border-color: $red-200;
-$error-message-font-color: $error-message-border-color;
-$login-container-background-color: $dark-gray-300;
 $opacity-slider-background-color: $light-gray-200;
 $opacity-slider-thumb-color: $dark-gray-300;
 $puzzle-panel-list-item-hover-background-color: $light-gray-300;
@@ -63,6 +62,28 @@ $pane-background-color: $light-gray-100;
 $control-bar-background-color: $pane-background-color;
 $square-border-color: $square-gray;
 $square-hover-color: $red-100;
+*/
+
+$app-background-color: $light-gray-200;
+// $background-screen-background-color: linear-gradient($indigo-dye, $cerulean);
+$background-screen-background-color: linear-gradient($silver-lake-blue, $slate-blue);
+$board-screen-background-color: transparent;
+$board-screen-section-temp-background-color: rgba(29, 29, 29, 0.4);
+$border-highlight-color: $light-gray-300;
+// $button-background-color: $light-gray-200;
+$button-background-color: transparent;
+$button-border-color: $light-gray-400;
+$button-border-hover-color: $light-gray-100;
+$button-hover-background-color: transparent;
+$delete-unlocked-fill-color: $red-300;
+$delete-unlocked-font-color: $light-gray-100;
+$error-message-background-color: $red-100;
+$error-message-border-color: $red-200;
+$error-message-font-color: $error-message-border-color;
+$login-container-background-color: $dark-gray-300;
+$menu-screen-background-color: blue;
+$text-light-color: $light-gray-100;
+$text-dark-color: $dark-gray-300;
 $text-input-active-border-color: $dark-gray-200;
 $text-input-error-border-color: $red-100;
 
