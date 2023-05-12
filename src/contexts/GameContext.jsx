@@ -14,6 +14,11 @@ const GameContextProvider = ({ children }) => {
   // used to block toggling the menu (when no board is loaded, etc)
   const [ menuScreenToggleLock, setMenuScreenToggleLock ] = useState(false);
   
+  // TODO: Include some way to save current background colors, as well as 
+  // a function to get current background colors from a puzzle
+  //
+  // Make sure that BackgroundScreen pulls this color to change dynamically
+  
   const toggleMenu = () => 
     !menuScreenToggleLock && setMenuIsActive((currentMenuState) => !currentMenuState);
 

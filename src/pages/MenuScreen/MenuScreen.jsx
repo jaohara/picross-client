@@ -26,6 +26,10 @@ const MenuScreen = () => {
     ${menuIsActive ? "active" : ""}
   `;
 
+  // TODO: Am I going to use react-router-dom here, or sort of write my own
+  // mini routing solution? I don't know if I want to have the submenu screens 
+  // accessible via a route in case users do stuff out of sequence.
+
   return ( 
     <div className={menuScreenClassNames}>
       Hey, I&apos;m the menu screen!

@@ -26,6 +26,9 @@ export async function createUserEntity(newUser, id) {
   newUser["createdTimestamp"] = userCreatedTimestamp;
   newUser["updatedTimestamp"] = userCreatedTimestamp;
 
+
+  // TODO: This should also create the statistics/achievements subcollections
+
   try {
     const docRef = doc(usersCollectionRef, id);
     const result = await setDoc(docRef, newUser);
