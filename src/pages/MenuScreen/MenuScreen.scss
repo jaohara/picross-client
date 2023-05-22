@@ -1,0 +1,10 @@
+@use "../../styles/globals.scss" as g;
+
+// These are style rules for the menu screen layer itself - 
+//  the file naming is a little confusing here
+
+.menu-screen {
+  @include g.full-screen-panel-styling();
+  display: flex;
+  flex-direction: column;
+}

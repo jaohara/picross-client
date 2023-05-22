@@ -1,30 +1,34 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { 
+  useContext, 
+} from 'react'
+import './styles/App.scss'
+
+// import { UserContextProvider } from "./contexts/UserContext";
+import { GameContext } from './contexts/GameContext';
+
+import useHotKeys from './hooks/useHotKeys';
+
+import BackgroundScreen from "./pages/BackgroundScreen/BackgroundScreen";
+import BoardScreen from './pages/BoardScreen/BoardScreen';
+import MenuScreen from './pages/MenuScreen/MenuScreen';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { toggleMenu } = useContext(GameContext);
 
+  useHotKeys({
+    toggleMenu: toggleMenu,
+  });
+
+  // TODO: Is this the proper order for wrapping the contexts?
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <p>
-          Hey! I&apos;ve been edited locally and pushed to <pre>main</pre> to see if the Firebase 
-          Hosting Deployment action was properly set up.
-        </p>
-      </div>
-    </>
-  )
+    <div className="App">
+      <BackgroundScreen />
+      <BoardScreen />
+      <MenuScreen 
+      
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;

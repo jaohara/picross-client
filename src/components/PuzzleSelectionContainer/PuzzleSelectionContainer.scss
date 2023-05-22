@@ -1,0 +1,10 @@
+@use "../../styles/globals.scss" as g;
+
+.puzzle-selection-container {
+  max-width: g.$content-container-max-width;
+}
+
+.puzzle-selection {
+  @include g.content-container-visual-styling(g.$puzzle-group-border-color);
+  gap: g.$common-gap;
+}

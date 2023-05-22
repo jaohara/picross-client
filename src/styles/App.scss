@@ -1,4 +1,5 @@
 @use "./globals.scss" as g;
+@use "./screen.scss";
 
 @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;700&family=JetBrains+Mono:wght@300&display=swap');
 
@@ -7,37 +8,59 @@
   // TODO: maybe not the best place for this? It's taking priority in certain spots
   //  like div.diagnostic-window-content
   font-family: g.$body-font, sans-serif;
+
+  // is this also the best place for this?
+  color: g.$text-light-color;
 }
 
 html, body {
+  line-height: 1.8rem;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 body {
   margin: 0rem;
 }
 
+/* pre, code {
+  font-family: g.$mono-font;
+  font-size: .9rem;
+  padding: .2rem .5rem;
+}
+
+code {
+  background-color: rgba(0,0,0,0.3);
+  border-radius: g.$common-border-radius;
+}
+ */
+
+pre, code {
+  @include g.inline-mono-styling();
+}
+
+pre {
+  background-color: initial;
+}
+
 p {
-  margin-top: 0rem;
+  margin: 0rem;
 }
 
 .App {
   background-color: g.$app-background-color;
-  overflow-y: hidden;
-  padding-top: g.$app-padding-top;
-}
-
-.app-body {
   display: flex;
+  // overflow-y: hidden;
   justify-content: space-between;
-  overflow-x: hidden;
-  padding: g.$app-body-padding;
+  height: 100vh;
+  overflow: hidden;
+  // padding-top: g.$app-padding-top;
+  // padding: g.$app-body-padding;
   width: 100vw;
-
-  .pane {
-    // width: 100%;
-    // flex-grow: 1;
-    width: 49vw;
-  }
 }
+
+/*
+.app-body {
+  overflow-x: hidden;
+}
+*/

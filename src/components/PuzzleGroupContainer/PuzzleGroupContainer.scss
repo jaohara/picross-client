@@ -1,0 +1,26 @@
+@use "../../styles/globals.scss" as g;
+
+.puzzle-group-container {
+  max-width: g.$content-container-max-width;
+}
+
+.puzzle-group {
+  @include g.content-container-visual-styling(g.$puzzle-group-border-color);
+  gap: g.$common-gap;
+
+  &:hover {
+    @include g.glow-border(g.$puzzle-group-border-hover-color);
+    cursor: pointer;
+  }
+}
+
+.puzzle-group-body {
+  // justify-content: space-between;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.puzzle-group-icon {
+  @include g.content-icon-wrapper-styling();
+  margin: g.$puzzle-group-icon-margin;
+}

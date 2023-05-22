@@ -1,0 +1,7 @@
+@use "../../styles/globals.scss" as g;
+
+.login-form-wrapper {
+  // border: 2px solid g.$login-container-border-color;
+  // border-radius: g.$common-border-radius;
+  padding: g.$common-padding;
+}

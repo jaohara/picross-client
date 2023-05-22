@@ -1,0 +1,72 @@
+@use "../../styles/globals.scss" as g;
+
+.app-button {
+  align-items: center;
+  background-color: g.$button-background-color;
+  border-radius: g.$common-border-radius;
+  border: 2px solid;
+  border-color: g.$button-border-color;
+  box-shadow: 0px 0px 0px g.$button-border-color;
+  display: flex;
+  font-size: 1rem;
+  font-weight: bold;
+  opacity: 1;
+  padding: .6rem 1rem;
+  transition: 
+    background-color g.$ui-fast-transition, 
+    border-color g.$ui-fast-transition, 
+    box-shadow g.$ui-fast-transition, 
+    color g.$ui-fast-transition, 
+    opacity g.$ui-fast-transition;
+
+  &:hover:not(:disabled) {
+    @include g.glow-border(g.$button-border-hover-color);
+    background-color: g.$button-hover-background-color;
+    // border-color: g.$button-border-hover-color;
+    // box-shadow: 0px 0px 25px color.adjust(g.$button-border-color, $alpha: -.8);
+    // box-shadow: 0px 0px 25px color.adjust(g.$button-border-color, $alpha: -.8);
+    color: g.$button-hover-text-color;
+    cursor: pointer;
+    
+    // a little hacky, but this works to override the react-icon component prop
+    .button-icon-wrapper svg path {
+      color: g.$button-hover-text-color;
+    }
+
+    &.delete-unlocked { 
+      background-color: g.$delete-unlocked-fill-color;
+      border-color: g.$delete-unlocked-fill-color;
+    }
+  }
+
+  &:disabled {
+    opacity: .5;
+  }
+
+  &.delete-unlocked {
+    color: g.$delete-unlocked-font-color;
+  }
+}
+
+.button-icon-wrapper {
+  align-items: center;
+  display: flex;
+  font-size: 1.2rem;
+  margin-left: .5rem;
+  pointer-events: none;
+  justify-content: center;
+
+  &.no-margin {
+    margin-right: 0rem;
+  }
+
+  &.waiting {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
