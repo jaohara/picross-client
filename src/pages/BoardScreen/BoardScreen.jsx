@@ -12,12 +12,19 @@ import { GameContext } from '../../contexts/GameContext';
 
 const BoardScreen = () => {
   const {
+    gameIsActive,
     menuIsActive,
+    setGameIsActive,
     toggleMenu,
   } = useContext(GameContext);
 
+  const boardScreenClassNames = `
+    board-screen screen
+    ${gameIsActive ? "active" : ""}
+  `;
+
   return ( 
-    <div className="board-screen screen">
+    <div className={boardScreenClassNames}>
       <div className="board-screen-header board-screen-section">
         <p>
           I will probably contain score info and controls for accessing the menu.
@@ -27,13 +34,13 @@ const BoardScreen = () => {
       <div className="board-screen-content-container board-screen-section">
         Hey, I&apos;m the board screen! This middle container will contain the board.
 
-        <h1>Toggle Menu</h1>
+        <h1>End Game</h1>
         <p>
           <Button
-            onClick={toggleMenu}
-            iconType='menu'
+            onClick={() => setGameIsActive(false)}
+            iconType='quit'
           >
-            Toggle Menu Screen
+            End Game
           </Button>
         </p>
       </div>

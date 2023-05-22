@@ -1,0 +1,47 @@
+@use "../../styles/globals.scss" as g;
+
+// .achievement, .achievement-icon-wrapper {
+//   border: 2px solid g.$achievement-border-color;
+//   border-radius: g.$common-border-radius;
+// }
+
+.achievement {
+  @include g.content-container-visual-styling(g.$achievement-border-color);
+  
+  &:hover {
+    box-shadow: g.$common-box-shadow;
+  }
+  
+  &.locked {
+    opacity: .25;
+
+    &:hover {
+      opacity: .5;
+    } 
+  }
+
+  &.unlocked {
+    @include g.glow-border(g.$achievement-unlocked-border-color);
+  }
+}
+
+.achievement-body {
+  // align-items: center;
+  // background-color: blue;
+  display: flex;
+  gap: g.$common-margin;
+  width: 100%;
+}
+
+.achievement-icon-wrapper {
+  @include g.content-icon-wrapper-styling();
+  // align-items: center;
+  // border: 2px solid g.$achievement-border-color;
+  // border-radius: g.$common-border-radius;
+  // // background-color: red;
+  // display: flex;
+  // // TODO: Adjust this based on window size
+  // height: 96px;
+  // justify-content: center;
+  // width: 96px;
+}

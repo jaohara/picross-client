@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // common sizes/variables
 $common-border-radius: 12px;
 // $common-border-radius: 48px;
@@ -6,7 +8,14 @@ $common-box-shadow: 0px 12px 32px #00000033;
 $common-gap: 1rem;
 $common-padding: 1rem;
 $common-margin: 1rem;
+$puzzle-group-icon-margin: calc(1.15rem / 2);
+$content-container-max-width: 920px;
+$content-icon-size: 92px;
 $full-screen-background-opacity: .6;
+$menu-body-gap: 2rem;
+$menu-header-icon-gap: 1rem;
+$menu-header-height: 72px;
+$menu-list-item-margin: 1rem;
 $section-header-font-size: 1.4rem;
 
 // fonts
@@ -15,6 +24,7 @@ $mono-font: "JetBrains Mono";
 
 // transition times
 $ui-fast-transition: 100ms;
+$ui-slow-transition: 250ms;
 
 // specific sizes
 $app-padding-top: 5.4rem;
@@ -65,6 +75,8 @@ $square-hover-color: $red-100;
 */
 
 $app-background-color: $light-gray-200;
+$achievement-border-color: $light-gray-400;
+$achievement-unlocked-border-color: $light-gray-200;
 // $background-screen-background-color: linear-gradient($indigo-dye, $cerulean);
 $background-screen-background-color: linear-gradient($silver-lake-blue, $slate-blue);
 $board-screen-background-color: transparent;
@@ -74,17 +86,21 @@ $border-highlight-color: $light-gray-300;
 $button-background-color: transparent;
 $button-border-color: $light-gray-400;
 $button-border-hover-color: $light-gray-100;
-$button-hover-background-color: transparent;
+// $button-hover-background-color: transparent;
+$button-hover-background-color: $button-border-hover-color;
+$button-hover-text-color: $dark-gray-300;
 $delete-unlocked-fill-color: $red-300;
 $delete-unlocked-font-color: $light-gray-100;
 $error-message-background-color: $red-100;
 $error-message-border-color: $red-200;
 $error-message-font-color: $error-message-border-color;
-$login-container-background-color: $dark-gray-300;
-$menu-screen-background-color: blue;
+$full-screen-panel-background-color: rgb(16, 16, 16);
+$login-container-border-color: $light-gray-100;
+$puzzle-group-border-color: $light-gray-400;
+$puzzle-group-border-hover-color: $light-gray-200;
 $text-light-color: $light-gray-100;
 $text-dark-color: $dark-gray-300;
-$text-input-active-border-color: $dark-gray-200;
+$text-input-active-border-color: $light-gray-100;
 $text-input-error-border-color: $red-100;
 
 // $a: #65ff0ff
@@ -147,9 +163,14 @@ $l-breakpoint: 1920px;
   }
 }
 
+@mixin common-border-styling ($border-color) {
+  border: 2px solid $border-color;
+  border-radius: $common-border-radius;
+}
+
 @mixin full-screen-panel-styling {
   backdrop-filter: blur(20px);
-  background-color: rgba($login-container-background-color, $full-screen-background-opacity);
+  background-color: rgba($full-screen-panel-background-color, $full-screen-background-opacity);
   height: 100vh;
   left: 0;
   opacity: 0%;
@@ -165,4 +186,54 @@ $l-breakpoint: 1920px;
     opacity: 100%;
     z-index: 10;
   }
+}
+
+@mixin inline-mono-styling {
+  // use with <code> and certain spans on the user profile
+  background-color: rgba(0,0,0,0.3);
+  border-radius: $common-border-radius;
+  font-family: $mono-font;
+  font-size: .9rem;
+  padding: .2rem .5rem;
+}
+
+@mixin glow-border ($border-color){
+  border-color: $border-color;
+  box-shadow: 0px 0px 25px color.adjust($border-color, $alpha: -.8);
+}
+
+// for use with Achievement and PuzzleGroup - a visual representation of a 
+//  content that is seperated from the main body content
+@mixin content-container-visual-styling ($border-color) {
+  // border: 2px solid $border-color;
+  // border-radius: $common-border-radius;
+  @include common-border-styling($border-color);
+  padding: $common-padding;
+  margin-bottom: calc($common-margin * 1.5);
+  transition: 
+    color $ui-slow-transition,
+    border-color $ui-slow-transition,
+    box-shadow $ui-slow-transition,
+    opacity $ui-slow-transition;
+  width: 100%;
+
+  h1 {
+    font-size: 1.4rem;
+    margin: 0;
+    margin-bottom: $common-padding;
+    // text-decoration: underline;
+  }
+}
+
+// for use on the wrappers for icons that appear within body content - things like
+//  .achievement-icon-wrapper and .puzzle-group-icon
+@mixin content-icon-wrapper-styling {
+  align-items: center;
+  border: 2px solid $achievement-border-color;
+  border-radius: $common-border-radius;
+  display: flex;
+  // TODO: Adjust this based on window size? Make smaller responsive sizes?
+  min-height: $content-icon-size;
+  min-width: $content-icon-size;
+  justify-content: center;
 }

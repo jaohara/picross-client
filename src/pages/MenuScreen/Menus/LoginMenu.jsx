@@ -4,29 +4,52 @@ import React, {
   useState,
 } from 'react';
 
+import {
+  Navigate,
+} from "react-router-dom";
+
 import "./Menu.scss";
 
 // remove as necessary
 import { UserContext } from '../../../contexts/UserContext';
 import { GameContext } from '../../../contexts/GameContext';
 
-import Button from '../../../components/Button/Button';
-import TextInput from '../../../components/TextInput/TextInput';
+import LoginForm from '../../../components/LoginForm/LoginForm';
+import MenuHeader from '../../../components/MenuHeader/MenuHeader';
+import MenuLinks from '../../../components/MenuLinks/MenuLinks';
 
 const LoginMenu = () => {
+  const {
+    login,
+    // logout,
+    user,
+  } = useContext(UserContext);
+
+  if (user) {
+    return (<Navigate to={"/title"} />)
+  }
+
   return ( 
     <div className="login-menu menu">
-      <h1>Login Menu</h1>
-      <p>
-        Hey, I&apos;m the login menu!
-      </p>
+      <MenuHeader
+        iconType="login"
+        title="Login"
+      />
 
-      <div className="menu-todo">
-        <h2>Todo:</h2>
-        <ul>
-          <li>Port most of the stuff from <pre>LoginWindow</pre> and <pre>LoginContainer</pre> into here</li>
-        </ul>
+      <div className="menu-body-container">
+        <MenuLinks
+          excludeAll={true}
+          showBackButton={true}
+        />
+
+        <div className="menu-body">
+          <LoginForm 
+            login={login}
+          />
+        </div>
+
       </div>
+
     </div>
   );
 }

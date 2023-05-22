@@ -1,13 +1,10 @@
 @use "../../styles/globals.scss" as g;
 
+// These are style rules for the menu screen layer itself - 
+//  the file naming is a little confusing here
+
 .menu-screen {
   @include g.full-screen-panel-styling();
-  // background-color: g.$menu-screen-background-color;
-
-  // // TODO: Figure out how this will actually be hidden
-  // display: none;
-
-  // &.active {
-  //   display: block;
-  // }
+  display: flex;
+  flex-direction: column;
 }

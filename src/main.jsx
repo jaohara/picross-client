@@ -4,13 +4,17 @@ import App from './App.jsx'
 
 import { UserContextProvider } from "./contexts/UserContext";
 import { GameContextProvider } from "./contexts/GameContext";
+import { DataContextProvider } from './contexts/DataContext.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <UserContextProvider>
-      <GameContextProvider>
-        <App />
-      </GameContextProvider>
-    </UserContextProvider>
+    <DataContextProvider>
+      <UserContextProvider>
+
+        <GameContextProvider>
+          <App />
+        </GameContextProvider>
+      </UserContextProvider>
+    </DataContextProvider>
   </React.StrictMode>,
 )

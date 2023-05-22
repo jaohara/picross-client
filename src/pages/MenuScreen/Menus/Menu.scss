@@ -1,8 +1,100 @@
 @use "../../../styles/globals.scss" as g;
 
+// These are style rules for the SUBMENU screens.
+
 .menu {
-  align-items: center;
+  // align-items: center;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  flex-grow: 1;
+  // justify-content: center;
+
+  h1 {
+    margin-top: 0rem;
+  }
+}
+
+.menu-links-list {
+  // background-color: red;
+  padding-left: 0rem;
+  width: 11rem;
+}
+
+.menu-link-list-item {
+  list-style-type: none;
+  margin-bottom: g.$menu-list-item-margin;
+  width: 100%;
+}
+
+.menu-link-list-item .app-button {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.menu-controls {
+  position: absolute;
+  right: g.$common-margin;
+}
+
+.menu-header {
+  font-size: 5rem;
+  line-height: 4rem;
+  margin: 0rem;
+}
+
+.menu-header-container {
+  height: g.$menu-header-height;
+}
+
+.menu-body-container {
+  // background-color: red;
+  display: flex;
+  // this value is used as padding-left/top on .menu-body instead
+  // gap: g.$menu-body-gap;
+  height: calc(100vh - g.$menu-header-height - calc(g.$common-margin * 5));
+  margin-top: g.$common-margin;
+}
+
+.menu-body {
+  max-height: 100%;
+  overflow: scroll;
+  // hacky, but prevents overflow from being clipped
+  padding-left: g.$menu-body-gap;
+  padding-top: g.$common-padding;
+  width: 100%;
+}
+
+.menu-header-container {
+  align-items: center;
+  display: flex;
+  gap: g.$menu-header-icon-gap;
+}
+
+.menu-header-icon-wrapper {
+  // kinda hacky
+  transform: translateY(.5rem);
+}
+
+
+// ProfileMenu stuff
+.profile-name {
+  font-size: 2.5rem;
+}
+
+.profile-record-line-item {
+  font-size: 1.1rem;
+}
+
+.profile-record-name {
+  font-weight: bold;
+}
+
+.profile-record-value {
+  // font-family: g.$mono-font;
+  @include g.inline-mono-styling();
+}
+
+// PuzzleListMenu stuff
+.puzzle-list-todo {
+  display: none;
 }

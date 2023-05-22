@@ -1,30 +1,40 @@
 import React from 'react';
 
 import { 
+  TbArrowBack,
   TbCloudDownload,
   TbCloudUpload,
-  TbFileCode, // maybe for save?
-  TbFileDownload, // maybe for save?
+  // TbFileCode, // maybe for save?
+  // TbFileDownload, // maybe for save?
+  TbHierarchy2,
+  TbHome,
   TbLoader,
   TbLogin,
   TbLogout,
   TbMenu2,
+  TbNews,
+  TbPlayerPauseFilled,
+  TbPlayerPlayFilled,
   TbPuzzle,
+  // this looks like a swastika. Don't use this.
+  // TbPuzzle2,
   TbPuzzleOff,
   TbReload,
+  TbSettings,
   TbStethoscope,
   TbStethoscopeOff,
-  TbTrash, // maybe for delete?
+  // TbTrash, // maybe for delete?
   TbTrashX,
   TbUserCircle,
   TbUserPlus,
+  TbX,
 } from "react-icons/tb";
 
 import './Button.scss';
 
 const Button = ({
   children,
-  className,
+  className = "",
   disabled,
   isFormSubmit = false,
   onClick,
@@ -32,21 +42,34 @@ const Button = ({
   iconType = "none",
 }) => {
   const buttonIcons = {
+    "back": (<TbArrowBack />),
     "clear": (<TbReload />),
     "delete": (<TbTrashX />),
+    "diagnostic": (<TbStethoscope />), 
     "diagnostic-on": (<TbStethoscope />), 
     "diagnostic-off": (<TbStethoscopeOff />), 
+    "help": (<TbNews />),       
     "log-auth": (<TbUserCircle />),
     "load": (<TbCloudDownload />),
     "login": (<TbLogin />),
     "logout": (<TbLogout />),
     "menu": (<TbMenu2 />),
+    "options": (<TbSettings />),
+    "pause": (<TbPlayerPauseFilled />),
+    "play": (<TbPlayerPlayFilled />),
+    "profile": (<TbUserCircle />),
+    "puzzle": (<TbPuzzle />),
+    "puzzle-group": (<TbHierarchy2 />),
+    "puzzle-list": (<TbPlayerPlayFilled />),       
+    "puzzle-off": (<TbPuzzleOff />),
+    "puzzle-on": (<TbPuzzle />),
+    "quit": (<TbX />),
+    "restart": (<TbReload />),
     // "save": (<TbFileCode />),
     // "save": (<TbFileDownload />),
     "save": (<TbCloudUpload />),
     "signup": (<TbUserPlus />),
-    "puzzle-off": (<TbPuzzleOff />),
-    "puzzle-on": (<TbPuzzle />),
+    "title": (<TbHome />),
     "waiting": (<TbLoader />)
   };
 
@@ -77,8 +100,8 @@ const Button = ({
       onMouseOut={onMouseOut}
       type={isFormSubmit ? "submit" : "button"}
     >
-      {getButtonIcon()}
       {children}
+      {getButtonIcon()}
     </button>
   );
 }

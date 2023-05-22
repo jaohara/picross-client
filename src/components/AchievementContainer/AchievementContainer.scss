@@ -1,0 +1,8 @@
+@use "../../styles/globals.scss" as g;
+
+.achievement-container {
+  // max-height: 500px;
+  max-width: g.$content-container-max-width;
+  overflow: visible;
+  width: 100%;
+}

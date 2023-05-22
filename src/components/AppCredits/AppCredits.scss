@@ -1,0 +1,22 @@
+@use "../../styles/globals.scss" as g;
+
+.app-credits a {
+  margin: 0 .15rem;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.app-version {
+  font-size: 1rem;
+  right: g.$common-margin;
+}
+
+.app-version, .credits-line {
+  font-weight: bold;
+  font-size: .8rem;
+  line-height: .8rem;
+  position: fixed;
+  bottom: g.$common-margin;
+}

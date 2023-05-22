@@ -14,12 +14,33 @@
 }
 
 html, body {
+  line-height: 1.8rem;
   max-width: 100%;
   overflow: hidden;
 }
 
 body {
   margin: 0rem;
+}
+
+/* pre, code {
+  font-family: g.$mono-font;
+  font-size: .9rem;
+  padding: .2rem .5rem;
+}
+
+code {
+  background-color: rgba(0,0,0,0.3);
+  border-radius: g.$common-border-radius;
+}
+ */
+
+pre, code {
+  @include g.inline-mono-styling();
+}
+
+pre {
+  background-color: initial;
 }
 
 p {
