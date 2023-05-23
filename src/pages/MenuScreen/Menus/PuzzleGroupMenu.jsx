@@ -56,6 +56,8 @@ const PuzzleGroupMenu = () => {
         />
 
         <div className="menu-body">
+          <h1>Test Change</h1>
+          
           <PuzzleSelectionContainer
             puzzles={puzzles}
           />
