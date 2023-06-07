@@ -7,7 +7,7 @@ import {
 // import callbackIsValid from "../utils/callbackIsValid.js";
 
 export default function useHotKeys({
-  toggleMenu = () => console.log("toggleMenu hotkey fired"),
+  togglePauseMenu = () => console.log("togglePauseMenu hotkey fired"),
 }) {
   const keysHeld = useRef([]);
 
@@ -34,7 +34,7 @@ export default function useHotKeys({
   }
 
   const hotkeyBindings = {
-    "Escape": toggleMenu,
+    "Escape": togglePauseMenu,
   }
 
   const hotkeys = Object.keys(hotkeyBindings);

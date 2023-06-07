@@ -62,20 +62,18 @@ const TitleMenu = () => {
         />
 
         <div className="menu-body">
-          <h1>Title Screen Body Content</h1>
           <p>
-            This should be displayed to the right of the controls.
+            You need to put some more thought into what should be displayed on this main screen.
           </p>
 
           <p>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam voluptatem, at molestiae voluptatibus fuga ab. At corporis architecto perspiciatis. Nam quasi commodi eum architecto a debitis, labore dignissimos. Nobis, dignissimos?
+            Should we even land at this main screen? Should you be forwarded to Play or Profile by 
+            default?
           </p>
 
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Facilis nobis repellendus debitis blanditiis magnam at incidunt id odit dicta quae tenetur, earum voluptates, sint accusamus molestiae. Ab dolores accusantium recusandae.
+            <strong>Should this be where the temporary instructions page is?</strong>
           </p>
-
-          <h1>Hey you! Yeah, you, you fucking champion! You got the puzzle and achievement data via DataContext, display it here when you get back to work!</h1>
         </div>
       </div>
     </div>

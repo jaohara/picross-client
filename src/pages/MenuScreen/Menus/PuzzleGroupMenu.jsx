@@ -4,6 +4,8 @@ import React, {
   useState,
 } from 'react';
 
+import { useNavigate } from 'react-router-dom';
+
 import "./Menu.scss";
 
 // remove as necessary
@@ -17,8 +19,11 @@ import MenuLinks from '../../../components/MenuLinks/MenuLinks';
 import PuzzleSelectionContainer from '../../../components/PuzzleSelectionContainer/PuzzleSelectionContainer';
 
 const PuzzleGroupMenu = () => {
+  const navigate = useNavigate();
+
   const {
     completedPuzzleIds,
+    // getCompletedPuzzleTime,
   } = useContext(UserContext);
 
   const {
@@ -56,9 +61,9 @@ const PuzzleGroupMenu = () => {
         />
 
         <div className="menu-body">
-          <h1>Test Change</h1>
-          
           <PuzzleSelectionContainer
+            completedPuzzleIds={completedPuzzleIds}
+            navigate={navigate}
             puzzles={puzzles}
           />
           {/* <h1>Todo:</h1>

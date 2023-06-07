@@ -1,5 +1,7 @@
 import React from 'react';
 
+import "./MenuHeader.scss";
+
 import {
   TbHierarchy2,
   // TbHome,

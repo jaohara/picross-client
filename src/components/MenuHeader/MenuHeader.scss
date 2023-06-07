@@ -1,0 +1,5 @@
+@use "../../styles/globals.scss" as g;
+
+.menu-header-container {
+  margin-bottom: g.$menu-header-margin;
+}

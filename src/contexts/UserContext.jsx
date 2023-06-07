@@ -26,37 +26,127 @@ import callbackIsValid from "../utils/callbackIsValid";
 const UserContext = createContext(undefined);
 
 const UserContextProvider = ({ children }) => {
+  // how are stats also pulled?
+
+  // This might be a little wasteful, but having multiple state values might be the best
+  //  idea for my use cases here.
+  const [ completedPuzzleIds, setCompletedPuzzleIds ] = useState([]);
+  const [ completedPuzzles, setCompletedPuzzles ] = useState([]);
+  const [ puzzleRecords, setPuzzleRecords ] = useState();
   // TODO: TEMP BEHAVIOR - replace with actual auth object, right now this 
   // is just spoofing whether a user is logged in or not with a bool
   const [ user, setUser ] = useState(false);
   // the useProfile created by createUserEntity. contains user profile data
   //  and gameRecords as a field
   const [ userProfile, setUserProfile ] = useState();
+  
+  // TODO: prune dead code when confirmed working
+  // const [ completedPuzzles, completedPuzzleIds ] = useMemo(() => {
+  //   if (!userProfile) {
+  //     return [ null, null ];
+  //   }
 
-  // TODO: add more derived data here, UPDATING FIRST NULL-ARRAY RETURN STATEMENT
-  const [ completedPuzzles, completedPuzzleIds ] = useMemo(() => {
-    if (!userProfile) {
-      return [ null, null ];
+  //   // shallow copy to update reference
+  //   const puzzleRecords = { ...userProfile.gameRecords.puzzles};
+  //   const puzzleRecordIds = Object.keys(puzzleRecords);
+
+  //   const completedPuzzles = [];
+  //   const completedPuzzleIds = [];
+
+  //   puzzleRecordIds.forEach((puzzleRecordId) => {
+  //     const puzzleRecord = puzzleRecords[puzzleRecordId];
+
+  //     if (puzzleRecord.completed) {
+  //       puzzleRecord.id = puzzleRecordId;
+  //       completedPuzzleIds.push(puzzleRecordId);
+  //       completedPuzzles.push(puzzleRecord);
+  //     }
+  //   });
+
+  //   console.log("UserContext: useMemo: completedPuzzles:", completedPuzzles);
+
+  //   return [ completedPuzzles, completedPuzzleIds ];
+  // }, [userProfile]);
+
+  // hook for updating completedPuzzles on userProfile change
+  useEffect(() => {
+    if (!userProfile) return;
+
+    console.log("UserContext: useEffect: updating puzzleRecords on userProfile change.");
+    setPuzzleRecords({...userProfile.gameRecords.puzzles});
+  }, [userProfile]);
+
+  // hook for updating completedPuzzles when puzzleRecords changes
+  useEffect(() => {
+    if (!puzzleRecords) {
+      return;
     }
 
-    const puzzleRecords = userProfile.gameRecords.puzzles;
-    const puzzleRecordIds = Object.keys(puzzleRecords);
+    const newPuzzleRecordIds = Object.keys(puzzleRecords);
 
-    const completedPuzzles = [];
-    const completedPuzzleIds = [];
+    const newCompletedPuzzles = [];
+    const newCompletedPuzzleIds = [];
 
-    puzzleRecordIds.forEach((puzzleRecordId) => {
-      const puzzleRecord = puzzleRecords[puzzleRecordId];
+    newPuzzleRecordIds.forEach((newPuzzleRecordId) => {
+      const newPuzzleRecord = puzzleRecords[newPuzzleRecordId];
 
-      if (puzzleRecord.completed) {
-        puzzleRecord.id = puzzleRecordId;
-        completedPuzzleIds.push(puzzleRecordId);
-        completedPuzzles.push(puzzleRecord);
+      if (newPuzzleRecord.completed) {
+        newPuzzleRecord.id = newPuzzleRecordId;
+        newCompletedPuzzleIds.push(newPuzzleRecordId);
+        newCompletedPuzzles.push(newPuzzleRecord);
       }
     });
 
-    return [ completedPuzzles, completedPuzzleIds ];
-  }, [userProfile])
+    setCompletedPuzzleIds(newCompletedPuzzleIds);
+    setCompletedPuzzles(newCompletedPuzzles);
+  }, [puzzleRecords]);
+
+  // adds a puzzleRecord to the puzzleRecords state value
+  const addPuzzleRecord = (puzzleRecord) => {
+    if (!userProfile || !puzzleRecords) {
+      return;
+    }
+
+    console.log("UserContext: addPuzzleRecord called with:", puzzleRecord);
+    console.log("UserContext: current puzzleRecords is: ", puzzleRecords);
+
+    console.log("UserContext: current userProfile is:", userProfile);
+
+    setPuzzleRecords((currentPuzzleRecords) => {
+      const newPuzzleRecords = { ...puzzleRecord, ...currentPuzzleRecords };
+      console.log("UserContext: addPuzzleRecord: updating puzzleRecords to:", newPuzzleRecords);
+      return newPuzzleRecords;
+    });
+
+
+    // TODO: prune dead code when confirmed working
+    // setUserProfile((currentUserProfile) => {
+    //   const puzzleRecords = currentUserProfile.gameRecords.puzzles;
+    //   currentUserProfile.gameRecords.puzzles = { ...puzzleRecord, ...puzzleRecords };
+    //   console.log("UserContext: attempting to set userProfile to:", currentUserProfile);
+    //   return currentUserProfile;
+    // });
+  }
+
+  // gets the best recorded time in millis for a completed puzzle, or null if it hasn't
+  //  been completed.
+  const getCompletedPuzzleTime = (puzzle) => {
+    console.log("UserContext: getCompletedPuzzleTime: looking for puzzle:", puzzle);
+    console.log("UserContext: getCompletedPuzzleTime: searching in:", completedPuzzles);
+
+    const filteredPuzzles = completedPuzzles.filter((puzzleRecord) => 
+    puzzleRecord.id === puzzle.id
+    );
+    
+    if (filteredPuzzles.length === 0) {
+      console.log("UserContext: getCompletedPuzzleTime: puzzle not found");
+      return null;
+    }
+    
+    console.log("UserContext: getCompletedPuzzleTime: found puzzles:", filteredPuzzles);
+    
+    return filteredPuzzles[0].gameTimer;
+  };
 
   // TODO: the signup function here should call api.createUserEntity,
   //  and the login function should also double check to see if all the required 
@@ -153,10 +243,13 @@ const UserContextProvider = ({ children }) => {
   return (
     <UserContext.Provider
       value={{
+        addPuzzleRecord,
         completedPuzzleIds,
         completedPuzzles,
+        getCompletedPuzzleTime,
         login,
         logout,
+        puzzleRecords,
         register,
         user,
         userProfile,

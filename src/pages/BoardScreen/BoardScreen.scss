@@ -3,9 +3,27 @@
 .board-screen {
   background-color: g.$board-screen-background-color;
   display: flex;
+  filter: blur(g.$board-screen-blur);
   flex-direction: column;
   gap: g.$common-gap;
   justify-content: space-between;
+  opacity: 0;
+  transition: 
+    filter g.$ui-fast-transition,
+    opacity g.$ui-fast-transition;
+
+  &.active {
+    filter: blur(0px);
+    opacity: 1;
+
+    &.paused {
+      filter: blur(g.$board-screen-blur);
+    }
+  }
+
+  // h1 {
+  //   margin: 0rem;
+  // }
 }
 
 .board-screen-header, .board-screen-footer {
@@ -14,7 +32,7 @@
 
 .board-screen-content-container {
   // background-color: red;
-  align-items: center;
+  // align-items: center;
   background-color: g.$board-screen-section-temp-background-color;
   flex-grow: 1;
 }
@@ -24,6 +42,61 @@
   border-radius: g.$common-border-radius;  
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  // justify-content: center;
   padding: g.$common-padding;
+}
+
+.board-test-controls {
+  align-items: center;
+  display: flex;
+  // flex-direction: column;
+  gap: g.$common-gap;
+  // justify-content: center;
+  width: 100%;
+
+  h1 {
+    font-size: 1.4rem;
+    margin: 0rem;
+  }
+}
+
+.board-test-controls-wrapper {
+  display: flex;
+  gap: g.$common-gap;
+}
+
+.board-container {
+  align-items: center;
+  // background-color: red;
+  display: flex;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.board-screen-gameplay-container {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+
+  & > * {
+    width: 100%;
+  }
+}
+
+// timer-related stuff
+.game-timer {
+  align-items: center;
+  display: flex;
+}
+
+.timer-icon {
+  height: 32px;
+  margin-right: g.$common-margin;
+}
+
+.timer-value {
+  font-weight: bold;
+  font-size: 1.2rem;
 }

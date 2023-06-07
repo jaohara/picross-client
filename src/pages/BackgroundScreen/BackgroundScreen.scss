@@ -2,4 +2,6 @@
 
 .background-screen {
   background: g.$background-screen-background-color;
+  transition: 
+    background g.$background-color-transition;
 }

@@ -1,6 +1,7 @@
 @use "sass:color";
 
 // common sizes/variables
+$board-screen-blur: 4px;
 $common-border-radius: 12px;
 // $common-border-radius: 48px;
 // $common-box-shadow: 0px 4px 4px rgba(25,25,25,0.25);
@@ -12,10 +13,14 @@ $puzzle-group-icon-margin: calc(1.15rem / 2);
 $content-container-max-width: 920px;
 $content-icon-size: 92px;
 $full-screen-background-opacity: .6;
+$input-box-max-width: calc($content-container-max-width / 2);
 $menu-body-gap: 2rem;
 $menu-header-icon-gap: 1rem;
 $menu-header-height: 72px;
+$menu-header-margin: .5rem;
 $menu-list-item-margin: 1rem;
+$menu-toggle-right-offset: calc(2 * $common-margin);
+$menu-toggle-top-offset: calc(1.6 * $common-margin);
 $section-header-font-size: 1.4rem;
 
 // fonts
@@ -25,6 +30,7 @@ $mono-font: "JetBrains Mono";
 // transition times
 $ui-fast-transition: 100ms;
 $ui-slow-transition: 250ms;
+$background-color-transition: 1000ms;
 
 // specific sizes
 $app-padding-top: 5.4rem;
@@ -47,7 +53,8 @@ $red-300: #de3333;
 $indigo-dye: #254E70;
 $cerulean: #37718E;
 $silver-lake-blue: #4F86C6;
-$slate-blue: #744FC6;
+// $slate-blue: #744FC6;
+$slate-blue: #3299d0;
 
 $square-gray: #35363866;
 
@@ -71,7 +78,6 @@ $puzzle-panel-list-item-hover-background-color: $light-gray-300;
 $pane-background-color: $light-gray-100;
 $control-bar-background-color: $pane-background-color;
 $square-border-color: $square-gray;
-$square-hover-color: $red-100;
 */
 
 $app-background-color: $light-gray-200;
@@ -80,7 +86,9 @@ $achievement-unlocked-border-color: $light-gray-200;
 // $background-screen-background-color: linear-gradient($indigo-dye, $cerulean);
 $background-screen-background-color: linear-gradient($silver-lake-blue, $slate-blue);
 $board-screen-background-color: transparent;
-$board-screen-section-temp-background-color: rgba(29, 29, 29, 0.4);
+// $board-screen-section-temp-background-color: rgba(29, 29, 29, 0.4);
+$board-screen-section-temp-background-color: rgba(29, 29, 29, 0.15);
+$board-square-hover-color: $red-100;
 $border-highlight-color: $light-gray-300;
 // $button-background-color: $light-gray-200;
 $button-background-color: transparent;
@@ -233,6 +241,8 @@ $l-breakpoint: 1920px;
   border-radius: $common-border-radius;
   display: flex;
   // TODO: Adjust this based on window size? Make smaller responsive sizes?
+  max-height: $content-icon-size;
+  max-width: $content-icon-size;
   min-height: $content-icon-size;
   min-width: $content-icon-size;
   justify-content: center;

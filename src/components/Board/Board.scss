@@ -1,0 +1,43 @@
+@use "../../styles/globals.scss" as g;
+
+
+.board, .board-row, .board-square {
+  font-family: g.$mono-font;
+}
+
+.board {
+  flex-direction: column;
+  display: flex;
+  justify-content: space-between;
+  width: fit-content;
+}
+
+.board-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+  height: 100%;
+  width: 100%;
+}
+
+.board-square {
+  align-items: center;
+  aspect-ratio: 1/1;
+  display: flex;
+  justify-content: center;
+  transform: scale(1.0);
+  transition: g.$ui-fast-transition transform;
+  width: 100%;
+
+  &:hover {
+    transform: scale(1.25);
+    z-index: 100;
+  }
+}
+
+.board-square-rect {  
+  &:hover {
+    cursor: crosshair;
+    stroke: g.$board-square-hover-color;
+  }
+}

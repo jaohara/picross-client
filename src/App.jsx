@@ -11,12 +11,24 @@ import useHotKeys from './hooks/useHotKeys';
 import BackgroundScreen from "./pages/BackgroundScreen/BackgroundScreen";
 import BoardScreen from './pages/BoardScreen/BoardScreen';
 import MenuScreen from './pages/MenuScreen/MenuScreen';
+import MenuToggle from './components/MenuToggle/MenuToggle';
 
 function App() {
-  const { toggleMenu } = useContext(GameContext);
+  const { 
+    gameIsActive,
+    toggleMenu,
+    togglePauseGame,
+  } = useContext(GameContext);
+
+  const togglePauseMenu = () => {
+    if (gameIsActive) {
+      togglePauseGame(Date.now());
+      toggleMenu();
+    }
+  }
 
   useHotKeys({
-    toggleMenu: toggleMenu,
+    togglePauseMenu: togglePauseMenu,
   });
 
   // TODO: Is this the proper order for wrapping the contexts?
@@ -27,6 +39,7 @@ function App() {
       <MenuScreen 
       
       />
+      <MenuToggle />
     </div>
   );
 }

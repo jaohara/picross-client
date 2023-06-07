@@ -7,6 +7,7 @@ import "./PuzzleGroupContainer.scss";
 import {
   TbPuzzle,
   TbPuzzleFilled,
+  TbQuestionMark,
 } from "react-icons/tb";
 
 import {
@@ -103,8 +104,10 @@ const PuzzleGroupIcon = ({
   `;
 
   const puzzleIcon = isCompleted ?
-    (<TbPuzzleFilled size={LARGE_ICON_SIZE}/>) :
-    (<TbPuzzle size={LARGE_ICON_SIZE}/>); 
+    // (<TbPuzzleFilled size={LARGE_ICON_SIZE}/>) :
+    (<TbPuzzle size={LARGE_ICON_SIZE}/>) :
+    // (<TbPuzzle size={LARGE_ICON_SIZE}/>); 
+    (<TbQuestionMark size={LARGE_ICON_SIZE}/>); 
 
   return (
     <div className={puzzleGroupIconClassNames}>
