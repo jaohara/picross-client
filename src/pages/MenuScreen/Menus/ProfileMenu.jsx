@@ -18,7 +18,8 @@ import Button from '../../../components/Button/Button';
 import MenuHeader from '../../../components/MenuHeader/MenuHeader';
 import MenuLinks from '../../../components/MenuLinks/MenuLinks';
 
-import convertMillisToMinutesAndSeconds from '../../../utils/convertMillistoMinutesAndSeconds';
+// import convertMillisToMinutesAndSeconds from '../../../utils/ConvertMillisToMinutesAndSeconds';
+import convertMillisToMinutesAndSeconds from '../../../utils/convertMillisToMinutesAndSeconds';
 
 const ProfileMenu = () => {
   const {
@@ -27,6 +28,7 @@ const ProfileMenu = () => {
 
   const {
     logout,
+    puzzleRecords,
     user,
     userProfile,
   } = useContext(UserContext);
@@ -47,7 +49,7 @@ const ProfileMenu = () => {
   ];
 
   const achievementRecords = userProfile.gameRecords.achievements;
-  const puzzleRecords = userProfile.gameRecords.puzzles;
+  // const puzzleRecords = userProfile.gameRecords.puzzles;
   const puzzleRecordKeys = Object.keys(puzzleRecords);
   const userAchievements = Object.keys(achievementRecords);
 
@@ -86,7 +88,6 @@ const ProfileMenu = () => {
     console.log("ProfileMenu: userProfile is:", userProfile);
     console.log("ProfileMenu: achievementRecords is:", achievementRecords);
     console.log("ProfileMenu: userAchievements is:", userAchievements);
-    console.log("")
   });
 
   const recordLineItems = statKeys.map((statKey, index) => (

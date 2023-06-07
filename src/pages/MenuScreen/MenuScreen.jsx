@@ -58,7 +58,7 @@ const MenuScreen = () => {
   return ( 
     <div className={menuScreenClassNames}>
       {/* TODO: Move this to its own component so that it can exist in App? */}
-      <div className="menu-controls">
+      {/* <div className="menu-controls">
         <Button
           onClick={toggleMenu}
           iconType='menu'
@@ -67,7 +67,7 @@ const MenuScreen = () => {
             menuIsActive ? "Close" : "Menu"
           }
         </Button>
-      </div>
+      </div> */}
 
       <Router>
         <Routes>

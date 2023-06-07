@@ -7,4 +7,36 @@
 .puzzle-selection {
   @include g.content-container-visual-styling(g.$puzzle-group-border-color);
   gap: g.$common-gap;
+
+  &.complete {
+    @include g.glow-border(g.$puzzle-group-border-color);
+  }
+
+  &:hover {
+    @include g.glow-border(g.$puzzle-group-border-hover-color);
+    cursor: pointer;
+  }
+}
+
+.puzzle-selection-icon {
+  @include g.content-icon-wrapper-styling();
+  margin: g.$puzzle-group-icon-margin;
+}
+
+.puzzle-selection-body {
+  display: flex;
+}
+
+.puzzle-selection-info {
+  padding: g.$common-padding;
+}
+
+.puzzle-selection-info-key {
+  font-weight: bold;
+  margin-right: calc(g.$common-margin / 2);
+}
+
+.puzzle-selection-info-value {
+  @include g.inline-mono-styling();
+  font-weight: bold;
 }

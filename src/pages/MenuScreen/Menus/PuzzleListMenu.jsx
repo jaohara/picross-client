@@ -23,7 +23,7 @@ import PuzzleGroupContainer from '../../../components/PuzzleGroupContainer/Puzzl
 const excludedRoutes = [
   // maybe I should have an "exclude all" option in MenuLinks?
   "login",
-  "title",
+  // "title",
   "options",
   "puzzle-group",
   "puzzle",
@@ -36,6 +36,7 @@ const PuzzleListMenu = () => {
   const navigate = useNavigate();
 
   const {
+    clearCurrentPuzzleGroup,
     currentPuzzleGroup,
     navigateToPuzzleGroup,
     selectPuzzleGroup,
@@ -63,6 +64,12 @@ const PuzzleListMenu = () => {
     }
   }, [currentPuzzleGroup, navigate]);
 
+  useEffect(() => {
+    if (currentPuzzleGroup) {
+      clearCurrentPuzzleGroup();
+    }
+  }, []);
+
   return ( 
     <div className="puzzle-list-menu menu">
       <MenuHeader
@@ -73,7 +80,7 @@ const PuzzleListMenu = () => {
       <div className="menu-body-container">
         <MenuLinks 
           excluded={excludedRoutes}
-          excludeAll={true}
+          // excludeAll={true}
           showBackButton={true}
         />
 

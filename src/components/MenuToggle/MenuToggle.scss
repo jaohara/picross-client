@@ -1,0 +1,16 @@
+@use '../../styles/globals.scss' as g;
+
+.menu-toggle {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: g.$menu-toggle-right-offset;
+  top: g.$menu-toggle-top-offset;
+  transition: opacity g.$ui-fast-transition;
+  z-index: 100;
+
+  &.active {
+    opacity: 1;
+    pointer-events: initial;
+  }
+}

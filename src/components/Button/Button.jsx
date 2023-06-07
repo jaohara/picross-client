@@ -2,6 +2,8 @@ import React from 'react';
 
 import { 
   TbArrowBack,
+  TbAward,
+  TbClock,
   TbCloudDownload,
   TbCloudUpload,
   // TbFileCode, // maybe for save?
@@ -44,6 +46,7 @@ const Button = ({
   const buttonIcons = {
     "back": (<TbArrowBack />),
     "clear": (<TbReload />),
+    "complete": (<TbAward />),
     "delete": (<TbTrashX />),
     "diagnostic": (<TbStethoscope />), 
     "diagnostic-on": (<TbStethoscope />), 
@@ -69,6 +72,7 @@ const Button = ({
     // "save": (<TbFileDownload />),
     "save": (<TbCloudUpload />),
     "signup": (<TbUserPlus />),
+    "time": (<TbClock />),
     "title": (<TbHome />),
     "waiting": (<TbLoader />)
   };
