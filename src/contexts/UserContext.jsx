@@ -39,34 +39,6 @@ const UserContextProvider = ({ children }) => {
   // the useProfile created by createUserEntity. contains user profile data
   //  and gameRecords as a field
   const [ userProfile, setUserProfile ] = useState();
-  
-  // TODO: prune dead code when confirmed working
-  // const [ completedPuzzles, completedPuzzleIds ] = useMemo(() => {
-  //   if (!userProfile) {
-  //     return [ null, null ];
-  //   }
-
-  //   // shallow copy to update reference
-  //   const puzzleRecords = { ...userProfile.gameRecords.puzzles};
-  //   const puzzleRecordIds = Object.keys(puzzleRecords);
-
-  //   const completedPuzzles = [];
-  //   const completedPuzzleIds = [];
-
-  //   puzzleRecordIds.forEach((puzzleRecordId) => {
-  //     const puzzleRecord = puzzleRecords[puzzleRecordId];
-
-  //     if (puzzleRecord.completed) {
-  //       puzzleRecord.id = puzzleRecordId;
-  //       completedPuzzleIds.push(puzzleRecordId);
-  //       completedPuzzles.push(puzzleRecord);
-  //     }
-  //   });
-
-  //   console.log("UserContext: useMemo: completedPuzzles:", completedPuzzles);
-
-  //   return [ completedPuzzles, completedPuzzleIds ];
-  // }, [userProfile]);
 
   // hook for updating completedPuzzles on userProfile change
   useEffect(() => {

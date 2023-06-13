@@ -39,7 +39,9 @@ const BoardScreen = () => {
     gameIsActive,
     gameIsPaused,
     getCurrentGameTimeInMillis,
+    moveCountRef,
     pauseDuration,
+    puzzleIsSolved,
     quitGame,
     setGameIsActive,
     startTime,
@@ -54,6 +56,7 @@ const BoardScreen = () => {
     board-screen screen
     ${gameIsActive ? "active" : ""}
     ${gameIsPaused ? "paused" : ""}
+    ${puzzleIsSolved ? "solved" : ""}
   `;
 
   /*
@@ -81,6 +84,7 @@ const BoardScreen = () => {
         gameTimer: getCurrentGameTimeInMillis(Date.now(), pauseDuration),
         id: currentPuzzleId,
         lastPlayed: Timestamp.now(),
+        moveCount: moveCountRef.current,
       }
     };
 
@@ -119,9 +123,6 @@ const BoardScreen = () => {
     };
   }, [startTime, pauseDuration]);
 
-
-  const tempPuzzleGridContent = currentPuzzle ? currentPuzzle.puzzle : "no puzzle loaded"
-
   return ( 
     <div className={boardScreenClassNames}>
       <div className="board-screen-header board-screen-section">
@@ -138,15 +139,13 @@ const BoardScreen = () => {
 
       <div className="board-screen-content-container board-screen-section">
         <div className="board-screen-gameplay-container">
-          <h1>Game Board</h1>
-
           <div className="board-container">
-            {/* {tempPuzzleGridContent} */}
             {
               boardIsReady && (
                 <Board 
                   puzzleData={currentPuzzle}
                   puzzleGrid={currentPuzzleGrid}
+                  puzzleIsSolved={puzzleIsSolved}
                   togglePuzzleGridSquare={togglePuzzleGridSquare}
                 />
               )

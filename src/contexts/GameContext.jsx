@@ -1,10 +1,13 @@
 import React, {
   createContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
+import hashPuzzleGrid from "../utils/hashPuzzleGrid";
 import sortHexColors from "../utils/sortHexColors";
+
 
 // TODO: import necessary api functions
 
@@ -28,6 +31,8 @@ const GameContextProvider = ({ children }) => {
   const [ currentPuzzleGroup, setCurrentPuzzleGroup ] = useState(null);
   // whether or not the game menu is active
   const [ menuIsActive, setMenuIsActive ] = useState(true);
+  // number of toggleSquare actions that have been performed
+  const moveCountRef = useRef(0);
   // used to block toggling the menu (when no board is loaded, etc)
   // const [ menuScreenToggleLock, setMenuScreenToggleLock ] = useState(false);
   // duration for a pause to measure offset
@@ -35,6 +40,8 @@ const GameContextProvider = ({ children }) => {
   // timestamp for when a pause event occurred
   // const [ pauseTime, setPauseTime ] = useState(null);
   const [ pauseTime, setPauseTime ] = useState(0);
+  // whether or not the currentPuzzle is solved
+  const [ puzzleIsSolved, setPuzzleIsSolved ] = useState(false);
   // timestamp for when the current game instance started
   const [ startTime, setStartTime ] = useState(0);
   
@@ -47,6 +54,9 @@ const GameContextProvider = ({ children }) => {
 
   const startGameTimer = () => setStartTime(Date.now());
   const stopGameTimer = () => setStartTime(0);
+  
+  const incrementMoveCount = () => moveCountRef.current = moveCountRef.current + 1;
+  const resetMoveCount = () => moveCountRef.current = 0;
 
   // TODO: Include some way to save current background colors, as well as 
   // a function to get current background colors from a puzzle
@@ -57,12 +67,16 @@ const GameContextProvider = ({ children }) => {
   const resetGame = (resetAndRestart = false) => {
     console.log("GameContext: resetGame is called");
 
+    // reset puzzle solved state
+    setPuzzleIsSolved(false);
     // reset accumulated pause time
     setPauseDuration(0);
     // reset pause timestamp
     setPauseTime(0); 
     // reset puzzle grid
     resetPuzzleGrid();
+    // reset move count
+    resetMoveCount();
     // reset game start timestamp
     resetAndRestart ? startGameTimer() : stopGameTimer();
     // setStartTime(resetAndRestart ? Date.now() : null); 
@@ -91,18 +105,29 @@ const GameContextProvider = ({ children }) => {
   };
 
   // flips the value of the given square, the count being the index in the puzzle grid array
-  const togglePuzzleGridSquare = (pixelCount) => {
-    if (!currentPuzzleGrid || pixelCount > currentPuzzleGrid.length){
+  const togglePuzzleGridSquare = (pixelCount, fillType = "fill") => {
+    if (!currentPuzzleGrid || pixelCount > currentPuzzleGrid.length || puzzleIsSolved){
       return;
     }
 
-    // console.log(`togglePuzzleGridSquare firing on ${pixelCount}`);
+    console.log(`togglePuzzleGridSquare firing on ${pixelCount} with fillType = ${fillType}`);
     
     setCurrentPuzzleGrid(currentGrid => {
       const newGrid = [...currentGrid];
-      newGrid[pixelCount] = newGrid[pixelCount] === 1 ? 0 : 1;
+      const currentFill = newGrid[pixelCount];
+
+      if (fillType === "fill" && currentFill !== 2){
+        console.log("We made it, setting a fill to 1");
+        newGrid[pixelCount] = currentFill === 1 ? 0 : 1;
+      }
+      else if (fillType === "x" && currentFill !== 1) {
+        console.log("We made it, setting a fill to 2");
+        newGrid[pixelCount] = currentFill === 2 ? 0 : 2; 
+      }
+
       return newGrid;
-    })
+    });
+    incrementMoveCount();
   };
 
   // gets current game time, 0 if no game is active
@@ -222,6 +247,33 @@ const GameContextProvider = ({ children }) => {
     resetPuzzleGrid();
   }, [currentPuzzle]);
 
+
+  // check if puzzle is solved
+  useEffect(() => {
+    if (!currentPuzzle) {
+      return;
+    }
+
+    const { 
+      name,
+      gridHash: solutionHash, 
+    } = currentPuzzle;
+
+    console.log("GameContext: currentPuzzleGrid:", currentPuzzleGrid);
+
+    // remove x from grid
+    const strippedPuzzleGrid = currentPuzzleGrid.map((cell) => cell === 2 ? 0 : cell);
+
+    // const currentGridHash = hashPuzzleGrid(currentPuzzleGrid, name);
+    const currentGridHash = hashPuzzleGrid(strippedPuzzleGrid, name);
+
+    console.log(`GameContext: currentGridHash, solutionHash: ${currentGridHash}, ${solutionHash}`);
+
+    if (currentGridHash === solutionHash) {
+      setPuzzleIsSolved(true);
+    }
+  }, [currentPuzzleGrid]);
+
   const boardIsReady = currentPuzzle && currentPuzzleGrid;
 
   return (
@@ -239,7 +291,9 @@ const GameContextProvider = ({ children }) => {
         getCurrentGameTimeInMillis,
         navigateToPuzzleGroup,
         menuIsActive,
+        moveCountRef,
         pauseDuration,
+        puzzleIsSolved,
         quitGame,
         selectPuzzle,
         selectPuzzleAndStartFromMenu,

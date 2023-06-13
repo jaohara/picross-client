@@ -1,0 +1,5 @@
+@use "../../styles/globals.scss" as g;
+
+.daily-streak-container {
+  @include g.content-container-visual-styling(g.$puzzle-group-border-color);
+}

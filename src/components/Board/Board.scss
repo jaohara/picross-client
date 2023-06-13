@@ -38,6 +38,46 @@
 .board-square-rect {  
   &:hover {
     cursor: crosshair;
-    stroke: g.$board-square-hover-color;
+    stroke: g.$board-square-hover-color !important;
+  }
+}
+
+// ColumnNumber and RowNumber related rules
+.board-row-and-board-wrapper {
+  display: flex;
+  flex-direction: row;
+}
+
+.board-column-numbers {
+  justify-content: flex-end;
+  // background-color: red;
+  display: flex;
+}
+
+.board-row-numbers {
+  // background-color: blue;
+}
+
+.board-number-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  .board-row-numbers & {
+    flex-direction: row;
+  }
+}
+
+.board-number {
+  // background-color: g.$board-number-background-color;
+  // border-radius: g.$common-border-radius;
+  display: flex;
+  font-weight: bold;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity g.$board-reveal-transition;
+
+  .solved & {
+    opacity: 0;
   }
 }

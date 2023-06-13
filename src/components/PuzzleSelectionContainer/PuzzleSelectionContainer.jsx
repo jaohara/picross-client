@@ -18,15 +18,13 @@ import {
 import { UserContext } from '../../contexts/UserContext';
 import { GameContext } from '../../contexts/GameContext';
 
+import PuzzleIcon from '../PuzzleIcon/PuzzleIcon';
+
 import convertMillisToMinutesAndSeconds from "../../utils/convertMillisToMinutesAndSeconds";
 
 /*
-  This is the detailed list of puzzles that you select one to play 
-  from. It appears on the `PuzzleGroupMenu` subpage.
-
-  TODO: Should I rename this to PuzzleGroupContainer, and rename
-   PuzzleGroupContainer to PuzzleListContainer to reflect the menu
-   pages that they are used on?
+  This is used within PuzzleGroupMenu (NOT PuzzleGroupContainer) to drill down
+  into a specific puzzle in a PuzzleGroup.
 */
 const PuzzleSelectionContainer = ({
   completedPuzzleIds,
@@ -80,7 +78,6 @@ const PuzzleSelectionContainer = ({
   );
 };
 
-
 const PuzzleSelection = ({
   bestTime,
   handlePuzzleSelectionClick = () => console.log("PuzzleSelection: handlePuzzleSelectionClick fired"),
@@ -117,8 +114,16 @@ const PuzzleSelection = ({
       </h1>
 
       <div className="puzzle-selection-body">
+
+        {/* 
+          TODO: Use PuzzleIcon Component here
+        */}
         <div className="puzzle-selection-icon">
-          {puzzleIcon}
+          {/* {puzzleIcon} */}
+          <PuzzleIcon
+            puzzleData={puzzle}
+            revealed={isCompleted}
+          />
         </div>
 
         <div className="puzzle-selection-info">
@@ -131,6 +136,12 @@ const PuzzleSelection = ({
             infoKey={"Best Time:"}
             infoValue={timeString}
           />
+
+          {/* TODO: Add puzzle moves when a gameRecord is saved */}
+          {/* <PuzzleSelectionInfoItem
+            infoKey={"Moves Taken:"}
+            infoValue={timeString}
+          /> */}
         </div>
       </div>
     </div>

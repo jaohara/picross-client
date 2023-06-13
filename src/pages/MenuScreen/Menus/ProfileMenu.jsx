@@ -15,6 +15,7 @@ import { DataContext } from '../../../contexts/DataContext';
 
 import AchievementContainer from '../../../components/AchievementContainer/AchievementContainer';
 import Button from '../../../components/Button/Button';
+import DailyStreakVisualization from '../../../components/DailyStreakVisualization/DailyStreakVisualization';
 import MenuHeader from '../../../components/MenuHeader/MenuHeader';
 import MenuLinks from '../../../components/MenuLinks/MenuLinks';
 
@@ -121,21 +122,26 @@ const ProfileMenu = () => {
             <ul>
               {recordLineItems}
               <li>Account Age?</li>
-              <li>Longest Daily activity Streak?</li>
-              <li>Longest Daily completion Streak?</li>
-              <li>Daily completion visualized like a github commit chart?</li>
-              <li>What else?</li>
             </ul>
+          </div>
+
+          <div className="profile-daily-streak">
+            <h1>Daily Streak</h1>
+
+            <DailyStreakVisualization
+              
+            />
           </div>
 
           <div className="profile-achievements">
             <h1>Achievements</h1>
+
+            <AchievementContainer
+              achievements={achievements}
+              userAchievements={userAchievements}
+            />
           </div>
 
-          <AchievementContainer
-            achievements={achievements}
-            userAchievements={userAchievements}
-          />
 
           {/* TODO: Remove this garbage */}
           <div className="profile-todo" style={{display: "none"}}>

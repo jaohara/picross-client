@@ -1,0 +1,15 @@
+@use "../../styles/globals.scss" as g;
+
+.puzzle-icon {
+
+}
+
+.icon-wrapper {
+  @include g.content-icon-wrapper-styling();
+}
+
+#icon-canvas {
+  // just reusing this was the easiest way 
+  @include g.content-icon-wrapper-styling();
+  image-rendering: pixelated;
+}

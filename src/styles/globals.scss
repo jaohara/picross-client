@@ -2,6 +2,7 @@
 
 // common sizes/variables
 $board-screen-blur: 4px;
+$board-square-hover-stroke-width: 2px;
 $common-border-radius: 12px;
 // $common-border-radius: 48px;
 // $common-box-shadow: 0px 4px 4px rgba(25,25,25,0.25);
@@ -31,6 +32,7 @@ $mono-font: "JetBrains Mono";
 $ui-fast-transition: 100ms;
 $ui-slow-transition: 250ms;
 $background-color-transition: 1000ms;
+$board-reveal-transition: 1500ms;
 
 // specific sizes
 $app-padding-top: 5.4rem;
@@ -85,6 +87,7 @@ $achievement-border-color: $light-gray-400;
 $achievement-unlocked-border-color: $light-gray-200;
 // $background-screen-background-color: linear-gradient($indigo-dye, $cerulean);
 $background-screen-background-color: linear-gradient($silver-lake-blue, $slate-blue);
+$board-number-background-color: $dark-gray-300;
 $board-screen-background-color: transparent;
 // $board-screen-section-temp-background-color: rgba(29, 29, 29, 0.4);
 $board-screen-section-temp-background-color: rgba(29, 29, 29, 0.15);
@@ -97,12 +100,16 @@ $button-border-hover-color: $light-gray-100;
 // $button-hover-background-color: transparent;
 $button-hover-background-color: $button-border-hover-color;
 $button-hover-text-color: $dark-gray-300;
+$content-container-completed-color: $dark-gray-300;
+$content-container-completed-background-color: $light-gray-100;
+$content-container-completed-border-color: $light-gray-100;
 $delete-unlocked-fill-color: $red-300;
 $delete-unlocked-font-color: $light-gray-100;
 $error-message-background-color: $red-100;
 $error-message-border-color: $red-200;
 $error-message-font-color: $error-message-border-color;
 $full-screen-panel-background-color: rgb(16, 16, 16);
+$icon-completed-border-color: $light-gray-100;
 $login-container-border-color: $light-gray-100;
 $puzzle-group-border-color: $light-gray-400;
 $puzzle-group-border-hover-color: $light-gray-200;
@@ -210,6 +217,11 @@ $l-breakpoint: 1920px;
   box-shadow: 0px 0px 25px color.adjust($border-color, $alpha: -.8);
 }
 
+@mixin glow-border-small ($border-color){
+  border-color: $border-color;
+  box-shadow: 0px 0px 10px color.adjust($border-color, $alpha: -.8);
+}
+
 // for use with Achievement and PuzzleGroup - a visual representation of a 
 //  content that is seperated from the main body content
 @mixin content-container-visual-styling ($border-color) {
@@ -231,6 +243,17 @@ $l-breakpoint: 1920px;
     margin-bottom: $common-padding;
     // text-decoration: underline;
   }
+
+  &.complete {
+    @include glow-border($content-container-completed-border-color);
+    // border-color: $content-container-completed-color;
+    // background-color: $content-container-completed-background-color;
+    // color: $content-container-completed-color;
+
+    h1 {
+      // color: $content-container-completed-color;
+    }
+  }
 }
 
 // for use on the wrappers for icons that appear within body content - things like
@@ -246,4 +269,10 @@ $l-breakpoint: 1920px;
   min-height: $content-icon-size;
   min-width: $content-icon-size;
   justify-content: center;
+
+  .complete & {
+    @include glow-border-small($icon-completed-border-color);
+    // border: 2px solid $icon-completed-border-color;
+    // border: 2px solid red;
+  }
 }
