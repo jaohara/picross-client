@@ -116,7 +116,7 @@ const ProfileMenu = () => {
         <div className="menu-body">
           <h1 className="profile-name">{userProfile.name}</h1>
 
-          <div className="profile-stats">
+          <div className="profile-stats profile-container">
             <h1>Stats</h1>
             {/* TODO: Think of a better way to present this, probably not as a ul */}
             <ul>
@@ -125,7 +125,7 @@ const ProfileMenu = () => {
             </ul>
           </div>
 
-          <div className="profile-daily-streak">
+          <div className="profile-daily-streak profile-container">
             <h1>Daily Streak</h1>
 
             <DailyStreakVisualization

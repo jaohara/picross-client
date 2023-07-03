@@ -1,5 +1,68 @@
+@use "sass:color";
 @use "../../styles/globals.scss" as g;
 
 .daily-streak-container {
   @include g.content-container-visual-styling(g.$puzzle-group-border-color);
+  display: flex;
+  max-width: g.$content-container-max-width;
+}
+
+@mixin daily-streak-cell-styling ($alpha-offset) {
+  align-items: center;
+  border: 2px solid g.$puzzle-group-border-color;
+  border-radius: g.$common-border-radius;
+  background-color: color.adjust(g.$daily-streak-cell-color, $alpha: $alpha-offset); 
+  display: flex;
+  font-family: g.$mono-font;
+  font-size: .75rem;
+  font-weight: bold;
+  height: g.$daily-streak-cell-size;
+  justify-content: center;
+  max-height: g.$daily-streak-cell-size;
+  max-width: g.$daily-streak-cell-size;
+  width: g.$daily-streak-cell-size;
+}
+
+.daily-streak-cell-00 {
+  @include daily-streak-cell-styling(-1.0);
+}
+
+.daily-streak-cell-10 {
+  @include daily-streak-cell-styling(-0.9);
+}
+
+.daily-streak-cell-20 {
+  @include daily-streak-cell-styling(-0.8);
+}
+
+.daily-streak-cell-30 {
+  @include daily-streak-cell-styling(-0.7);
+}
+
+.daily-streak-cell-40 {
+  @include daily-streak-cell-styling(-0.6);
+}
+
+.daily-streak-cell-50 {
+  @include daily-streak-cell-styling(-0.5);
+}
+
+.daily-streak-cell-60 {
+  @include daily-streak-cell-styling(-0.4);
+}
+
+.daily-streak-cell-70 {
+  @include daily-streak-cell-styling(-0.3);
+}
+
+.daily-streak-cell-80 {
+  @include daily-streak-cell-styling(-0.2);
+}
+
+.daily-streak-cell-90 {
+  @include daily-streak-cell-styling(-0.1);
+}
+
+.daily-streak-cell-100 {
+  @include daily-streak-cell-styling(0);
 }

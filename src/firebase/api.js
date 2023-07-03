@@ -45,7 +45,6 @@ export async function createUserEntity(newUser, id) {
     batch.set(achievementsDocRef, {});
     batch.set(puzzlesDocRef, {});
 
-
     // commit the batched write
     await batch.commit();
     // return result;

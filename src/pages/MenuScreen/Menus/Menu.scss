@@ -89,6 +89,10 @@
   @include g.inline-mono-styling();
 }
 
+.profile-container {
+  margin-bottom: g.$profile-menu-container-bottom-margin;
+}
+
 // PuzzleListMenu stuff
 .puzzle-list-todo {
   display: none;
