@@ -4,13 +4,21 @@
 .daily-streak-container {
   @include g.content-container-visual-styling(g.$puzzle-group-border-color);
   display: flex;
+  flex-wrap: wrap;
   max-width: g.$content-container-max-width;
+  justify-content: space-between;
+}
+
+.daily-streak-week {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
 }
 
 @mixin daily-streak-cell-styling ($alpha-offset) {
   align-items: center;
   border: 2px solid g.$puzzle-group-border-color;
-  border-radius: g.$common-border-radius;
+  border-radius: g.$daily-streak-cell-border-radius;
   background-color: color.adjust(g.$daily-streak-cell-color, $alpha: $alpha-offset); 
   display: flex;
   font-family: g.$mono-font;
@@ -18,6 +26,7 @@
   font-weight: bold;
   height: g.$daily-streak-cell-size;
   justify-content: center;
+  margin: 2px;
   max-height: g.$daily-streak-cell-size;
   max-width: g.$daily-streak-cell-size;
   width: g.$daily-streak-cell-size;
