@@ -12,7 +12,7 @@
 .daily-streak-week {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: 1.25rem;
 }
 
 @mixin daily-streak-cell-styling ($alpha-offset) {
@@ -30,6 +30,25 @@
   max-height: g.$daily-streak-cell-size;
   max-width: g.$daily-streak-cell-size;
   width: g.$daily-streak-cell-size;
+}
+
+.daily-streak-cell-info {
+  @include daily-streak-cell-styling(-1.0);
+  border: 0px;
+  font-weight: bold;
+  font-size: 1.0rem;
+  font-family: g.$body-font;
+}
+
+.daily-streak-cell {
+  transform: scale(1.0);
+  transition: transform g.$ui-fast-transition;
+  
+  &:hover {
+    box-shadow: g.$common-box-shadow;
+    cursor: pointer;
+    transform: scale(1.2);
+  }
 }
 
 .daily-streak-cell-00 {

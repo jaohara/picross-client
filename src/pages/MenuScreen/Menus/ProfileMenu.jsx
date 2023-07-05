@@ -131,6 +131,8 @@ const ProfileMenu = () => {
             <DailyStreakVisualization
               
             />
+
+            <p><strong>TODO:</strong> Add "Longest Unbroken Streak"</p>
           </div>
 
           <div className="profile-achievements">
