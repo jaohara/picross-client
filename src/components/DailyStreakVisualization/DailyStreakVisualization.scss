@@ -15,13 +15,13 @@
   gap: 1.25rem;
 }
 
-@mixin daily-streak-cell-styling ($alpha-offset) {
+@mixin daily-streak-cell-styling ($alpha-offset, $cell-date-color) {
   align-items: center;
   border: 2px solid g.$puzzle-group-border-color;
   border-radius: g.$daily-streak-cell-border-radius;
   background-color: color.adjust(g.$daily-streak-cell-color, $alpha: $alpha-offset); 
   display: flex;
-  font-family: g.$mono-font;
+  // font-family: g.$mono-font;
   font-size: .75rem;
   font-weight: bold;
   height: g.$daily-streak-cell-size;
@@ -29,11 +29,40 @@
   margin: 2px;
   max-height: g.$daily-streak-cell-size;
   max-width: g.$daily-streak-cell-size;
+  // text-shadow: 0px 1px 3px #000;
   width: g.$daily-streak-cell-size;
+
+  &:hover {
+    border-color: g.$daily-streak-cell-hover-color;
+    
+    .daily-streak-cell-date {
+      opacity: 0;
+    }
+
+    .daily-streak-cell-value { 
+      opacity: 1;
+    }
+  }
+
+  & > div {
+    color: $cell-date-color;
+  }
+
+  .daily-streak-cell-date, .daily-streak-cell-value {
+    transition: opacity g.$ui-fast-transition;
+  }
+
+  .daily-streak-cell-date {
+    opacity: 1;
+  }
+
+  .daily-streak-cell-value {
+    opacity: 0;
+  }
 }
 
 .daily-streak-cell-info {
-  @include daily-streak-cell-styling(-1.0);
+  @include daily-streak-cell-styling(-1.0, g.$daily-streak-cell-color);
   border: 0px;
   font-weight: bold;
   font-size: 1.0rem;
@@ -43,6 +72,10 @@
 .daily-streak-cell {
   transform: scale(1.0);
   transition: transform g.$ui-fast-transition;
+
+  & > div {
+    position: absolute;
+  }
   
   &:hover {
     box-shadow: g.$common-box-shadow;
@@ -52,45 +85,54 @@
 }
 
 .daily-streak-cell-00 {
-  @include daily-streak-cell-styling(-1.0);
+  @include daily-streak-cell-styling(-1.0, g.$daily-streak-cell-color);
+  border-color: g.$daily-streak-cell-empty-color;
 }
 
 .daily-streak-cell-10 {
-  @include daily-streak-cell-styling(-0.9);
+  @include daily-streak-cell-styling(-0.9, g.$daily-streak-cell-color);
 }
 
 .daily-streak-cell-20 {
-  @include daily-streak-cell-styling(-0.8);
+  @include daily-streak-cell-styling(-0.8, g.$daily-streak-cell-color);
 }
 
 .daily-streak-cell-30 {
-  @include daily-streak-cell-styling(-0.7);
+  @include daily-streak-cell-styling(-0.7, g.$daily-streak-cell-color);
 }
 
 .daily-streak-cell-40 {
-  @include daily-streak-cell-styling(-0.6);
+  @include daily-streak-cell-styling(-0.6, g.$daily-streak-cell-color);
 }
 
 .daily-streak-cell-50 {
-  @include daily-streak-cell-styling(-0.5);
+  @include daily-streak-cell-styling(-0.5, g.$daily-streak-cell-inverted-color);
+  color: g.$daily-streak-cell-inverted-color;
 }
 
 .daily-streak-cell-60 {
-  @include daily-streak-cell-styling(-0.4);
+  @include daily-streak-cell-styling(-0.4, g.$daily-streak-cell-inverted-color);
+  color: g.$daily-streak-cell-inverted-color;
+
+  
 }
 
 .daily-streak-cell-70 {
-  @include daily-streak-cell-styling(-0.3);
+  @include daily-streak-cell-styling(-0.3, g.$daily-streak-cell-inverted-color);
+  color: g.$daily-streak-cell-inverted-color;
 }
 
 .daily-streak-cell-80 {
-  @include daily-streak-cell-styling(-0.2);
+  @include daily-streak-cell-styling(-0.2, g.$daily-streak-cell-inverted-color);
+  color: g.$daily-streak-cell-inverted-color;
 }
 
 .daily-streak-cell-90 {
-  @include daily-streak-cell-styling(-0.1);
+  @include daily-streak-cell-styling(-0.1, g.$daily-streak-cell-inverted-color);
+  color: g.$daily-streak-cell-inverted-color;
 }
 
 .daily-streak-cell-100 {
-  @include daily-streak-cell-styling(0);
+  @include daily-streak-cell-styling(0, g.$daily-streak-cell-inverted-color);
+  color: g.$daily-streak-cell-inverted-color;
 }
