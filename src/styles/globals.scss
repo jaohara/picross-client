@@ -1,6 +1,8 @@
 @use "sass:color";
 
 // common sizes/variables
+$app-body-padding: .5rem;
+$app-padding-top: 5.4rem;
 $board-screen-blur: 4px;
 $board-square-hover-stroke-width: 2px;
 $common-border-radius: 12px;
@@ -13,6 +15,8 @@ $common-margin: 1rem;
 $puzzle-group-icon-margin: calc(1.15rem / 2);
 $content-container-max-width: 920px;
 $content-icon-size: 92px;
+$daily-streak-cell-size: 42px;
+$daily-streak-cell-border-radius: 6px;
 $full-screen-background-opacity: .6;
 $input-box-max-width: calc($content-container-max-width / 2);
 $menu-body-gap: 2rem;
@@ -22,6 +26,8 @@ $menu-header-margin: .5rem;
 $menu-list-item-margin: 1rem;
 $menu-toggle-right-offset: calc(2 * $common-margin);
 $menu-toggle-top-offset: calc(1.6 * $common-margin);
+$message-icon-font-size: 10rem;
+$profile-menu-container-bottom-margin: 3rem;
 $section-header-font-size: 1.4rem;
 
 // fonts
@@ -33,11 +39,6 @@ $ui-fast-transition: 100ms;
 $ui-slow-transition: 250ms;
 $background-color-transition: 1000ms;
 $board-reveal-transition: 1500ms;
-
-// specific sizes
-$app-padding-top: 5.4rem;
-$app-body-padding: .5rem;
-$message-icon-font-size: 10rem;
 
 // colors (specific)
 $dark-gray-100: #626466;
@@ -52,8 +53,8 @@ $red-200: #da4c4c;
 $red-300: #de3333;
 
 // colors (temp shades)
-$indigo-dye: #254E70;
 $cerulean: #37718E;
+$indigo-dye: #254E70;
 $silver-lake-blue: #4F86C6;
 // $slate-blue: #744FC6;
 $slate-blue: #3299d0;
@@ -103,6 +104,10 @@ $button-hover-text-color: $dark-gray-300;
 $content-container-completed-color: $dark-gray-300;
 $content-container-completed-background-color: $light-gray-100;
 $content-container-completed-border-color: $light-gray-100;
+$daily-streak-cell-color: $light-gray-100;
+$daily-streak-cell-inverted-color: $dark-gray-100;
+$daily-streak-cell-empty-color: color.adjust($light-gray-400, $alpha: -.9);
+$daily-streak-cell-hover-color: $light-gray-100;
 $delete-unlocked-fill-color: $red-300;
 $delete-unlocked-font-color: $light-gray-100;
 $error-message-background-color: $red-100;

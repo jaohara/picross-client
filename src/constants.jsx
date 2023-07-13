@@ -31,3 +31,4 @@ export const PUZZLE_SQUARE_DELIMITER = ",";
 export const MENU_HEADER_ICON_SIZE = LARGE_ICON_SIZE;
 export const SECRET_ACHIEVEMENT_NAME = "Hidden Achievement";
 export const SECRET_ACHIEVEMENT_DESCRIPTION = "This is a hidden achievement. Unlock it to reveal what it is!";
+export const WEEKDAY_STRINGS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
