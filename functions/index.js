@@ -8,25 +8,29 @@
  */
 
 
-import { onRequest } from "firebase-functions/v2/https";
-import { info, error as _error } from "firebase-functions/logger";
+const { onRequest } = require("firebase-functions/v2/https");
+const logger = require("firebase-functions/logger");
 
 // import and init firestore
-import { 
+const { 
   onDocumentCreated,
   onDocumentUpdated,
-} from "firebase-functions/v2/firestore";
-import { Firestore } from "@google-cloud/firestore";
+} = require("firebase-functions/v2/firestore");
+const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
 
-export const helloWorld = onRequest((request, response) => {
-  info("Hello logs!", {structuredData: true});
+// Create and deploy your first functions
+// https://firebase.google.com/docs/functions/get-started
+
+exports.helloWorld = onRequest((request, response) => {
+  logger.info("Hello logs!", {structuredData: true});
   response.send("Hello from Firebase!");
 });
 
 
-export const countGameRecords = onRequest(async (req, res) => {
-  info("Invoking countGameRecords...");
+// Test function to return a count of all game records in the document database
+exports.countGameRecords = onRequest(async (req, res) => {
+  logger.info("Invoking countGameRecords...");
 
   // temp variable - remove with check to permanent storage
   const cacheIsValid = false;
@@ -82,22 +86,27 @@ export const countGameRecords = onRequest(async (req, res) => {
     res.status(200).json(gameRecords);
   } 
   catch (error) {
-    _error("Error querying gameRecords:", error);
+    logger.error("Error querying gameRecords:", error);
   }
 });
 
 
-export const createGameRecord = functions.firestore
-  .document('users/{userId}/gameRecords/{gameRecordId}')
-  .onCreate(async (snapshot, context) => {
+// TODO: WORK ON THIS MORE
+// function to create a dupe, top-level gameRecord on creation of a completed user gameRecord
+exports.createGameRecord = 
+  onDocumentCreated('users/{userId}/gameRecords/{gameRecordId}', async (event, context) => {
+  // functions.firestore
+  // .document('users/{userId}/gameRecords/{gameRecordId}')
+  // .onCreate(async (snapshot, context) => {
     try {
       const { gameRecordId } = context.params;
       
-      const gameRecordData = snapshot.data();
+      // const gameRecordData = snapshot.data();
+      const gameRecordData = event.data.data();
 
       // bail out if record isn't complete
       if (!gameRecordData.completed) { 
-        info("GameRecord isn't complete, not duplicating.")
+        logger.info("GameRecord isn't complete, not duplicating.")
         return;
       }
 
@@ -109,10 +118,10 @@ export const createGameRecord = functions.firestore
       await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
     }
     catch (error) {
-      _error("Error duplicating gameRecord:", error);
+      logger.error("Error duplicating gameRecord:", error);
     }
   });
 
-export const updateGameRecord = functions.firestore
-  .document('users/{userId}/gameRecords/{gameRecordId}')
-  .on
+// exports.updateGameRecord = functions.firestore
+//   .document('users/{userId}/gameRecords/{gameRecordId}')
+//   .on
