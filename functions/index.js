@@ -8,25 +8,25 @@
  */
 
 
-const { onRequest } = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
+import { onRequest } from "firebase-functions/v2/https";
+import { info, error as _error } from "firebase-functions/logger";
 
 // import and init firestore
-const { Firestore } = require("@google-cloud/firestore");
+import { 
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
+import { Firestore } from "@google-cloud/firestore";
 const db = new Firestore();
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
-
-exports.helloWorld = onRequest((request, response) => {
-  logger.info("Hello logs!", {structuredData: true});
+export const helloWorld = onRequest((request, response) => {
+  info("Hello logs!", {structuredData: true});
   response.send("Hello from Firebase!");
 });
 
 
-// Test function to return a count of all game records in the document database
-exports.countGameRecords = onRequest(async (req, res) => {
-  logger.info("Invoking countGameRecords...");
+export const countGameRecords = onRequest(async (req, res) => {
+  info("Invoking countGameRecords...");
 
   // temp variable - remove with check to permanent storage
   const cacheIsValid = false;
@@ -51,7 +51,7 @@ exports.countGameRecords = onRequest(async (req, res) => {
 
       Querying all of the documents in the user subcollections is going to cause a LOT of 
       read operations. It's not really feasible to run this multiple times a day - I think we 
-      need to gun once or twice a day, max. 
+      need to gun for once or twice a day, max. 
 
       Anyway, using this top-level collection, we won't need to query the user records at all, 
       which will cut out some reads. We'll also have simpler (non-batched) read logic for getting
@@ -82,14 +82,12 @@ exports.countGameRecords = onRequest(async (req, res) => {
     res.status(200).json(gameRecords);
   } 
   catch (error) {
-    logger.error("Error querying gameRecords:", error);
+    _error("Error querying gameRecords:", error);
   }
 });
 
 
-// TODO: WORK ON THIS MORE
-// function to create a dupe, top-level gameRecord on creation of a completed user gameRecord
-exports.createGameRecord = functions.firestore
+export const createGameRecord = functions.firestore
   .document('users/{userId}/gameRecords/{gameRecordId}')
   .onCreate(async (snapshot, context) => {
     try {
@@ -99,7 +97,7 @@ exports.createGameRecord = functions.firestore
 
       // bail out if record isn't complete
       if (!gameRecordData.completed) { 
-        logger.info("GameRecord isn't complete, not duplicating.")
+        info("GameRecord isn't complete, not duplicating.")
         return;
       }
 
@@ -111,6 +109,10 @@ exports.createGameRecord = functions.firestore
       await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
     }
     catch (error) {
-      logger.error("Error duplicating gameRecord:", error);
+      _error("Error duplicating gameRecord:", error);
     }
   });
+
+export const updateGameRecord = functions.firestore
+  .document('users/{userId}/gameRecords/{gameRecordId}')
+  .on
