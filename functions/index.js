@@ -7,15 +7,19 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-
-const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
+
+const { 
+  onCall,
+  onRequest,
+} = require("firebase-functions/v2/https");
 
 // import and init firestore
 const { 
   onDocumentCreated,
   onDocumentUpdated,
 } = require("firebase-functions/v2/firestore");
+
 const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
 
@@ -54,7 +58,7 @@ exports.countGameRecords = onRequest(async (req, res) => {
 
 // TODO: WORK ON THIS MORE
 // function to create a dupe, top-level gameRecord on creation of a completed user gameRecord
-exports.createGameRecord = 
+exports.duplicateGameRecordOnCreate = 
   onDocumentCreated('users/{userId}/gameRecords/{gameRecordId}', async (event) => {
     try {
       const { gameRecordId } = event.params;
@@ -79,12 +83,7 @@ exports.createGameRecord =
       logger.error("createGameRecord: Error duplicating gameRecord:", error);
     }
   });
-
-// exports.updateGameRecord = functions.firestore
-//   .document('users/{userId}/gameRecords/{gameRecordId}')
-//   .on
-
-exports.updateGameRecord = 
+exports.duplicateGameRecordOnUpdate = 
   onDocumentUpdated('users/{userId}/gameRecords/{gameRecordId}', async (event) => {
     try {
       const { gameRecordId } = event.params;
@@ -118,3 +117,15 @@ async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
   await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
   logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
 }
+
+// should only be called after auth is confirmed
+async function setGameRecordForUser(userId, gameRecordData) { 
+  logger.info(`setGameRecordForUser: attempting to create new record in /users/${userId}/gameRecords/...`);
+}
+
+// create game record
+// exports.createGame
+
+// update game record
+
+// delete game record (won't delete global dupe for rankings... or should it?)
