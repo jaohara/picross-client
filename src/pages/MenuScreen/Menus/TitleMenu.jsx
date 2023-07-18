@@ -1,25 +1,22 @@
 import React, {
   useContext,
-  useEffect,
   useState,
 } from 'react';
 
 import "./Menu.scss";
 
-import { TbPuzzle } from "react-icons/tb";
 
 // remove as necessary
 import { UserContext } from '../../../contexts/UserContext';
-import { GameContext } from '../../../contexts/GameContext';
 
+import Button from '../../../components/Button/Button';
 import MenuHeader from '../../../components/MenuHeader/MenuHeader';
 import MenuLinks from '../../../components/MenuLinks/MenuLinks';
+import TextInput from '../../../components/TextInput/TextInput';
 import { menuRoutes } from '../../../routes';
 
 import { 
   APP_TITLE,
-  APP_VERSION,
-  CREDITS_LINE,
   MENU_HEADER_ICON_SIZE as ICON_SIZE,
 } from "../../../constants";
 
@@ -31,6 +28,12 @@ const defaultExcludedRoutes = [
   "puzzle",
   "pause",
 ];
+
+
+// TODO: Temporary imports
+import { functions } from '../../../firebase/firebase';
+import { httpsCallable } from 'firebase/functions';
+const createGameRecord = httpsCallable(functions, 'createGameRecord');
 
 const TitleMenu = () => {
   const {
@@ -45,6 +48,26 @@ const TitleMenu = () => {
 
   const renamedRoutes = {
     "puzzle-list": "Play",
+  };
+
+  // TODO: remove test state
+  const [ testString, setTestString ] = useState("");
+
+  // temporary test function for my callable cloud function
+  const callCallableCloudFunction = () => {
+    console.log("callCallableCloudFunction: invoked");
+
+    const testGameRecord = {
+      completed: true,
+      dateString: Date.now(),
+      testGameRecord: true,
+      testString: testString,
+    };
+
+    createGameRecord({ gameRecord: testGameRecord })
+      .then((result) => {
+        console.log("callCallableCloudFunction: invocation finished, data returned is:", result);
+      });
   };
 
   return ( 
@@ -74,6 +97,25 @@ const TitleMenu = () => {
           <p>
             <strong>Should this be where the temporary instructions page is?</strong>
           </p>
+
+          <div>
+            <h1>Test Callable Cloud Function</h1>
+
+            <p>
+              <TextInput
+                setValue={setTestString}
+                value={testString}
+              />
+              <Button
+                iconType='save'
+                onClick={callCallableCloudFunction}
+              >
+                Call Cloud Function
+              </Button>
+            </p>
+
+          </div>
+
         </div>
       </div>
     </div>

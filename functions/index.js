@@ -7,6 +7,20 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
+
+/*
+  TODO:
+
+    To deploy only one function:
+
+      firebase deploy --only functions:<functionName>
+
+    e.g:
+
+      firebase deploy --only functions:createGameRecord
+*/
+
+
 const logger = require("firebase-functions/logger");
 
 const { 
@@ -22,6 +36,16 @@ const {
 
 const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
+
+// helper function to check if auth exists and is valid
+function requestAuthIsValid(request, callerSignature) {
+  if (!request.auth || !request.auth.uid) {
+    logger.error(`${callerSignature}: request is not authenticated, aborting.`);
+    return false;
+  }
+
+  return true;
+}
 
 // Test function to return a count of all game records in the document database
 exports.countGameRecords = onRequest(async (req, res) => {
@@ -55,6 +79,62 @@ exports.countGameRecords = onRequest(async (req, res) => {
   }
 });
 
+// gameRecord CRUD operations
+// create game record
+exports.createGameRecord = onCall(async (request) => {
+  if (!requestAuthIsValid(request, "createGameRecord")) {
+    return;
+  }
+
+  if (!request.data || !request.data.gameRecord) {
+    logger.error("createGameRecord: gameRecord data not attached, aborting.");
+    return;
+  }
+
+  const { uid: userId } = request.auth; 
+  const { gameRecord } =  request.data;
+
+  logger.info("createGameRecord: recieved gameRecord data:", gameRecord);
+
+  if (!gameRecord) {
+    logger.error("createGameRecord: error: gameRecord is undefined")
+  } 
+  const result = await setGameRecordForUser(userId, gameRecord);
+
+  if (result) {
+    logger.info("createGameRecord: returning result to client:", result);
+    return result;
+  }
+
+  return;
+});
+
+// read game records
+exports.getUserGameRecords = onCall(async (request) => {
+  if (!requestAuthIsValid(request, "getUserGameRecords")) {
+    return;
+  }
+
+  const { uid: userId } = request.auth;
+
+  // TODO: get everything at "/users/{userId}/gameRecords"
+  const gameRecords = {};
+
+  return gameRecords;
+});
+
+// update game record
+exports.updateGameRecord = onCall(async (request) =>{
+  /*
+    TODO: This should be similar to createGameRecord, calling setGameRecordForUser.
+
+    Where it differs is that it should provide the gameRecordId as the third
+    argument in order to update the record in place.
+  */
+});  
+
+// delete game record (won't delete global dupe for rankings... or should it?)
+
 
 // TODO: WORK ON THIS MORE
 // function to create a dupe, top-level gameRecord on creation of a completed user gameRecord
@@ -72,6 +152,7 @@ exports.duplicateGameRecordOnCreate =
 
       // TODO: filter unnecessary fields here
       delete gameRecordData.userId;
+      await setTopLevelGameRecord(gameRecordId, gameRecordData);
 
       // create a dupe entry in the top-level /gameRecords coll
       // const gameRecordsRef = db.collection('gameRecords');
@@ -83,6 +164,8 @@ exports.duplicateGameRecordOnCreate =
       logger.error("createGameRecord: Error duplicating gameRecord:", error);
     }
   });
+
+
 exports.duplicateGameRecordOnUpdate = 
   onDocumentUpdated('users/{userId}/gameRecords/{gameRecordId}', async (event) => {
     try {
@@ -114,18 +197,49 @@ exports.duplicateGameRecordOnUpdate =
 
 async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
   const gameRecordsRef = db.collection('gameRecords');
-  await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
-  logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
+  
+  try {
+    const docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+    logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
+    const snapshot = await docRef.get();
+    const result = snapshot.data();
+    logger.info("setTopLevelGameRecord: resultant data:", result);
+    return result;
+  }
+  catch (error) {
+    logger.error("setTopLevelGameRecord: error getting record data:", error);
+  }
+
+  return;
 }
 
 // should only be called after auth is confirmed
-async function setGameRecordForUser(userId, gameRecordData) { 
+async function setGameRecordForUser(userId, gameRecordData, gameRecordId = undefined) { 
   logger.info(`setGameRecordForUser: attempting to create new record in /users/${userId}/gameRecords/...`);
+  const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords'); 
+
+  let docRef;
+
+  if (!gameRecordId) {
+    // create scenario, no gameRecordId specified
+    docRef = await gameRecordsRef.add(gameRecordData);
+  }
+  else {
+    // update scenario, gameRecordId specified
+    docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+  }
+
+  logger.info("setGameRecordForUser: finished creating record.")
+  // return result;
+  try {
+    const snapshot = await docRef.get();
+    const result = await snapshot.data();
+    logger.info("setGameRecordForUser: resultant data:", result);
+    return result;
+  }
+  catch (error) {
+    logger.error("setGameRecordsForUser: error getting record data:", error);
+  }
+
+  return;
 }
-
-// create game record
-// exports.createGame
-
-// update game record
-
-// delete game record (won't delete global dupe for rankings... or should it?)

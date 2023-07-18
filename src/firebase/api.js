@@ -1,3 +1,8 @@
+import { 
+  db,
+  functions,
+} from "./firebase";
+
 import {
   collection,
   doc,
@@ -12,11 +17,104 @@ import {
   writeBatch,
 } from "firebase/firestore";
 
-import { db } from "./firebase";
+import { httpsCallable } from "firebase/functions";
 
+// related to old API approach
 const achievementsCollectionRef = collection(db, "achievements");
 const usersCollectionRef = collection(db, "users");
 const puzzlesCollectionRef = collection(db, "puzzles");
+
+
+// global constants for API functions
+const gameRecordNecessaryKeys = [
+  "completed",
+  "gameTimer",
+  "lastPlayed",
+  "moves",
+  "puzzleGrid",
+  "puzzleId",
+  "userId",
+];
+
+// ========================================================================
+// NEW API FUNCTIONS (>7/18, callable cloud functions for firestore access)
+// ========================================================================
+
+// new helper functions
+export function validateGameRecord(gameRecordData) {
+  for (const necessaryKey in gameRecordNecessaryKeys) {
+    if (!gameRecordData[necessaryKey]) {
+      console.error(`validateGameRecord: gameRecord is missing '${necessaryKey}', aborting.`);
+      return false;
+    }
+  }
+
+  console.log("validateGameRecord: gameRecord is valid!");
+  return true;
+}
+
+// TODO: Test this function
+export async function createGameRecord(userId, gameRecordData) {
+  if (!userId || !gameRecordData) {
+    console.error("createGameRecord: both userId and gameRecordData need to be provided, aborting.");
+    return;
+  }
+
+  if (typeof gameRecordData !== 'object') {
+    console.error("createGameRecord: gameRecordData is not an object, aborting.");
+    return;
+  }
+
+  // use this as the alias for the callable cloud function
+  const callable = httpsCallable(functions, 'createGameRecord');
+
+  console.log("createGameRecord: invoking callable cloud function");
+
+  // TODO: Does this record need anything more attached to it?
+  gameRecordData['userId'] = userId;
+  gameRecordData['lastPlayed'] = Timestamp.now();
+
+
+  // TODO: Make this true after debugging/remove this extra logic
+  const CHECK_DATA_MODEL = false;
+
+  if (CHECK_DATA_MODEL) {
+    if (!validateGameRecord(gameRecordData)) {
+      return;
+    }
+  }
+
+  const result = await callable(gameRecordData);
+
+  console.log(`createGameRecord: callable finished, data returned is:`, result);
+  
+  return result;
+}
+
+export async function completeGameRecord(userId, gameRecordId) {
+  /*
+    takes an existing gameRecord that lives at /users/{userId}/gameRecords/{gameRecordId}
+    and modifies it so that gameRecord.completed === true
+  */
+}
+
+export async function deleteGameRecord(userId, gameRecordId) {
+  /*
+    takes an existing gameRecord at /users/{userId}/gameRecords/{gameRecordId}
+    and deletes it.
+
+    DOES NOT delete the top-level /gameRecords/{gameRecordId} entry.
+
+    - Should this only delete in-progress records? I think so - there isn't a good use case
+      for users deleting their previous records.
+  */
+}
+
+
+
+// ===========================================================
+// OLD API FUNCTIONS (Pre 7/18, client-level firestore access)
+// ===========================================================
 
 // user-related api functions
 export async function createUserEntity(newUser, id) {
@@ -223,3 +321,4 @@ export async function getPuzzleGridForPuzzle(puzzleData) {
 
   return loadedGrid;
 }
+
