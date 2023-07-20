@@ -20,7 +20,6 @@
       firebase deploy --only functions:createGameRecord
 */
 
-
 const logger = require("firebase-functions/logger");
 
 const { 
@@ -38,13 +37,44 @@ const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
 
 // helper function to check if auth exists and is valid
-function requestAuthIsValid(request, callerSignature) {
+function requestAuthIsValid(request, callerName) {
   if (!request.auth || !request.auth.uid) {
-    logger.error(`${callerSignature}: request is not authenticated, aborting.`);
+    logger.error(`${callerName}: request is not authenticated, aborting.`);
     return false;
   }
 
   return true;
+}
+
+// helper function to check if gameRecord data is attached to request
+function requestHasGameRecord(request, callerName) {
+  if (!request.data || !request.data.gameRecord) {
+    logger.error(`${callerName}: gameRecord data not supplied, aborting.`);
+    return false;
+  }
+
+  logger.info(`${callerName}: recieved gameRecord data:`, request.data.gameRecord);
+  return true;
+}
+
+// helper function to check if a gameRecordId is attached to request
+function requestHasGameRecordId(request, callerName) {
+  if (!request.data || !request.data.gameRecordId) {
+    logger.error(`${callerName}: gameRecordId not supplied, aborting.`);
+    return false;
+  }
+
+  return true;
+}
+
+// helper function to check, log, and return resultant record.
+function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
+  if (gameRecordData) {
+    logger.info(`${callerName}: returning result to client: `, gameRecordData);
+  }
+
+  logger.error(`${callerName}: gameRecordData is null.`);
+  return;
 }
 
 // Test function to return a count of all game records in the document database
@@ -79,62 +109,92 @@ exports.countGameRecords = onRequest(async (req, res) => {
   }
 });
 
+// ==========================
 // gameRecord CRUD operations
+// ==========================
+
+//TODO: Test that this still works, also triggering the proper dupe functions
 // create game record
 exports.createGameRecord = onCall(async (request) => {
-  if (!requestAuthIsValid(request, "createGameRecord")) {
-    return;
-  }
+  const fName = "createGameRecord";
 
-  if (!request.data || !request.data.gameRecord) {
-    logger.error("createGameRecord: gameRecord data not attached, aborting.");
-    return;
-  }
+  if (!requestAuthIsValid(request, fName)) return;
+  if (!requestHasGameRecord(request, fName)) return;
 
   const { uid: userId } = request.auth; 
   const { gameRecord } =  request.data;
 
-  logger.info("createGameRecord: recieved gameRecord data:", gameRecord);
-
-  if (!gameRecord) {
-    logger.error("createGameRecord: error: gameRecord is undefined")
-  } 
   const result = await setGameRecordForUser(userId, gameRecord);
 
-  if (result) {
-    logger.info("createGameRecord: returning result to client:", result);
-    return result;
-  }
-
-  return;
+  return checkAndReturnGameRecordIfValid(result, fName);
 });
 
+// TODO: TEST THIS FN (in tandem with api.getUserGameRecords)
 // read game records
 exports.getUserGameRecords = onCall(async (request) => {
-  if (!requestAuthIsValid(request, "getUserGameRecords")) {
-    return;
-  }
+  if (!requestAuthIsValid(request, "getUserGameRecords")) return;
 
   const { uid: userId } = request.auth;
+  const gameRecordsCollectionRef = db.collection(`users/${userId}/gameRecords`);
 
-  // TODO: get everything at "/users/{userId}/gameRecords"
-  const gameRecords = {};
+  // get everything at "/users/{userId}/gameRecords"
+  try {
+    const snapshot = await gameRecordsCollectionRef.get();
+    const gameRecords = {};
 
-  return gameRecords;
+    snapshot.forEach((doc) => {
+      const gameRecord = doc.data();
+      const gameRecordId = doc.id;
+      gameRecords[gameRecordId] = gameRecord;
+    });
+
+    return { data: gameRecords, success: true };
+  }
+  catch (error) {
+    logger.error("getUserGameRecords: error getting records:", error);
+    return { error: error.message, success: false };
+  }
 });
 
+// TODO: TEST THIS FN (in tandem with api.completeGameRecord)
+// - ensure that the dupe records are made correctly on completion
 // update game record
 exports.updateGameRecord = onCall(async (request) =>{
-  /*
-    TODO: This should be similar to createGameRecord, calling setGameRecordForUser.
+  if (!requestAuthIsValid(request, "updateGameRecord")) return;
+  if (!requestHasGameRecord(request, "updateGameRecord")) return;
+  if (!requestHasGameRecordId(request, "updateGameRecord")) return;
 
-    Where it differs is that it should provide the gameRecordId as the third
-    argument in order to update the record in place.
-  */
+  const { uid: userId } = request.auth;
+  const { gameRecord, gameRecordId } = request.data;
+
+  const result = await setGameRecordForUser(userId, gameRecord, gameRecordId);
+
+  return checkAndReturnGameRecordIfValid(result, "updateGameRecord");
 });  
 
+// TODO: TEST THIS FN
 // delete game record (won't delete global dupe for rankings... or should it?)
+exports.deleteGameRecord = onCall(async (request) => {
+  if (!requestAuthIsValid(request, "deleteGameRecord")) return;
+  if (!requestHasGameRecordId(request, "deleteGameRecord")) return;
 
+  const { uid: userId } = request.auth;
+  const { gameRecordId } = request.data;
+  const docPath = `/users/${userId}/gameRecords/${gameRecordId}`;
+
+  logger.info(`deleteGameRecord: attempting to delete record at ${docPath}...`);
+  const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords').doc(gameRecordId);
+
+  try {
+    await gameRecordsRef.delete();
+    logger.info(`deleteGameRecord: successfully deleted doc at ${docPath}`);
+    return { success: true } ;
+  }
+  catch (error) {
+    logger.error(`deleteGameRecord: error deleting doc at ${docPath}:`, error);
+    return { error: error.message, success: false };
+  }
+});
 
 // TODO: WORK ON THIS MORE
 // function to create a dupe, top-level gameRecord on creation of a completed user gameRecord
@@ -214,7 +274,13 @@ async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
 }
 
 // should only be called after auth is confirmed
-async function setGameRecordForUser(userId, gameRecordData, gameRecordId = undefined) { 
+async function setGameRecordForUser(
+  userId,
+  // this is the initial data for create and an object with the updated fields for update 
+  gameRecordData, 
+  // if defined, will make this function update rather than create.
+  gameRecordId = undefined
+) { 
   logger.info(`setGameRecordForUser: attempting to create new record in /users/${userId}/gameRecords/...`);
   const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords'); 
 
@@ -226,7 +292,8 @@ async function setGameRecordForUser(userId, gameRecordData, gameRecordId = undef
   }
   else {
     // update scenario, gameRecordId specified
-    docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+    // docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+    docRef = await gameRecordsRef.doc(gameRecordId).update(gameRecordData);
   }
 
   logger.info("setGameRecordForUser: finished creating record.")
@@ -235,11 +302,12 @@ async function setGameRecordForUser(userId, gameRecordData, gameRecordId = undef
     const snapshot = await docRef.get();
     const result = await snapshot.data();
     logger.info("setGameRecordForUser: resultant data:", result);
-    return result;
+    return { data: result, success: true };
   }
   catch (error) {
     logger.error("setGameRecordsForUser: error getting record data:", error);
+    return { error: error.message, success: false };
   }
 
-  return;
 }
+

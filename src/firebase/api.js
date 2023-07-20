@@ -24,6 +24,8 @@ const achievementsCollectionRef = collection(db, "achievements");
 const usersCollectionRef = collection(db, "users");
 const puzzlesCollectionRef = collection(db, "puzzles");
 
+// shorthand for getting a callable, assumes 'callableName' is a function that exists
+const getCallable = (callableName) => httpsCallable(functions, callableName);
 
 // global constants for API functions
 const gameRecordNecessaryKeys = [
@@ -66,7 +68,7 @@ export async function createGameRecord(userId, gameRecordData) {
   }
 
   // use this as the alias for the callable cloud function
-  const callable = httpsCallable(functions, 'createGameRecord');
+  const callable = getCallable('createGameRecord');
 
   console.log("createGameRecord: invoking callable cloud function");
 
@@ -91,11 +93,22 @@ export async function createGameRecord(userId, gameRecordData) {
   return result;
 }
 
+export async function getUserGameRecords(userId) {
+  /*
+    should call httpCallable(functions, "getUserGameRecords")
+  */
+
+  const callable = getCallable("getUserGameRecords");
+}
+
 export async function completeGameRecord(userId, gameRecordId) {
   /*
     takes an existing gameRecord that lives at /users/{userId}/gameRecords/{gameRecordId}
     and modifies it so that gameRecord.completed === true
   */
+ const callable = getCallable("updateGameRecord");
+
+ // only submit { completed: true }, as only changed fields update
 }
 
 export async function deleteGameRecord(userId, gameRecordId) {
@@ -108,6 +121,8 @@ export async function deleteGameRecord(userId, gameRecordId) {
     - Should this only delete in-progress records? I think so - there isn't a good use case
       for users deleting their previous records.
   */
+
+  const callable = httpsCallable(functions, ""
 }
 
 
@@ -175,6 +190,7 @@ export async function getUserProfile(userId) {
 
     console.log("getUserProfile: got userProfileData: ", userProfileData);
 
+    // TODO: Move this operation out of here and into its own function
     // get the gameRecords subcollection
     const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
     const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
