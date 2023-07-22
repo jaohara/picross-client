@@ -1,23 +1,11 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
+// See a full list of supported triggers at https://firebase.google.com/docs/functions
 
 /*
-  TODO:
+  To deploy only one function:
+    firebase deploy --only functions:<functionName>
 
-    To deploy only one function:
-
-      firebase deploy --only functions:<functionName>
-
-    e.g:
-
-      firebase deploy --only functions:createGameRecord
+  e.g:
+    firebase deploy --only functions:createGameRecord
 */
 
 const logger = require("firebase-functions/logger");
@@ -35,6 +23,10 @@ const {
 
 const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
+
+// ===================
+// CF helper functions
+// ===================
 
 // helper function to check if auth exists and is valid
 function requestAuthIsValid(request, callerName) {
@@ -77,37 +69,6 @@ function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
   return;
 }
 
-// Test function to return a count of all game records in the document database
-exports.countGameRecords = onRequest(async (req, res) => {
-  // temp variable - remove with check to permanent storage
-  const cacheIsValid = false;
-  // if cache is valid - serve info from cache
-  if (cacheIsValid) {
-    res.send("Cache is valid!")
-    return;
-  }
-  
-  // if cache is invalid (over ~6hrs since last update)
-  try {
-    // const gameRecords = [];
-    const gameRecords = "test as a string";
-    const gameRecordsSnapshot = await db.collection("gameRecords").get();
-
-    logger.info("countGameRecords: got gameRecordsSnapshot:", gameRecordsSnapshot);
-
-    // iterate over the batched results and add to the collection
-    // results.forEach((gameRecordsSnapshot) => 
-    //   gameRecordsSnapshot.forEach((gameRecordDoc) => 
-    //     gameRecords.push(gameRecordDoc.data()))
-    // );
-
-    // send the gameRecords as a response
-    res.status(200).json(gameRecords);
-  } 
-  catch (error) {
-    logger.error("Error querying gameRecords:", error);
-  }
-});
 
 // ==========================
 // gameRecord CRUD operations
@@ -172,7 +133,7 @@ exports.updateGameRecord = onCall(async (request) =>{
   return checkAndReturnGameRecordIfValid(result, "updateGameRecord");
 });  
 
-// TODO: TEST THIS FN
+// TODO: TEST THIS FN (in tandem with api.deleteGameRecord)
 // delete game record (won't delete global dupe for rankings... or should it?)
 exports.deleteGameRecord = onCall(async (request) => {
   if (!requestAuthIsValid(request, "deleteGameRecord")) return;
@@ -196,7 +157,6 @@ exports.deleteGameRecord = onCall(async (request) => {
   }
 });
 
-// TODO: WORK ON THIS MORE
 // function to create a dupe, top-level gameRecord on creation of a completed user gameRecord
 exports.duplicateGameRecordOnCreate = 
   onDocumentCreated('users/{userId}/gameRecords/{gameRecordId}', async (event) => {
@@ -210,22 +170,18 @@ exports.duplicateGameRecordOnCreate =
         return;
       }
 
-      // TODO: filter unnecessary fields here
+      // filter unnecessary fields here
       delete gameRecordData.userId;
+
       await setTopLevelGameRecord(gameRecordId, gameRecordData);
-
-      // create a dupe entry in the top-level /gameRecords coll
-      // const gameRecordsRef = db.collection('gameRecords');
-      // await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
-      // logger.info(`createGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
-
     }
     catch (error) {
       logger.error("createGameRecord: Error duplicating gameRecord:", error);
     }
   });
 
-
+// TODO: test this (probably in tandem with updateGameRecord and api.completeGameRecord)
+// creates a top-level gameRecord dupe when !gameRecord.completed => gameRecord.completed;
 exports.duplicateGameRecordOnUpdate = 
   onDocumentUpdated('users/{userId}/gameRecords/{gameRecordId}', async (event) => {
     try {
@@ -241,19 +197,60 @@ exports.duplicateGameRecordOnUpdate =
         return;
       }
 
-      // TODO: filter unnecessary fields here
+      // filter unnecessary fields
       delete newGameRecordData.userId;
-      await setTopLevelGameRecord(gameRecordId, newGameRecordData);
 
-      // create a dupe entry in the top-level /gameRecords coll
-      // const gameRecordsRef = db.collection('gameRecords');
-      // await gameRecordsRef.doc(gameRecordId).set(newGameRecordData);
-      // logger.info(`createGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
+      await setTopLevelGameRecord(gameRecordId, newGameRecordData);
     }
     catch (error) {
       logger.error("createGameRecord: Error duplicating gameRecord:", error);
     }
   });
+
+// ==================================
+// gameRecord data analysis functions
+// ==================================
+
+// These are functions that work on the data at /gameRecords to perform analysis for
+// difficulty grading/overall statistics.
+
+
+// TODO: Should there just be one large function that returns all of the dataAnalysis stuff?
+// TODO: Should the results of the data analysis functions be stored at '/dataAnalysis'?
+//  - "/gameRecordStats"?
+
+// TODO: revise this to use onCallable? 
+// Test function to return a count of all game records in the document database
+exports.countGameRecords = onRequest(async (req, res) => {
+  // temp variable - remove with check to permanent storage
+  const cacheIsValid = false;
+  // if cache is valid - serve info from cache
+  if (cacheIsValid) {
+    res.send("Cache is valid!")
+    return;
+  }
+  
+  // if cache is invalid (over ~6hrs since last update)
+  try {
+    // const gameRecords = [];
+    const gameRecords = "test as a string";
+    const gameRecordsSnapshot = await db.collection("gameRecords").get();
+
+    logger.info("countGameRecords: got gameRecordsSnapshot:", gameRecordsSnapshot);
+
+    // iterate over the batched results and add to the collection
+    // results.forEach((gameRecordsSnapshot) => 
+    //   gameRecordsSnapshot.forEach((gameRecordDoc) => 
+    //     gameRecords.push(gameRecordDoc.data()))
+    // );
+
+    // send the gameRecords as a response
+    res.status(200).json(gameRecords);
+  } 
+  catch (error) {
+    logger.error("Error querying gameRecords:", error);
+  }
+});
 
 async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
   const gameRecordsRef = db.collection('gameRecords');

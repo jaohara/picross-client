@@ -122,7 +122,7 @@ export async function deleteGameRecord(userId, gameRecordId) {
       for users deleting their previous records.
   */
 
-  const callable = httpsCallable(functions, ""
+  const callable = getCallable("deleteGameRecord");
 }
 
 
