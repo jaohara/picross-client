@@ -15,6 +15,9 @@ import MenuLinks from '../../../components/MenuLinks/MenuLinks';
 import TextInput from '../../../components/TextInput/TextInput';
 import { menuRoutes } from '../../../routes';
 
+// TODO: for testing cloud functions
+import CloudFunctionTester from '../../../components/CloudFunctionTester/CloudFunctionTester';
+
 import { 
   APP_TITLE,
   MENU_HEADER_ICON_SIZE as ICON_SIZE,
@@ -85,6 +88,8 @@ const TitleMenu = () => {
         />
 
         <div className="menu-body">
+          <CloudFunctionTester />
+
           <p>
             You need to put some more thought into what should be displayed on this main screen.
           </p>

@@ -1,0 +1,21 @@
+@use "../../styles/globals.scss" as g;
+
+.cloud-function-tester {
+  @include g.content-container-visual-styling(g.$puzzle-group-border-color);
+  border-radius: g.$common-border-radius;
+  max-width: g.$content-container-max-width;
+  padding: g.$common-padding;
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: .5rem;
+  }
+}
+
+.cloud-function-test-container {
+  margin-bottom: calc(g.$common-margin * 2);
+
+  h1 {
+    font-size: 1.4rem;
+  }
+}
