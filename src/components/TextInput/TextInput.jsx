@@ -7,6 +7,7 @@ const TextInput = ({
   label,
   onChange,
   password = false,
+  placeholder ="",
   setValue = () => {},
   value = "",
 }) => {
@@ -32,6 +33,7 @@ const TextInput = ({
         className={getClassNames()}
         // onChange={e => setValue(e.target.value)}
         onChange={e => handleInput(e)}
+        placeholder={password ? "" : placeholder}
         type={password ? "password" : "text"}
         value={value}
       />

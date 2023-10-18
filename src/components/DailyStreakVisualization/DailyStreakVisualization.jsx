@@ -128,8 +128,7 @@ const DailyStreakVisualization = ({
       currentWeekday++;
     }
 
-
-    console.log("DailyStreakVisualization: getPastDates: result is:", pastDates);
+    // console.log("DailyStreakVisualization: getPastDates: result is:", pastDates);
     return pastDates;
   }
 
