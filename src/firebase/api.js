@@ -19,6 +19,9 @@ import {
 
 import { httpsCallable } from "firebase/functions";
 
+import getDataFromApiResponse from "../utils/getDataFromApiResponse";
+import convertFirestoreResponseToDataArray from "../utils/convertFirestoreResponseToDataArray";
+
 /*
   api.js
   ------
@@ -176,6 +179,11 @@ function checkIfResponseWasSuccessful(response, callerName) {
 // a new document in firestore
 export async function createGameRecord(user, gameRecordData) {
 
+  // const testCallable = getCallable('createGameRecord');
+  const testCallable = httpsCallable(functions, 'createGameRecord');
+  testCallable({data: "test data"});
+  return;
+
 
   //TODO: Should this add the one-off record to the local gameRecords in context here?
   
@@ -196,18 +204,20 @@ export async function createGameRecord(user, gameRecordData) {
   // use this as the alias for the callable cloud function
   const callable = getCallable('createGameRecord');
 
-  console.log("createGameRecord: invoking callable cloud function");
-
+  
   // TODO: Does this record need anything more attached to it?
   gameRecordData['userId'] = userId;
   gameRecordData['lastPlayed'] = Timestamp.now();
-
+  
+  // TODO: Enable this
   if (CHECK_GAME_RECORD_DATA_MODEL) {
     if (!validateGameRecord(gameRecordData)) {
       return;
     }
   }
   
+  console.log("createGameRecord: invoking callable cloud function, passing in:", gameRecordData);
+
   const response = await callable(gameRecordData);
   
   console.log(`createGameRecord: callable finished, data returned is:`, response);
@@ -215,7 +225,7 @@ export async function createGameRecord(user, gameRecordData) {
   return response;
 }
 
-export async function getUserGameRecords(user) {
+export async function getUserGameRecords(user, returnFullResponse = false) {
   /*
     should call httpCallable(functions, "getUserGameRecords")
     */
@@ -227,8 +237,14 @@ export async function getUserGameRecords(user) {
   const callable = getCallable("getUserGameRecords");
 
   try {
-    const response = await callable();
-    if (checkIfResponseWasSuccessful(response)) return response;
+    const response = await callable({data: "test parameter for cf"});
+    if (checkIfResponseWasSuccessful(response, "getUserGameRecords")) {
+      console.log("getUserGameRecords: received response:", response);
+      if (returnFullResponse) return response;
+
+      // return convertFirestoreResponseToDataArray(response);
+      return getDataFromApiResponse(response);
+    }
   } 
   catch (error) {
     console.error("getUserGameRecords: error getting game records:", error);
@@ -248,9 +264,9 @@ export async function completeGameRecord(user, gameRecordId) {
   /*
     takes an existing gameRecord that lives at /users/{userId}/gameRecords/{gameRecordId}
     and modifies it so that gameRecord.completed === true
-    */
- if (!checkIfUserExistsAndGetUid(user)) return;
- if (!parameterExists(gameRecordId, "gameRecordId", "completeGameRecord")) return;
+  */
+  if (!checkIfUserExistsAndGetUid(user)) return;
+  if (!parameterExists(gameRecordId, "gameRecordId", "completeGameRecord")) return;
 
   const callable = getCallable("updateGameRecord");
   

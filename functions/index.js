@@ -76,26 +76,34 @@ function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
 
 //TODO: Test that this still works, also triggering the proper dupe functions
 // create game record
-exports.createGameRecord = onCall(async (request) => {
+// exports.createGameRecord = onCall(async (request) => {
+exports.createGameRecord = onCall(async (data, context) => {
   const fName = "createGameRecord";
 
-  if (!requestAuthIsValid(request, fName)) return;
-  if (!requestHasGameRecord(request, fName)) return;
+  logger.log("createGameRecord: received data:", data);
+  logger.log("createGameRecord: received context:", context);
 
-  const { uid: userId } = request.auth; 
-  const { gameRecord } =  request.data;
+  // if (!requestAuthIsValid(request, fName)) return;
+  // if (!requestHasGameRecord(request, fName)) return;
 
-  const result = await setGameRecordForUser(userId, gameRecord);
+  // const { uid: userId } = request.auth; 
+  // const { gameRecord } =  request.data;
 
-  return checkAndReturnGameRecordIfValid(result, fName);
+  // const result = await setGameRecordForUser(userId, gameRecord);
+
+  // return checkAndReturnGameRecordIfValid(result, fName);
 });
 
 // TODO: TEST THIS FN (in tandem with api.getUserGameRecords)
 // read game records
-exports.getUserGameRecords = onCall(async (request) => {
-  if (!requestAuthIsValid(request, "getUserGameRecords")) return;
+// exports.getUserGameRecords = onCall(async (request) => {
+exports.getUserGameRecords = onCall(async (data, context) => {
+  // if (!requestAuthIsValid(request, "getUserGameRecords")) return;
 
-  const { uid: userId } = request.auth;
+  logger.log("getUserGameRecords: received data:", data);
+  logger.log("getUserGameRecords: received context:", context);
+
+  const { uid: userId } = context.auth;
   const gameRecordsCollectionRef = db.collection(`users/${userId}/gameRecords`);
 
   // get everything at "/users/{userId}/gameRecords"
@@ -106,7 +114,11 @@ exports.getUserGameRecords = onCall(async (request) => {
     snapshot.forEach((doc) => {
       const gameRecord = doc.data();
       const gameRecordId = doc.id;
-      gameRecords[gameRecordId] = gameRecord;
+
+      // TODO: eventually remove these subcollections, but just filter them out for now
+      if (gameRecordId !== "achievements" && gameRecordId !== "puzzles"){
+        gameRecords[gameRecordId] = gameRecord;
+      }
     });
 
     return { data: gameRecords, success: true };
@@ -121,6 +133,8 @@ exports.getUserGameRecords = onCall(async (request) => {
 // - ensure that the dupe records are made correctly on completion
 // update game record
 exports.updateGameRecord = onCall(async (request) =>{
+  logger.log("updateGameRecord: received request:", request);
+
   if (!requestAuthIsValid(request, "updateGameRecord")) return;
   if (!requestHasGameRecord(request, "updateGameRecord")) return;
   if (!requestHasGameRecordId(request, "updateGameRecord")) return;

@@ -9,6 +9,7 @@ import './CloudFunctionTester.scss';
 import Button from '../Button/Button';
 import HorizontalDivider from '../HorizontalDivider/HorizontalDivider';
 import TextInput from '../TextInput/TextInput';
+import Select from '../Select/Select';
 
 import { UserContext } from '../../contexts/UserContext';
 
@@ -30,11 +31,17 @@ import {
   getUserGameRecords,
 } from "../../firebase/api";
 
+import convertDataFromObjectWithIdKeysToArray from '../../utils/convertDataFromObjectWithIdKeysToArray';
+
 const CloudFunctionTester = () => {
   const [ completeGameRecordId, setCompleteGameRecordId ] = useState("");
   const [ createRecordIsComplete, setCreateRecordIsComplete ] = useState(false);
   const [ createRecordTestString, setCreateRecordTestString ] = useState("");
   const [ deleteGameRecordId, setDeleteGameRecordId ] = useState("");
+
+  // test copy of the game records, local to this component
+  const [ testGameRecords, setTestGameRecords ] = useState(null);
+  const [ testGameRecordsLoading, setTestGameRecordsLoading ] = useState(false);
   
   const { 
     user
@@ -60,21 +67,25 @@ const CloudFunctionTester = () => {
     };
 
     createGameRecord(user, testGameRecord);
-
-    // createGameRecordCallable({ gameRecord: testGameRecord})
-    //   .then((result) => {
-    //     console.log("createGameRecord: invocation finished, data returned is:", result);
-    //   });
   };
   
   const handleGetUserGameRecords = () => {
-    logStateValues();
+    console.log("handleGetUserGameRecords: invoked");
+
+    // logStateValues();
+    setTestGameRecordsLoading(true);
     
     const callCloudFunction = async () => {
       const gameRecords = await getUserGameRecords(user);
-      
+      setTestGameRecordsLoading(false);
+
       if (gameRecords) {
         console.log("CloudFunctionTester: received gameRecords:", gameRecords);
+        setTestGameRecords(gameRecords);
+        const gameRecordsArray = convertDataFromObjectWithIdKeysToArray(gameRecords);
+        // console.log("converted gameRecords to:", gameRecordsArray);
+        setCompleteGameRecordId(gameRecordsArray[0].id);
+        setDeleteGameRecordId(gameRecordsArray[0].id);
       }
     };
 
@@ -83,9 +94,20 @@ const CloudFunctionTester = () => {
   
   const handleCompleteGameRecord = () => {
     logStateValues();
+    console.log("handleCompleteGameRecord: invoked");
+
+    const result = completeGameRecord(user, completeGameRecordId);
+
+    if (result) {
+      // IMPLEMENT: remove the key that was just deleted
+      const newGameRecords = testGameRecords;
+      newGameRecords[completeGameRecordId].complete = true;
+      setTestGameRecords(newGameRecords);
+    }
   };
   
   const deleteGameRecord = () => {
+    console.log("handleDeleteGameRecord: invoked");
     logStateValues();
   };
   
@@ -94,12 +116,26 @@ const CloudFunctionTester = () => {
     logStateValues();
   };
   
+  useEffect(() => {
+    // load the test records for the purpose of using these api calls in this component
+
+    // load once here and manually reload on change, just to test
+    handleGetUserGameRecords();
+  }, [user]);
+
+  const testGameRecordsArray = 
+    testGameRecords ? convertDataFromObjectWithIdKeysToArray(testGameRecords) : null;
 
   return ( 
     <div className="cloud-function-tester">
       <h1>Cloud Function Tester</h1>
 
       <HorizontalDivider extraBottomMargin/>
+      <p>
+        <code>
+          testGameRecords { testGameRecordsLoading ? "loading..." : "loaded."}
+        </code>
+      </p>
 
 
       <div className="cloud-function-test-container">
@@ -191,11 +227,22 @@ const CloudFunctionTester = () => {
         </div>
 
         <p>
-          <TextInput
-            placeholder='gameRecord id'
+          <Select
+            disabled={testGameRecordsLoading}
+            label={"gameRecord id"}
+            options={testGameRecordsArray}
+            optionField={"id"}
             setValue={setCompleteGameRecordId}
             value={completeGameRecordId}
           />
+
+          { completeGameRecordId && testGameRecords && (
+            <code>
+              <strong>{completeGameRecordId}</strong>: 
+              {!testGameRecords[completeGameRecordId].completed && "in"}complete
+            </code>
+          )}
+
           <Button
             iconType='complete'
             onClick={handleCompleteGameRecord}
@@ -221,8 +268,11 @@ const CloudFunctionTester = () => {
         </div>
 
         <p>
-          <TextInput
-            placeholder='gameRecord id'
+          <Select
+            disabled={testGameRecordsLoading}
+            // label={"gameRecord id"}
+            options={testGameRecordsArray}
+            optionField={"id"}
             setValue={setDeleteGameRecordId}
             value={deleteGameRecordId}
           />
