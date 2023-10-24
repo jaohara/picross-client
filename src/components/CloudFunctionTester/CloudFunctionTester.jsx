@@ -22,6 +22,7 @@ import { httpsCallable } from 'firebase/functions';
 // const getUserGameRecordsCallable = httpsCallable(functions, 'getUserGameRecords');
 // const completeGameRecordCallable = httpsCallable(functions, 'completeGameRecord');
 // const deleteGameRecordCallable = httpsCallable(functions, 'deleteGameRecord');
+const testParameters = httpsCallable(functions, 'testParameters');
 
 // import api with wrapped callable functions
 import {
@@ -46,6 +47,10 @@ const CloudFunctionTester = () => {
   const { 
     user
   } = useContext(UserContext); 
+
+  const handleTestParameters = () => {
+    testParameters({ name: "Test Parameters", number: 123, });
+  };
 
   // function to log current state values when interacting with tester elements
   const logStateValues = () => {
@@ -130,10 +135,20 @@ const CloudFunctionTester = () => {
     <div className="cloud-function-tester">
       <h1>Cloud Function Tester</h1>
 
+      <Button
+        onClick={handleTestParameters}
+      >
+        Test Parameters
+      </Button>
+
+
       <HorizontalDivider extraBottomMargin/>
       <p>
         <code>
-          testGameRecords { testGameRecordsLoading ? "loading..." : "loaded."}
+          testGameRecords { testGameRecordsLoading ? "loading..." : "loaded"}
+          { 
+            testGameRecordsArray !== null && ` - ${testGameRecordsArray.length} records`
+          }
         </code>
       </p>
 

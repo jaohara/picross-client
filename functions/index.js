@@ -24,6 +24,8 @@ const {
 const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
 
+const DEBUG_LOG_REQUESTS = true;
+
 // ===================
 // CF helper functions
 // ===================
@@ -63,11 +65,26 @@ function requestHasGameRecordId(request, callerName) {
 function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
   if (gameRecordData) {
     logger.info(`${callerName}: returning result to client: `, gameRecordData);
+    return gameRecordData;
   }
 
   logger.error(`${callerName}: gameRecordData is null.`);
   return;
 }
+
+// logs the request if the DEBUG_LOG_REQUESTS flag is true
+function logRequest(request, fName) {
+  if (DEBUG_LOG_REQUESTS) {
+    logger.log(`${fName}: received request:`, request);
+  }
+}
+
+// Minimal test functions
+exports.testParameters = onCall(async (data, context) => {
+  logger.log("testParameters called");
+  logger.log("testParameters: data:", data);
+  logger.log("testParameters: context:", context);
+});
 
 
 // ==========================
@@ -76,34 +93,36 @@ function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
 
 //TODO: Test that this still works, also triggering the proper dupe functions
 // create game record
-// exports.createGameRecord = onCall(async (request) => {
-exports.createGameRecord = onCall(async (data, context) => {
+exports.createGameRecord = onCall(async (request) => {
+// exports.createGameRecord = onCall(async (data, context) => {
   const fName = "createGameRecord";
 
-  logger.log("createGameRecord: received data:", data);
-  logger.log("createGameRecord: received context:", context);
+  // logger.log("createGameRecord: received request:", request);
+  logRequest(request, fName);
 
-  // if (!requestAuthIsValid(request, fName)) return;
-  // if (!requestHasGameRecord(request, fName)) return;
+  if (!requestAuthIsValid(request, fName)) return;
+  if (!requestHasGameRecord(request, fName)) return;
 
-  // const { uid: userId } = request.auth; 
-  // const { gameRecord } =  request.data;
+  const { uid: userId } = request.auth; 
+  const { gameRecord } = request.data;
 
-  // const result = await setGameRecordForUser(userId, gameRecord);
+  logger.log(`${fName}: userId is: `, userId);
+  logger.log(`${fName}: gameRecord is:`, gameRecord);
 
-  // return checkAndReturnGameRecordIfValid(result, fName);
+  const result = await setGameRecordForUser(userId, gameRecord);
+
+  return checkAndReturnGameRecordIfValid(result, fName);
 });
 
 // TODO: TEST THIS FN (in tandem with api.getUserGameRecords)
 // read game records
 // exports.getUserGameRecords = onCall(async (request) => {
-exports.getUserGameRecords = onCall(async (data, context) => {
-  // if (!requestAuthIsValid(request, "getUserGameRecords")) return;
+exports.getUserGameRecords = onCall(async (request) => {
+  if (!requestAuthIsValid(request, "getUserGameRecords")) return;
 
-  logger.log("getUserGameRecords: received data:", data);
-  logger.log("getUserGameRecords: received context:", context);
+  logRequest(request, "getUserGameRecords");
 
-  const { uid: userId } = context.auth;
+  const { uid: userId } = request.auth;
   const gameRecordsCollectionRef = db.collection(`users/${userId}/gameRecords`);
 
   // get everything at "/users/{userId}/gameRecords"
@@ -133,7 +152,7 @@ exports.getUserGameRecords = onCall(async (data, context) => {
 // - ensure that the dupe records are made correctly on completion
 // update game record
 exports.updateGameRecord = onCall(async (request) =>{
-  logger.log("updateGameRecord: received request:", request);
+  logRequest(request, "updateGameRecord");
 
   if (!requestAuthIsValid(request, "updateGameRecord")) return;
   if (!requestHasGameRecord(request, "updateGameRecord")) return;
@@ -150,6 +169,8 @@ exports.updateGameRecord = onCall(async (request) =>{
 // TODO: TEST THIS FN (in tandem with api.deleteGameRecord)
 // delete game record (won't delete global dupe for rankings... or should it?)
 exports.deleteGameRecord = onCall(async (request) => {
+  logRequest(request, "deleteGameRecord");
+
   if (!requestAuthIsValid(request, "deleteGameRecord")) return;
   if (!requestHasGameRecordId(request, "deleteGameRecord")) return;
 

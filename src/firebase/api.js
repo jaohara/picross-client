@@ -180,9 +180,9 @@ function checkIfResponseWasSuccessful(response, callerName) {
 export async function createGameRecord(user, gameRecordData) {
 
   // const testCallable = getCallable('createGameRecord');
-  const testCallable = httpsCallable(functions, 'createGameRecord');
-  testCallable({data: "test data"});
-  return;
+  // const testCallable = httpsCallable(functions, 'createGameRecord');
+  // testCallable({data: "test data"});
+  // return;
 
 
   //TODO: Should this add the one-off record to the local gameRecords in context here?
