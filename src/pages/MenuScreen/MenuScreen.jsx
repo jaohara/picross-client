@@ -1,7 +1,5 @@
 import React, {
   useContext,
-  useEffect,
-  useState,
 } from 'react';
 
 import { 
@@ -14,8 +12,6 @@ import {
 } from "react-router-dom";
 
 import "./MenuScreen.scss";
-
-import Button from "../../components/Button/Button";
 
 import { GameContext } from '../../contexts/GameContext';
 import { UserContext } from '../../contexts/UserContext';

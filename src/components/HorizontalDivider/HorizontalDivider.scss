@@ -1,0 +1,19 @@
+@use "../../styles/globals.scss" as g;
+
+.horizontal-divider {
+  background-color: g.$horizontal-divider-color;
+  border-radius: g.$common-border-radius;
+  height: g.$horizontal-divider-thickness;
+  max-height: g.$horizontal-divider-thickness;
+  margin: 0 0 g.$common-margin 0;
+  opacity: .3;
+  width: 100%; 
+}
+
+.has-top-margin {
+  margin-top: g.$common-margin;
+}
+
+.extra-bottom-margin {
+  margin-bottom: calc(g.$common-margin * 2);
+}

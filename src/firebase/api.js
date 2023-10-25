@@ -1,3 +1,8 @@
+import { 
+  db,
+  functions,
+} from "./firebase";
+
 import {
   collection,
   doc,
@@ -12,11 +17,298 @@ import {
   writeBatch,
 } from "firebase/firestore";
 
-import { db } from "./firebase";
+import { httpsCallable } from "firebase/functions";
 
+import getDataFromApiResponse from "../utils/getDataFromApiResponse";
+import convertFirestoreResponseToDataArray from "../utils/convertFirestoreResponseToDataArray";
+
+/*
+  api.js
+  ------
+
+  This is a file for the client-side api functions that 
+  interact with my firebase services (mainly cloud functions)
+*/
+
+
+// related to old API approach
 const achievementsCollectionRef = collection(db, "achievements");
 const usersCollectionRef = collection(db, "users");
 const puzzlesCollectionRef = collection(db, "puzzles");
+
+// shorthand for getting a callable, assumes 'callableName' is a function that exists
+const getCallable = (callableName) => httpsCallable(functions, callableName);
+
+// global constants for API functions
+const gameRecordNecessaryKeys = [
+  "completed",
+  "gameTimer",
+  "lastPlayed",
+  "moves",
+  "puzzleGrid",
+  "puzzleId",
+  "userId",
+];
+
+// TODO: set this to true
+const CHECK_GAME_RECORD_DATA_MODEL = false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+// TODO: RESUME HERE!
+
+/* 
+  Alright, I think that most of this stuff works? I've proofread the 
+  functions at both endpoints and have ran them through chatGPT to check
+  for glaring mistakes. The approach seems sound, so I think next up is 
+  testing.
+
+  Use `TitleMenu.jsx` to make more simple test components for each of
+  these functions. 
+
+  Once these work, maybe create these same functions for 
+  different types of firestore data? I think that I want to use 
+  this same approach for making users (although "createUserEntity" might
+  be better as a cloud trigger response).
+
+  After this, hook up the gameRecord creation and retrieval to the client 
+  via the game events. 
+
+    - Do I already have existing game event functions that should submit
+      records on completion?
+
+  After that, play the game to create records and check to see where the 
+  system needs more polish.
+
+  After that, make some basic data analysis functions
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ========================================================================
+// NEW API FUNCTIONS (>7/18, callable cloud functions for firestore access)
+// ========================================================================
+
+// new helper functions
+export function validateGameRecord(gameRecordData) {
+  for (const necessaryKey in gameRecordNecessaryKeys) {
+    if (!gameRecordData[necessaryKey]) {
+      console.error(`validateGameRecord: gameRecord is missing '${necessaryKey}', aborting.`);
+      return false;
+    }
+  }
+
+  console.log("validateGameRecord: gameRecord is valid!");
+  return true;
+}
+
+// ensures submitted user object has a userId. Returns the userId if it
+// does, and null if it does not.
+export function checkIfUserExistsAndGetUid(user, callerName) {
+  if (!user || !user.uid) {
+    console.error(`${callerName}: user object supplied does not exist`);
+    return null;
+  }
+
+  return user.uid;
+}
+
+// checks if a necessary parameter exists. Logs an error if it doesn't
+// and returns true or false based on whether it exists.
+function parameterExists(parameter, paramName, callerName) {
+  if (!parameter) {
+    console.error(`${callerName}: parameter '${paramName}' must be provided.`);
+    return false;
+  }
+
+  return true;
+}
+
+// checks if the response from a callable was successful via the
+// presence/state of the response.data.success boolean.
+function checkIfResponseWasSuccessful(response, callerName) {
+  const { success } = response.data;
+
+  if (success) {
+    console.log(`${callerName}: cloud function call successful.`);
+    return true;
+  }
+
+  const { error } = response.data;
+
+  if (error) {
+    console.error(`${callerName}: error calling cloud function:`, error);
+  }
+  else {
+    console.error(`${callerName}: error calling cloud function.`)
+  }
+
+  return false;
+}
+
+// TODO: Test this function
+// takes in a user object (UserContext.user) and the gameRecord data
+// as a js object, validates presence of required keys, and creates
+// a new document in firestore
+export async function createGameRecord(user, gameRecordData) {
+
+  // const testCallable = getCallable('createGameRecord');
+  // const testCallable = httpsCallable(functions, 'createGameRecord');
+  // testCallable({data: "test data"});
+  // return;
+
+
+  //TODO: Should this add the one-off record to the local gameRecords in context here?
+  
+  
+  
+  const userId = checkIfUserExistsAndGetUid(user);
+  
+  if (!gameRecordData) {
+    console.error("createGameRecord: gameRecordData does not exist, aborting.");
+    return;
+  }
+  
+  if (typeof gameRecordData !== 'object') {
+    console.error("createGameRecord: gameRecordData is not an object, aborting.");
+    return;
+  }
+
+  // use this as the alias for the callable cloud function
+  const callable = getCallable('createGameRecord');
+
+  
+  // TODO: Does this record need anything more attached to it?
+  gameRecordData['userId'] = userId;
+  gameRecordData['lastPlayed'] = Timestamp.now();
+  
+  // TODO: Enable this
+  if (CHECK_GAME_RECORD_DATA_MODEL) {
+    if (!validateGameRecord(gameRecordData)) {
+      return;
+    }
+  }
+  
+  console.log("createGameRecord: invoking callable cloud function, passing in:", gameRecordData);
+
+  const response = await callable({ gameRecord: gameRecordData});
+  
+  console.log(`createGameRecord: callable finished, data returned is:`, response);
+  
+  return response;
+}
+
+export async function getUserGameRecords(user, returnFullResponse = false) {
+  // not sure if passing the user object as an arg is the best way
+  // to verify - is there a simpler approach?
+  if (!checkIfUserExistsAndGetUid(user)) return;
+
+  const callable = getCallable("getUserGameRecords");
+
+  try {
+    const response = await callable({data: "test parameter for cf"});
+    if (checkIfResponseWasSuccessful(response, "getUserGameRecords")) {
+      console.log("getUserGameRecords: received response:", response);
+      if (returnFullResponse) return response;
+
+      // return convertFirestoreResponseToDataArray(response);
+      return getDataFromApiResponse(response);
+    }
+  } 
+  catch (error) {
+    console.error("getUserGameRecords: error getting game records:", error);
+  }
+
+  return null;
+}
+
+export async function completeGameRecord(user, gameRecordId) {
+  //TODO: Should this modify the record in the local gameRecords in context?
+  
+  /*
+    takes an existing gameRecord that lives at /users/{userId}/gameRecords/{gameRecordId}
+    and modifies it so that gameRecord.completed === true
+  */
+  if (!checkIfUserExistsAndGetUid(user)) return;
+  if (!parameterExists(gameRecordId, "gameRecordId", "completeGameRecord")) return;
+
+  const callable = getCallable("updateGameRecord");
+  
+  // only submit { completed: true }, as only changed fields update
+  const data = {
+    gameRecord: { completed: true },
+    gameRecordId,
+  };
+  
+  try {
+    const response = await callable(data);
+    if (checkIfResponseWasSuccessful(response)) return response;
+  }
+  catch (error) {
+    console.error("completeGameRecord: error completing game record:", error);
+  }
+
+  return null;
+}
+
+// takes an existing user gameRecordId and delete the corresponding doc.
+export async function deleteGameRecord(user, gameRecordId) {
+  // DOES NOT delete the top-level /gameRecords/{gameRecordId} entry.
+  //  - Should this only delete in-progress records? I think so - there isn't a good use case
+  //    for users deleting their previous records.
+  //TODO: Should this remove the record in the local gameRecords in context here?
+  
+  const fName = "deleteGameRecord";
+ 
+  if (!checkIfUserExistsAndGetUid(user, fName)) return;
+  if (!parameterExists(gameRecordId, "gameRecordId", fName)) return;
+
+  const callable = getCallable("deleteGameRecord");
+  const data = { gameRecordId };
+
+  try { 
+    const response = await callable(data);
+    checkIfResponseWasSuccessful(response, fName);
+    return true;
+  }
+  catch (error) {
+    console.error(`${fName}: error deleting record:`, error)
+  }
+
+  return false;
+}
+
+
+// ===========================================================
+// OLD API FUNCTIONS (Pre 7/18, client-level firestore access)
+// ===========================================================
 
 // user-related api functions
 export async function createUserEntity(newUser, id) {
@@ -47,7 +339,7 @@ export async function createUserEntity(newUser, id) {
 
     // commit the batched write
     await batch.commit();
-    // return result;
+    // return response;
     return true;
   }
   catch (error) {
@@ -77,6 +369,7 @@ export async function getUserProfile(userId) {
 
     console.log("getUserProfile: got userProfileData: ", userProfileData);
 
+    // TODO: Move this operation out of here and into its own function
     // get the gameRecords subcollection
     const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
     const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
@@ -223,3 +516,4 @@ export async function getPuzzleGridForPuzzle(puzzleData) {
 
   return loadedGrid;
 }
+

@@ -10,11 +10,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <DataContextProvider>
       <UserContextProvider>
-
         <GameContextProvider>
           <App />
         </GameContextProvider>
       </UserContextProvider>
     </DataContextProvider>
   </React.StrictMode>,
-)
+);

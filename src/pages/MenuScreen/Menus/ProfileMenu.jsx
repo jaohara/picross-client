@@ -286,6 +286,9 @@ const ProfileMenu = () => {
             <p><strong>TODO:</strong> Add "Longest Unbroken Streak"</p>
           </div>
 
+
+          {/* TODO: Do I actually want to use these? */}
+          {/* 
           <div className="profile-achievements">
             <h1>Achievements</h1>
 
@@ -293,7 +296,8 @@ const ProfileMenu = () => {
               achievements={achievements}
               userAchievements={userAchievements}
             />
-          </div>
+          </div> 
+          */}
 
 
           {/* TODO: Remove this garbage */}

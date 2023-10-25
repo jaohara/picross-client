@@ -31,7 +31,6 @@ function App() {
     togglePauseMenu: togglePauseMenu,
   });
 
-  // TODO: Is this the proper order for wrapping the contexts?
   return (
     <div className="App">
       <BackgroundScreen />
