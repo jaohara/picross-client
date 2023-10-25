@@ -22,7 +22,8 @@ import { httpsCallable } from 'firebase/functions';
 // const getUserGameRecordsCallable = httpsCallable(functions, 'getUserGameRecords');
 // const completeGameRecordCallable = httpsCallable(functions, 'completeGameRecord');
 // const deleteGameRecordCallable = httpsCallable(functions, 'deleteGameRecord');
-const testParameters = httpsCallable(functions, 'testParameters');
+
+const deleteAllTestGameRecordsCallable = httpsCallable(functions, 'deleteAllTestGameRecords');
 
 // import api with wrapped callable functions
 import {
@@ -48,10 +49,6 @@ const CloudFunctionTester = () => {
     user
   } = useContext(UserContext); 
 
-  const handleTestParameters = () => {
-    testParameters({ name: "Test Parameters", number: 123, });
-  };
-
   // function to log current state values when interacting with tester elements
   const logStateValues = () => {
     console.log(`completeGameRecordId: ${completeGameRecordId}`);
@@ -60,14 +57,30 @@ const CloudFunctionTester = () => {
     console.log(`deleteGameRecordId: ${deleteGameRecordId}`);
   };
 
+
+  //TODO: Debug, don't have this function in production code
+  const handleDeleteAllTestGameRecords = () => {
+    if (!user) {
+      console.error("handleDeleteAllTestGameRecords: no user authenticated");
+      return;
+    }
+
+    const callCloudFunction = async () => {
+      const result = await deleteAllTestGameRecordsCallable();
+      console.log("handleDeleteAllTestGameRecords: returned these test records:", result);
+    };
+
+    callCloudFunction();
+  };
+
   // functions to wrap callables with some more local functionality
   const handleCreateGameRecord = () => {
     logStateValues();
 
     const testGameRecord = {
-      completed: createRecordIsComplete,
       dateString: Date.now(),
       testGameRecord: true,
+      completed: createRecordIsComplete,
       testString: createRecordTestString,
     };
 
@@ -111,9 +124,19 @@ const CloudFunctionTester = () => {
     }
   };
   
-  const deleteGameRecord = () => {
-    console.log("handleDeleteGameRecord: invoked");
+  const handleDeleteGameRecord = () => {
+    const fName = "handleDeleteGameRecord";
+    console.log(`${fName}: invoked`);
     logStateValues();
+
+    const result = deleteGameRecord(user, deleteGameRecordId);
+
+    if (result) {
+      console.log(`${fName}: successfully deleted record '${deleteGameRecordId}`);
+    }
+    else {
+      console.error(`${fName}: error deleting record '${deleteGameRecordId}'`);
+    }
   };
   
   const handleCreateGameRecordCheckboxChange = () => {
@@ -135,13 +158,6 @@ const CloudFunctionTester = () => {
     <div className="cloud-function-tester">
       <h1>Cloud Function Tester</h1>
 
-      <Button
-        onClick={handleTestParameters}
-      >
-        Test Parameters
-      </Button>
-
-
       <HorizontalDivider extraBottomMargin/>
       <p>
         <code>
@@ -161,18 +177,6 @@ const CloudFunctionTester = () => {
             - boolean of whether the submission is complete
         */}
         <HorizontalDivider />
-        <div className="cloud-function-tester-instructions">  
-          <p>
-            Here I will test <code>api.createGameRecord</code>, similar to how I already am in 
-            <code>TitleMenu</code>. This should have a button to toggle whether or not the record
-            is complete.
-          </p>
-
-          <p>
-            <strong>After this is done, check that <code>duplicateGameRecordOnCreate</code> fired if the 
-            gameRecord was completed.</strong>
-          </p>
-        </div>
 
         <p>
           <TextInput
@@ -204,14 +208,6 @@ const CloudFunctionTester = () => {
         <h1>getUserGameRecords</h1>
         <HorizontalDivider/>
 
-        <div className="cloud-function-tester-instructions">
-          <p>
-            This should just be a button that gets the user records and logs the response object.
-            After this, <strong>I should work on using this approach to grab the overall gameRecords 
-            in <code>UserContext</code>.</strong>
-          </p>
-        </div>
-
         <p>
           <Button 
             iconType='load'
@@ -229,17 +225,6 @@ const CloudFunctionTester = () => {
             - gameRecordId text input
         */}
         <HorizontalDivider />
-
-        <div className="cloud-function-tester-instructions">
-          <p>
-            This should be a <code>TextInput</code> that, when given a <code>gameRecordId</code> of an
-            incomplete gameRecord that the current user owns, resubmit it marked as completed.
-          </p>
-
-          <p>
-            <strong>After this is done, check that <code>duplicateGameRecordOnUpdate</code> fired.</strong>
-          </p>
-        </div>
 
         <p>
           <Select
@@ -274,13 +259,6 @@ const CloudFunctionTester = () => {
             - gameRecordId text input
         */}
         <HorizontalDivider />
-        <div className="cloud-function-tester-instructions">
-          <p>
-            This should be a <code>TextInput</code> that takes in a <code>gameRecordId</code> of a gameRecord that
-            the current user owns, then submits a request to delete the resource. The response data should be 
-            logged.
-          </p>
-        </div>
 
         <p>
           <Select
@@ -293,9 +271,22 @@ const CloudFunctionTester = () => {
           />
           <Button
             iconType='delete'
-            onClick={deleteGameRecord}
+            onClick={handleDeleteGameRecord}
           >
             Delete Game Record
+          </Button>
+        </p>
+      </div>
+
+      <div className="cloud-function-test-container">
+        <h1>deleteAllTestGameRecords</h1>
+
+        <p>
+          <Button
+            iconType='nuke'
+            onClick={handleDeleteAllTestGameRecords}
+          >
+            Delete All Test Records
           </Button>
         </p>
       </div>

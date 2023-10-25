@@ -3,6 +3,7 @@ import React from 'react';
 import { 
   TbArrowBack,
   TbAward,
+  TbBomb,
   TbClock,
   TbCloudDownload,
   TbCloudUpload,
@@ -58,6 +59,7 @@ const Button = ({
     "login": (<TbLogin />),
     "logout": (<TbLogout />),
     "menu": (<TbMenu2 />),
+    "nuke": (<TbBomb />),
     "options": (<TbSettings />),
     "pause": (<TbPlayerPauseFilled />),
     "play": (<TbPlayerPlayFilled />),

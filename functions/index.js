@@ -25,10 +25,52 @@ const { Firestore } = require("@google-cloud/firestore");
 const db = new Firestore();
 
 const DEBUG_LOG_REQUESTS = true;
+const DEBUG_TEST_RECORDS = true;
 
 // ===================
 // CF helper functions
 // ===================
+
+/*
+  checkAndReturnGameRecordIfValid - why do I need this?
+  getDataWithIdFromSnapshot - return the snapshot.data with snapshot.id appended
+  logRequest - logs request if DEBUG_LOG_REQUESTS flag is true
+  requestAuthIsValid - check if auth exists on request and is valid
+  requestHasGameRecord - check if "request.data.gameRecord" exists
+  requestHasGameRecordId - check if "request.data.gameRecordId" exists 
+*/
+
+// helper function to check, log, and return resultant record.
+function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
+  if (gameRecordData) {
+    if (DEBUG_LOG_REQUESTS) {
+      logger.info(`${callerName}: returning result to client: `, gameRecordData);
+    }
+    return gameRecordData;
+  }
+
+  logger.error(`${callerName}: gameRecordData is null.`);
+  return;
+}
+
+// helper function to get the data with an id appended from a Firestore snapshot
+async function getDataWithIdFromSnapshot(snapshot) {
+  if (!snapshot) {
+    logger.error("getDataWithIdFromSnapshot: snapshot not provided");
+    return;
+  }
+
+  const result = await snapshot.data();
+  result.id = snapshot.id;
+  return result;
+}
+
+// logs the request if the DEBUG_LOG_REQUESTS flag is true
+function logRequest(request, fName) {
+  if (DEBUG_LOG_REQUESTS) {
+    logger.log(`${fName}: received request:`, request);
+  }
+}
 
 // helper function to check if auth exists and is valid
 function requestAuthIsValid(request, callerName) {
@@ -61,23 +103,7 @@ function requestHasGameRecordId(request, callerName) {
   return true;
 }
 
-// helper function to check, log, and return resultant record.
-function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
-  if (gameRecordData) {
-    logger.info(`${callerName}: returning result to client: `, gameRecordData);
-    return gameRecordData;
-  }
 
-  logger.error(`${callerName}: gameRecordData is null.`);
-  return;
-}
-
-// logs the request if the DEBUG_LOG_REQUESTS flag is true
-function logRequest(request, fName) {
-  if (DEBUG_LOG_REQUESTS) {
-    logger.log(`${fName}: received request:`, request);
-  }
-}
 
 // Minimal test functions
 exports.testParameters = onCall(async (data, context) => {
@@ -94,10 +120,8 @@ exports.testParameters = onCall(async (data, context) => {
 //TODO: Test that this still works, also triggering the proper dupe functions
 // create game record
 exports.createGameRecord = onCall(async (request) => {
-// exports.createGameRecord = onCall(async (data, context) => {
   const fName = "createGameRecord";
 
-  // logger.log("createGameRecord: received request:", request);
   logRequest(request, fName);
 
   if (!requestAuthIsValid(request, fName)) return;
@@ -118,9 +142,11 @@ exports.createGameRecord = onCall(async (request) => {
 // read game records
 // exports.getUserGameRecords = onCall(async (request) => {
 exports.getUserGameRecords = onCall(async (request) => {
-  if (!requestAuthIsValid(request, "getUserGameRecords")) return;
+  const fName = "getUserGameRecords";
 
-  logRequest(request, "getUserGameRecords");
+  if (!requestAuthIsValid(request, fName)) return;
+
+  logRequest(request, fName);
 
   const { uid: userId } = request.auth;
   const gameRecordsCollectionRef = db.collection(`users/${userId}/gameRecords`);
@@ -135,7 +161,8 @@ exports.getUserGameRecords = onCall(async (request) => {
       const gameRecordId = doc.id;
 
       // TODO: eventually remove these subcollections, but just filter them out for now
-      if (gameRecordId !== "achievements" && gameRecordId !== "puzzles"){
+      if (gameRecordId !== "achievements" && gameRecordId !== "puzzles") {
+        gameRecord.id = gameRecordId;
         gameRecords[gameRecordId] = gameRecord;
       }
     });
@@ -143,7 +170,7 @@ exports.getUserGameRecords = onCall(async (request) => {
     return { data: gameRecords, success: true };
   }
   catch (error) {
-    logger.error("getUserGameRecords: error getting records:", error);
+    logger.error(`${fName}: error getting records:`, error);
     return { error: error.message, success: false };
   }
 });
@@ -169,25 +196,69 @@ exports.updateGameRecord = onCall(async (request) =>{
 // TODO: TEST THIS FN (in tandem with api.deleteGameRecord)
 // delete game record (won't delete global dupe for rankings... or should it?)
 exports.deleteGameRecord = onCall(async (request) => {
-  logRequest(request, "deleteGameRecord");
+  const fName = "deleteGameRecord";
 
-  if (!requestAuthIsValid(request, "deleteGameRecord")) return;
-  if (!requestHasGameRecordId(request, "deleteGameRecord")) return;
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return;
+  if (!requestHasGameRecordId(request, fName)) return;
 
   const { uid: userId } = request.auth;
   const { gameRecordId } = request.data;
   const docPath = `/users/${userId}/gameRecords/${gameRecordId}`;
 
-  logger.info(`deleteGameRecord: attempting to delete record at ${docPath}...`);
+  logger.info(`${fName}: attempting to delete record at ${docPath}...`);
   const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords').doc(gameRecordId);
 
   try {
     await gameRecordsRef.delete();
-    logger.info(`deleteGameRecord: successfully deleted doc at ${docPath}`);
+    logger.info(`${fName}: successfully deleted doc at ${docPath}`);
     return { success: true } ;
   }
   catch (error) {
-    logger.error(`deleteGameRecord: error deleting doc at ${docPath}:`, error);
+    logger.error(`${fName}: error deleting doc at ${docPath}:`, error);
+    return { error: error.message, success: false };
+  }
+});
+
+exports.deleteAllTestGameRecords = onCall(async (request) => {
+  const fName = "deleteAllTestGameRecords";
+  const { uid: userId } = request.auth;
+
+  if (!requestAuthIsValid(request, fName)) return;
+
+  try {
+    const batch = db.batch();
+
+    const testGameRecordsTopLevelSnapshot = await db.collection('gameRecords')
+      .where("testGameRecord", "==", true)
+      .get();
+      
+    const testGameRecordsSnapshot = await db.collection(`users/${userId}/gameRecords`)
+      .where("testGameRecord", "==", true)
+      .get();
+  
+    if (testGameRecordsTopLevelSnapshot.empty && testGameRecordsSnapshot.empty) {
+      logger.log(`${fName}: No test game records found.`);
+      return;
+    }
+      
+    // top-level records
+    testGameRecordsTopLevelSnapshot.forEach((doc) => {
+      batch.delete(doc.ref); 
+    });
+    
+    // user records
+    testGameRecordsSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    logger.log(`${fName}: All top-level testGameRecords and testGameRecords for ${userId} successfully deleted.`)
+    return { data: "All testGameRecords successfully deleted.", success: true }
+  }
+  catch (error) {
+    logger.error(`${fName}: error getting records:`, error);
     return { error: error.message, success: false };
   }
 });
@@ -195,13 +266,20 @@ exports.deleteGameRecord = onCall(async (request) => {
 // function to create a dupe, top-level gameRecord on creation of a completed user gameRecord
 exports.duplicateGameRecordOnCreate = 
   onDocumentCreated('users/{userId}/gameRecords/{gameRecordId}', async (event) => {
+    const fName = "duplicateGameRecordOnCreate";
+
     try {
       const { gameRecordId } = event.params;
       const gameRecordData = event.data.data();
 
       // bail out if record isn't complete
       if (!gameRecordData.completed) { 
-        logger.info("createGameRecord: GameRecord isn't complete, not duplicating.")
+        logger.info(`${fName}: GameRecord isn't complete, not duplicating.`)
+        return;
+      }
+
+      // bail out if gameRecordId is "puzzles" or "achievements" (legacy feature)
+      if (gameRecordId === "achievements" || gameRecordId === "puzzles") {
         return;
       }
 
@@ -211,7 +289,7 @@ exports.duplicateGameRecordOnCreate =
       await setTopLevelGameRecord(gameRecordId, gameRecordData);
     }
     catch (error) {
-      logger.error("createGameRecord: Error duplicating gameRecord:", error);
+      logger.error(`${fName}: Error duplicating gameRecord:`, error);
     }
   });
 
@@ -294,7 +372,9 @@ async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
     const docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
     logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
     const snapshot = await docRef.get();
-    const result = snapshot.data();
+    // const result = snapshot.data();
+    // result.id = snapshot.id;
+    const result = await getDataWithIdFromSnapshot(snapshot)
     logger.info("setTopLevelGameRecord: resultant data:", result);
     return result;
   }
@@ -332,7 +412,10 @@ async function setGameRecordForUser(
   // return result;
   try {
     const snapshot = await docRef.get();
-    const result = await snapshot.data();
+    // const result = await snapshot.data();
+    // result.id = snapshot.id;
+    const result = await getDataWithIdFromSnapshot(snapshot);
+
     logger.info("setGameRecordForUser: resultant data:", result);
     return { data: result, success: true };
   }
@@ -340,6 +423,5 @@ async function setGameRecordForUser(
     logger.error("setGameRecordsForUser: error getting record data:", error);
     return { error: error.message, success: false };
   }
-
 }
 

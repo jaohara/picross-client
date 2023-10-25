@@ -102,25 +102,6 @@ const TitleMenu = () => {
           <p>
             <strong>Should this be where the temporary instructions page is?</strong>
           </p>
-
-          <div>
-            <h1>Test Callable Cloud Function</h1>
-
-            <p>
-              <TextInput
-                setValue={setTestString}
-                value={testString}
-              />
-              <Button
-                iconType='save'
-                onClick={callCallableCloudFunction}
-              >
-                Call Cloud Function
-              </Button>
-            </p>
-
-          </div>
-
         </div>
       </div>
     </div>

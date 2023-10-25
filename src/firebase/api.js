@@ -218,7 +218,7 @@ export async function createGameRecord(user, gameRecordData) {
   
   console.log("createGameRecord: invoking callable cloud function, passing in:", gameRecordData);
 
-  const response = await callable(gameRecordData);
+  const response = await callable({ gameRecord: gameRecordData});
   
   console.log(`createGameRecord: callable finished, data returned is:`, response);
   
@@ -226,11 +226,7 @@ export async function createGameRecord(user, gameRecordData) {
 }
 
 export async function getUserGameRecords(user, returnFullResponse = false) {
-  /*
-    should call httpCallable(functions, "getUserGameRecords")
-    */
-
-   // not sure if passing the user object as an arg is the best way
+  // not sure if passing the user object as an arg is the best way
   // to verify - is there a simpler approach?
   if (!checkIfUserExistsAndGetUid(user)) return;
 
@@ -287,38 +283,33 @@ export async function completeGameRecord(user, gameRecordId) {
   return null;
 }
 
+// takes an existing user gameRecordId and delete the corresponding doc.
 export async function deleteGameRecord(user, gameRecordId) {
-
-
+  // DOES NOT delete the top-level /gameRecords/{gameRecordId} entry.
+  //  - Should this only delete in-progress records? I think so - there isn't a good use case
+  //    for users deleting their previous records.
   //TODO: Should this remove the record in the local gameRecords in context here?
-
-
-
-
-  /*
-  takes an existing gameRecord at /users/{userId}/gameRecords/{gameRecordId}
-  and deletes it.
   
-  DOES NOT delete the top-level /gameRecords/{gameRecordId} entry.
-  
-  - Should this only delete in-progress records? I think so - there isn't a good use case
-  for users deleting their previous records.
-  */
+  const fName = "deleteGameRecord";
  
- if (!checkIfUserExistsAndGetUid(user)) return;
-  if (!parameterExists(gameRecordId, "gameRecordId", "deleteGameRecord")) return;
+  if (!checkIfUserExistsAndGetUid(user, fName)) return;
+  if (!parameterExists(gameRecordId, "gameRecordId", fName)) return;
 
   const callable = getCallable("deleteGameRecord");
   const data = { gameRecordId };
 
   try { 
     const response = await callable(data);
-    checkIfResponseWasSuccessful(response);
+    checkIfResponseWasSuccessful(response, fName);
+    return true;
   }
   catch (error) {
-    console.error('deleteGameRecord: error deleting record:', error)
+    console.error(`${fName}: error deleting record:`, error)
   }
+
+  return false;
 }
+
 
 // ===========================================================
 // OLD API FUNCTIONS (Pre 7/18, client-level firestore access)
