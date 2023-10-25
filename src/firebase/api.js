@@ -250,12 +250,7 @@ export async function getUserGameRecords(user, returnFullResponse = false) {
 }
 
 export async function completeGameRecord(user, gameRecordId) {
-
-
-  //TODO: Should this modify the record in the local gameRecords in context here?
-  
-  
-  
+  //TODO: Should this modify the record in the local gameRecords in context?
   
   /*
     takes an existing gameRecord that lives at /users/{userId}/gameRecords/{gameRecordId}
