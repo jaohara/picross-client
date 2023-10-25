@@ -21,7 +21,10 @@ const {
   onDocumentUpdated,
 } = require("firebase-functions/v2/firestore");
 
-const { Firestore } = require("@google-cloud/firestore");
+const { 
+  Firestore,
+  Timestamp,
+} = require("@google-cloud/firestore");
 const db = new Firestore();
 
 const DEBUG_LOG_REQUESTS = true;
@@ -82,6 +85,10 @@ function requestAuthIsValid(request, callerName) {
   return true;
 }
 
+// TODO: How do I minimize reuse here? do I make a generic version of this function
+//  that checks for the objected in request.data using the syntax with the square 
+//  brackets rather than the dot so I can use a dynamic string for the field name?
+
 // helper function to check if gameRecord data is attached to request
 function requestHasGameRecord(request, callerName) {
   if (!request.data || !request.data.gameRecord) {
@@ -103,7 +110,15 @@ function requestHasGameRecordId(request, callerName) {
   return true;
 }
 
+// helper function to check if puzzleData is attached to request
+function requestHasPuzzleData(request, callerName) {
+  if (!request.data || !request.data.puzzleData) {
+    logger.error(`${callerName}: puzzleData not supplied, aborting.`);
+    return false;
+  }
 
+  return true;
+}
 
 // Minimal test functions
 exports.testParameters = onCall(async (data, context) => {
@@ -138,7 +153,6 @@ exports.createGameRecord = onCall(async (request) => {
   return checkAndReturnGameRecordIfValid(result, fName);
 });
 
-// TODO: TEST THIS FN (in tandem with api.getUserGameRecords)
 // read game records
 // exports.getUserGameRecords = onCall(async (request) => {
 exports.getUserGameRecords = onCall(async (request) => {
@@ -175,7 +189,6 @@ exports.getUserGameRecords = onCall(async (request) => {
   }
 });
 
-// TODO: TEST THIS FN (in tandem with api.completeGameRecord)
 // - ensure that the dupe records are made correctly on completion
 // update game record
 exports.updateGameRecord = onCall(async (request) =>{
@@ -193,7 +206,6 @@ exports.updateGameRecord = onCall(async (request) =>{
   return checkAndReturnGameRecordIfValid(result, "updateGameRecord");
 });  
 
-// TODO: TEST THIS FN (in tandem with api.deleteGameRecord)
 // delete game record (won't delete global dupe for rankings... or should it?)
 exports.deleteGameRecord = onCall(async (request) => {
   const fName = "deleteGameRecord";
@@ -221,6 +233,9 @@ exports.deleteGameRecord = onCall(async (request) => {
   }
 });
 
+// deletes all game records where gameRecord.testGameRecord === true. mainly for testing and debug,
+// not intended to be called in production.
+// TODO: Remove after gameRecord stuff is finished
 exports.deleteAllTestGameRecords = onCall(async (request) => {
   const fName = "deleteAllTestGameRecords";
   const { uid: userId } = request.auth;
@@ -319,7 +334,7 @@ exports.duplicateGameRecordOnUpdate =
       logger.error("createGameRecord: Error duplicating gameRecord:", error);
     }
   });
-  
+
 //
 async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
   const gameRecordsRef = db.collection('gameRecords');
@@ -411,7 +426,40 @@ exports.getUserProfile = onCall(async (request) => {
 // the backend stuff with cloud functions
 
 // TODO: bring over pp/firebase/api:createPuzzle
-// - 
+exports.createPuzzle = onCall(async (request) => {
+  const fName = "createPuzzle";
+
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return;
+  if (!requestHasPuzzleData(request, fName)) return;
+
+  const { puzzleData } = request.data;
+
+  // alright, now we've got the puzzle data.
+
+  // we're kind of combining pp:./App.jsx:savePuzzle (first step) and 
+  // pp:./firebase/api.js:createPuzzle (second step) into one unified step here.
+  
+
+  // 1. go through and list out what steps savePuzzle does (preformatting mainly)
+  //  - list here
+
+  // 2. go through and list out what createPuzzle does (saving to firestore)
+  //  - list here
+
+  // 3. combine the functionality of both things
+
+  // 4. add these cloud functions to picross-parser
+
+  // 5. reimplement how App.jsx:savePuzzle works 
+  //  - use this new function, but keep everything else the same
+
+  // 6. after testing, do the same for the other CRUD ops
+
+
+});
+
 
 // ==================================
 // gameRecord data analysis functions
