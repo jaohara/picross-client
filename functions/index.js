@@ -319,6 +319,99 @@ exports.duplicateGameRecordOnUpdate =
       logger.error("createGameRecord: Error duplicating gameRecord:", error);
     }
   });
+  
+//
+async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
+  const gameRecordsRef = db.collection('gameRecords');
+  
+  try {
+    const docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+    logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
+    const snapshot = await docRef.get();
+    // const result = snapshot.data();
+    // result.id = snapshot.id;
+    const result = await getDataWithIdFromSnapshot(snapshot)
+    logger.info("setTopLevelGameRecord: resultant data:", result);
+    return result;
+  }
+  catch (error) {
+    logger.error("setTopLevelGameRecord: error getting record data:", error);
+  }
+
+  return;
+};
+
+// helper function for any api function that needs to add or edit a gameRecord belonging
+// to a user
+// should only be called after auth is confirmed
+async function setGameRecordForUser(
+  userId,
+  // this is the initial data for create and an object with the updated fields for update 
+  gameRecordData, 
+  // if defined, will make this function update rather than create.
+  gameRecordId = undefined
+) { 
+  logger.info(`setGameRecordForUser: attempting to create new record in /users/${userId}/gameRecords/...`);
+  const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords'); 
+
+  let docRef;
+
+  if (!gameRecordId) {
+    // create scenario, no gameRecordId specified
+    docRef = await gameRecordsRef.add(gameRecordData);
+  }
+  else {
+    // update scenario, gameRecordId specified
+    // docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+    docRef = await gameRecordsRef.doc(gameRecordId).update(gameRecordData);
+  }
+
+  logger.info("setGameRecordForUser: finished creating record.")
+  // return result;
+  try {
+    const snapshot = await docRef.get();
+    // const result = await snapshot.data();
+    // result.id = snapshot.id;
+    const result = await getDataWithIdFromSnapshot(snapshot);
+
+    logger.info("setGameRecordForUser: resultant data:", result);
+    return { data: result, success: true };
+  }
+  catch (error) {
+    logger.error("setGameRecordsForUser: error getting record data:", error);
+    return { error: error.message, success: false };
+  }
+};
+
+// ====================
+// user CRUD operations
+// ====================
+
+// TODO: bring over ./firebase/api:createUserEntity
+//  - mind its one use in UserContext and what it expects to take in and return
+exports.createUserEntity = onCall(async (request) => {
+  const fName = "createUserEntity";
+
+});
+
+// TODO: bring over ./firebase/api:getUserProfile
+exports.getUserProfile = onCall(async (request) => {
+  const fName = "getUserProfile";
+});
+
+// ======================
+// puzzle CRUD operations
+// ======================
+
+// TODO: bring over ./firebase/api:getPuzzles
+
+// --- FROM /picross-parser/firesbase/api ---
+
+// note: some of these are only necessary for the parser, but required to unify
+// the backend stuff with cloud functions
+
+// TODO: bring over pp/firebase/api:createPuzzle
+// - 
 
 // ==================================
 // gameRecord data analysis functions
@@ -365,63 +458,5 @@ exports.countGameRecords = onRequest(async (req, res) => {
   }
 });
 
-async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
-  const gameRecordsRef = db.collection('gameRecords');
-  
-  try {
-    const docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
-    logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
-    const snapshot = await docRef.get();
-    // const result = snapshot.data();
-    // result.id = snapshot.id;
-    const result = await getDataWithIdFromSnapshot(snapshot)
-    logger.info("setTopLevelGameRecord: resultant data:", result);
-    return result;
-  }
-  catch (error) {
-    logger.error("setTopLevelGameRecord: error getting record data:", error);
-  }
 
-  return;
-}
-
-// should only be called after auth is confirmed
-async function setGameRecordForUser(
-  userId,
-  // this is the initial data for create and an object with the updated fields for update 
-  gameRecordData, 
-  // if defined, will make this function update rather than create.
-  gameRecordId = undefined
-) { 
-  logger.info(`setGameRecordForUser: attempting to create new record in /users/${userId}/gameRecords/...`);
-  const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords'); 
-
-  let docRef;
-
-  if (!gameRecordId) {
-    // create scenario, no gameRecordId specified
-    docRef = await gameRecordsRef.add(gameRecordData);
-  }
-  else {
-    // update scenario, gameRecordId specified
-    // docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
-    docRef = await gameRecordsRef.doc(gameRecordId).update(gameRecordData);
-  }
-
-  logger.info("setGameRecordForUser: finished creating record.")
-  // return result;
-  try {
-    const snapshot = await docRef.get();
-    // const result = await snapshot.data();
-    // result.id = snapshot.id;
-    const result = await getDataWithIdFromSnapshot(snapshot);
-
-    logger.info("setGameRecordForUser: resultant data:", result);
-    return { data: result, success: true };
-  }
-  catch (error) {
-    logger.error("setGameRecordsForUser: error getting record data:", error);
-    return { error: error.message, success: false };
-  }
-}
 

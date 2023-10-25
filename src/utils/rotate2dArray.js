@@ -1,3 +1,4 @@
+// rotates a 2d array 90 degrees clockwise
 export default function rotate2dArray(input) {
   // assumes a square, which is fine for our purposes
   const rows = input.length;

@@ -178,17 +178,7 @@ function checkIfResponseWasSuccessful(response, callerName) {
 // as a js object, validates presence of required keys, and creates
 // a new document in firestore
 export async function createGameRecord(user, gameRecordData) {
-
-  // const testCallable = getCallable('createGameRecord');
-  // const testCallable = httpsCallable(functions, 'createGameRecord');
-  // testCallable({data: "test data"});
-  // return;
-
-
   //TODO: Should this add the one-off record to the local gameRecords in context here?
-  
-  
-  
   const userId = checkIfUserExistsAndGetUid(user);
   
   if (!gameRecordData) {

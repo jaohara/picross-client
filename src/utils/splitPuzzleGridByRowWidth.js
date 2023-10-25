@@ -1,5 +1,26 @@
+// splits an array of numbers into a 2d array with the elements of the array appearing
+// in the same order in each sub-array. rowWidth defines the length of each array.
+
+/*
+  example:
+
+  input: 
+    puzzleGrid: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]
+    rowWidth: 5
+
+  output: 
+    [
+      [ 1, 2, 3, 4, 5 ],
+      [ 6, 7, 8, 9, 10 ],
+      [ 11, 12, 13, 14, 15 ],
+      [ 16, 17, 18, 19, 20 ],
+      [ 21, 22, 23, 24, 25 ]
+    ]
+*/
 export default function splitPuzzleGridByRowWidth (puzzleGrid, rowWidth) {
   const result = [];
+
+  // is this kind of gross?
   let currentRowArray;
 
   const checkAndAddCurrentRowArray = () => 
@@ -20,18 +41,3 @@ export default function splitPuzzleGridByRowWidth (puzzleGrid, rowWidth) {
 
   return result;
 }
-
-function testSplitPuzzleGridByRowWidth() {
-  // const testArray = Array.from(Array(25 + 1).keys()).slice(1);
-  // const testArray = Array.from(Array(100 + 1).keys()).slice(1);
-  const testArray = Array.from(Array(225 + 1).keys()).slice(1);
-  // const testRowWidth = 5;
-  // const testRowWidth = 10;
-  const testRowWidth = 15;
-  const result = splitPuzzleGridByRowWidth(testArray, testRowWidth);
-
-  console.log(`input: `, testArray);
-  console.log(`result: `, result);
-};
-
-// testSplitPuzzleGridByRowWidth();
