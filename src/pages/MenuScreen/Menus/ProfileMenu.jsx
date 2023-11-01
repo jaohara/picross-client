@@ -301,11 +301,11 @@ const ProfileMenu = () => {
 
 
           {/* TODO: Remove this garbage */}
-          <div className="profile-todo" style={{display: "none"}}>
+          <div className="profile-todo">
             <h1>Todo:</h1>
             <ul>
-              <li>Show user statistics summary</li>
-              <li>Show unlocked achievements</li>
+              <li>Make a better view (see sticky note on desk) for "stats"</li>
+              <li>Use these icons: TbClockBolt for fastest, TbLink for longest chain (or not, has semantic meaning as link - maybe TbLine?), what else?</li>
               <li>Maybe allow a user to pick a puzzle as their avatar?</li>
               <li>This needs some sort of dynamic avatar/profile rank icon, as well as cool visualization for stats,</li>
             </ul>

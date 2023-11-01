@@ -7,6 +7,8 @@
   e.g:
     firebase deploy --only functions:createGameRecord
 */
+const admin = require("firebase-admin");
+admin.initializeApp();
 
 const logger = require("firebase-functions/logger");
 
@@ -85,40 +87,50 @@ function requestAuthIsValid(request, callerName) {
   return true;
 }
 
-// TODO: How do I minimize reuse here? do I make a generic version of this function
-//  that checks for the objected in request.data using the syntax with the square 
-//  brackets rather than the dot so I can use a dynamic string for the field name?
-
-// helper function to check if gameRecord data is attached to request
-function requestHasGameRecord(request, callerName) {
-  if (!request.data || !request.data.gameRecord) {
-    logger.error(`${callerName}: gameRecord data not supplied, aborting.`);
+// generic function to check if some data is attached to a request
+function checkIfDataExistsOnRequest(
+  request, 
+  dataName, 
+  callerName,
+  logData = false,
+) {
+  if (!request.data || !request.data[dataName]) {
+    logger.error(`${callerName}: ${dataName} not supplied, aborting.`);
     return false;
   }
 
-  logger.info(`${callerName}: recieved gameRecord data:`, request.data.gameRecord);
-  return true;
-}
-
-// helper function to check if a gameRecordId is attached to request
-function requestHasGameRecordId(request, callerName) {
-  if (!request.data || !request.data.gameRecordId) {
-    logger.error(`${callerName}: gameRecordId not supplied, aborting.`);
-    return false;
+  if (logData) {
+    logger.info(`${callerName}: recieved ${dataName} data:`, request.data[dataName]);
   }
 
   return true;
 }
 
-// helper function to check if puzzleData is attached to request
-function requestHasPuzzleData(request, callerName) {
-  if (!request.data || !request.data.puzzleData) {
-    logger.error(`${callerName}: puzzleData not supplied, aborting.`);
-    return false;
-  }
+// checks whether the request has a gameRecord
+const requestHasGameRecord = (request, callerName) => 
+checkIfDataExistsOnRequest(request, "gameRecord", callerName, true);
 
-  return true;
-}
+// checks whether the request has a gameRecordId
+const requestHasGameRecordId = (request, callerName) => 
+checkIfDataExistsOnRequest(request, "gameRecordId", callerName);
+
+// checks whether the request has puzzleData
+const requestHasPuzzleData = (request, callerName) => 
+checkIfDataExistsOnRequest(request, "puzzleData", callerName);
+
+// checks whether the request has a puzzleId
+const requestHasPuzzleId = (request, callerName) => 
+  checkIfDataExistsOnRequest(request, "puzzleId", callerName);
+
+// checks whether the request has newUserDAta
+const requestHasNewUserData = (request, callerName) => 
+  checkIfDataExistsOnRequest(request, "newUserData", callerName);
+
+
+// ensures the newUserData only has what it needs
+
+
+// checks to see if puzzleId is attached to request
 
 // Minimal test functions
 exports.testParameters = onCall(async (data, context) => {
@@ -404,8 +416,28 @@ async function setGameRecordForUser(
 
 // TODO: bring over ./firebase/api:createUserEntity
 //  - mind its one use in UserContext and what it expects to take in and return
-exports.createUserEntity = onCall(async (request) => {
-  const fName = "createUserEntity";
+exports.createUser = onCall(async (request) => {
+  const fName = "createUser";
+
+  logRequest(request);
+
+  if (!requestHasNewUserData(request, fName)) return;
+  
+  const { newUserData } = request.data;
+  
+  if (!newUserDataIsValid(newUserData, fName)) return;
+
+  // we expect newUserData to look like this:
+
+  /*
+    {
+      email: "...", 
+      password: "...", 
+      displayName: "...", 
+    }
+  */
+
+  admin.auth().createUser()
 
 });
 
@@ -440,7 +472,10 @@ exports.createPuzzle = onCall(async (request) => {
 
   // we're kind of combining pp:./App.jsx:savePuzzle (first step) and 
   // pp:./firebase/api.js:createPuzzle (second step) into one unified step here.
-  
+
+
+
+  // 0. REMEMBER: You now have ./shared-utils.js to import functions from.
 
   // 1. go through and list out what steps savePuzzle does (preformatting mainly)
   //  - list here
@@ -458,6 +493,30 @@ exports.createPuzzle = onCall(async (request) => {
   // 6. after testing, do the same for the other CRUD ops
 
 
+});
+
+// Updates the puzzleData for a given puzzle. Passed in as request.data.puzzleData
+exports.updatePuzzle = onCall(async (request) => {
+  const fName = "updatePuzzle";
+
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return;
+  if (!requestHasPuzzleData(request, fName)) return;
+
+  const { puzzleData } = request.data;
+});
+
+// Deletes 
+exports.deletePuzzle = onCall(async (request) => {
+  const fName = "deletePuzzle";
+
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return;
+  if (!requestHasPuzzleId(request, fName)) return;
+
+  const { puzzleId } = request.data;
 });
 
 
