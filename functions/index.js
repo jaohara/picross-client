@@ -7,6 +7,8 @@
   e.g:
     firebase deploy --only functions:createGameRecord
 */
+const admin = require("firebase-admin");
+admin.initializeApp();
 
 const logger = require("firebase-functions/logger");
 
@@ -21,11 +23,41 @@ const {
   onDocumentUpdated,
 } = require("firebase-functions/v2/firestore");
 
-const { Firestore } = require("@google-cloud/firestore");
+const { 
+  Firestore,
+  Timestamp,
+} = require("@google-cloud/firestore");
 const db = new Firestore();
 
-const DEBUG_LOG_REQUESTS = true;
-const DEBUG_TEST_RECORDS = true;
+// import helper functions
+const {
+  hashPuzzleGrid,
+  splitPuzzleGridByRowWidth,
+  rotate2dArray,
+  sumRowNumbers,
+} = require("./shared-utils.js");
+
+// debug flags
+const DEBUG_LO_REQUESTS = true;
+
+// Maybe make its own module - expected keys for data
+const newUserDataExpectedKeys = ["email", "password", "displayName"];
+const puzzleDataExpectedKeys = [
+  // not every key is necessary; they are commented out here
+  // some were formerly made on the frontend and now are made here
+  "author",
+  "authorId",
+  "colors",
+  // "colNumbers",
+  // "gridHash",
+  "grid",
+  "height",
+  // "group",
+  // "minimumMoves",
+  "name",
+  // "rowNumbers",
+  "width",
+];
 
 // ===================
 // CF helper functions
@@ -54,13 +86,24 @@ function checkAndReturnGameRecordIfValid(gameRecordData, callerName) {
 }
 
 // helper function to get the data with an id appended from a Firestore snapshot
+/**
+ * A function that takes a Firestore snapshot and returns the data with its id appended.
+ * @param {} snapshot a snapshot from Firestore
+ * @returns {Object} the data from the snapshot with the id appended
+ */
 async function getDataWithIdFromSnapshot(snapshot) {
+  // TODO: Probably want better error handling here - should I be returning those message objects?
   if (!snapshot) {
     logger.error("getDataWithIdFromSnapshot: snapshot not provided");
     return;
   }
 
-  const result = await snapshot.data();
+  if (!snapshot.exists()) {
+    logger.error("getDataWithIdFromSnapshot: snapshot data does not exist");
+    return;
+  }
+
+  const result = snapshot.data();
   result.id = snapshot.id;
   return result;
 }
@@ -72,7 +115,74 @@ function logRequest(request, fName) {
   }
 }
 
-// helper function to check if auth exists and is valid
+// logs the error with some info on the caller and intended action and returns 
+//  an object with the error message and success status
+function logAndReturnError(
+  error, // the error object
+  callerName, // the name of the caller
+  intentMessage, // a short string describing what action failed 
+) {
+  if (!error && !error.message) {
+    logger.error(`logAndReturnError: ${callerName} didn't pass a valid error object`);
+    // not sure I like the resolution of this code path, but my own backend coding error messages
+    //  probably shouldn't reach the client?
+    return null;
+  }
+
+  logger.error(`${fName}: ${intentMessage ? `${intentMessage}:` : ""} ${error}`);
+  return { error: error.message, success: false }
+}
+
+/**
+ * 
+ * @param {*} data the successful data to be returned to the client
+ * @param {string} callerName the name of caller
+ * @param {string} intentMessage a short string describing what successfully completed
+ * @returns 
+ */
+function logAndReturnSuccess(data, callerName, intentMessage) {
+  if (DEBUG_LOG_REQUESTS) {
+    logger.info(`${callerName}: ${intentMessage ? `${intentMessage}:` : ""}`, data);
+  }
+
+  return { data: data, success: true };
+}
+
+// creates an error message for missing data to return to the client
+const createMissingDataError = (missingDataName) => ({
+  error: `'${missingDataName}' was not supplied in the request`,
+  errorCode: "MISSING_DATA",
+  success: false,
+});
+
+// creates an error message for invalid data to return to the client
+const createInvalidDataError = (invalidDataName) => ({
+  error: `Provided '${invalidDataName}' is invalid`,
+  errorCode: "INVALID_DATA",
+  success: false,
+});
+
+// TODO: Add me to all try/catch blocks where we don't check snapshot.exists()
+// creates an error message for non-existant document data - when !myFirestoreSnapshot.exists()
+const createEmptyDocumentError = (snapshotName) => ({
+  error: `The '${snapshotName}' document data does not exist.`,
+  errorCode: "NONEXISTENT_DOCUMENT",
+  success: false,
+});
+
+// An error message for an invalid auth to return to the client
+const invalidAuthError = {
+  error: "Client isn't authorized to call this function.",
+  errorCode: "INVALID_AUTH",
+  success: false,
+};
+
+/**
+ * Checks if the auth on a request is valid.
+ * @param {*} request the client's request object 
+ * @param {string} callerName name of the calling function as a string
+ * @returns {boolean} Whether or not the request auth is valid
+ */
 function requestAuthIsValid(request, callerName) {
   if (!request.auth || !request.auth.uid) {
     logger.error(`${callerName}: request is not authenticated, aborting.`);
@@ -82,28 +192,105 @@ function requestAuthIsValid(request, callerName) {
   return true;
 }
 
-// helper function to check if gameRecord data is attached to request
-function requestHasGameRecord(request, callerName) {
-  if (!request.data || !request.data.gameRecord) {
-    logger.error(`${callerName}: gameRecord data not supplied, aborting.`);
+// generic function to check if some data is attached to a request
+function checkIfDataExistsOnRequest(
+  request, 
+  dataName, 
+  callerName,
+  logData = false,
+) {
+  if (!request.data || !request.data[dataName]) {
+    logger.error(`${callerName}: ${dataName} not supplied, aborting.`);
     return false;
   }
 
-  logger.info(`${callerName}: recieved gameRecord data:`, request.data.gameRecord);
-  return true;
-}
-
-// helper function to check if a gameRecordId is attached to request
-function requestHasGameRecordId(request, callerName) {
-  if (!request.data || !request.data.gameRecordId) {
-    logger.error(`${callerName}: gameRecordId not supplied, aborting.`);
-    return false;
+  if (logData) {
+    logger.info(`${callerName}: recieved ${dataName} data:`, request.data[dataName]);
   }
 
   return true;
 }
 
+// checks whether the request has a gameRecord
+const requestHasGameRecord = (request, callerName) => 
+checkIfDataExistsOnRequest(request, "gameRecord", callerName, true);
 
+// checks whether the request has a gameRecordId
+const requestHasGameRecordId = (request, callerName) => 
+checkIfDataExistsOnRequest(request, "gameRecordId", callerName);
+
+// checks whether the request has puzzleData
+const requestHasPuzzleData = (request, callerName) => 
+checkIfDataExistsOnRequest(request, "puzzleData", callerName);
+
+// checks whether the request has a puzzleId
+const requestHasPuzzleId = (request, callerName) => 
+  checkIfDataExistsOnRequest(request, "puzzleId", callerName);
+
+// checks whether the request has newUserData
+const requestHasNewUserData = (request, callerName) => 
+  checkIfDataExistsOnRequest(request, "newUserData", callerName);
+
+// checks whether the request has a userId
+const requestHasUserId = (request, callerName) =>
+  checkIfDataExistsOnRequest(request, "userId", callerName);
+
+/**
+ * Helper function to check whether user-submitted data matches what is expected. Implemented
+ *  internally for specific cases. 
+ * @param {Object} data the data object being validated 
+ * @param {Array} expectedKeysArray an array of the expected keys of the data object 
+ * @param {string} callerName the name of the calling function
+ * @param {string} dataName the name of the data (gameRecordData, newUserData, etc) for logging
+ * @returns {boolean} whether or not the supplied data is valid
+ */
+function requestDataIsValid(data, expectedKeysArray, callerName, dataName) {
+  if (!data) {
+    logger.error(`${callerName}: no data supplied, aborting.`);
+    return false;
+  }
+
+  dataKeys = Object.keys(data);
+
+  const dataIsValid = dataKeys.every((key) => expectedKeysArray.includes(key));
+
+  if (!dataIsValid) {
+    logger.error(`${callerName}: ${dataName} is invalid, aborting.`)
+  }
+
+  return dataIsValid;
+}
+
+const newUserDataIsValid = (newUserData, callerName) =>
+  requestDataIsValid(newUserData, newUserDataExpectedKeys, callerName, "newUserData");
+
+const puzzleDataIsValid = (puzzleData, callerName) => 
+  requestDataIsValid(puzzleData, puzzleDataExpectedKeys, callerName, "puzzleData");
+
+// ensures the newUserData only has what it needs
+// TODO: probabably a candidate for writing a smart, generic function like
+//  checkIfDataExistsOnRequest
+// function newUserDataIsValid(newUserData, callerName) {
+//   if (!newUserData) {
+//     logger.error(`${callerName}: no newUserData supplied, aborting.`);
+//     return false;
+//   }
+
+//   const newUserDataKeys = Object.keys(newUserData);
+
+//   // this approach ensures that every key on newUserData is supposed to be there
+//   // - inverting this makes it so it at least has everything on newUserDataExpectedKeys,
+//   //   but potentially more than that
+//   const newUserDataIsValid = 
+//     newUserDataKeys.every((key) => newUserDataExpectedKeys.includes(key));
+
+//   if (newUserDataIsValid) {
+//     return true;
+//   }
+
+//   logger.error(`${callerName}: newUserData is invalid, aborting`);
+//   return false;
+// }
 
 // Minimal test functions
 exports.testParameters = onCall(async (data, context) => {
@@ -124,8 +311,8 @@ exports.createGameRecord = onCall(async (request) => {
 
   logRequest(request, fName);
 
-  if (!requestAuthIsValid(request, fName)) return;
-  if (!requestHasGameRecord(request, fName)) return;
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+  if (!requestHasGameRecord(request, fName)) return createMissingDataError("gameRecord");
 
   const { uid: userId } = request.auth; 
   const { gameRecord } = request.data;
@@ -138,22 +325,13 @@ exports.createGameRecord = onCall(async (request) => {
   return checkAndReturnGameRecordIfValid(result, fName);
 });
 
-// TODO: TEST THIS FN (in tandem with api.getUserGameRecords)
-// read game records
-// exports.getUserGameRecords = onCall(async (request) => {
-exports.getUserGameRecords = onCall(async (request) => {
-  const fName = "getUserGameRecords";
-
-  if (!requestAuthIsValid(request, fName)) return;
-
-  logRequest(request, fName);
-
-  const { uid: userId } = request.auth;
-  const gameRecordsCollectionRef = db.collection(`users/${userId}/gameRecords`);
-
-  // get everything at "/users/{userId}/gameRecords"
+// helper function to handle getting a user's game records - returns error message on error
+//  assumes that the userId is valid that user exists.
+//  CHECK RESULT FOR `result.error` AFTER CALLING
+async function getGameRecordsFromFirestore(userId, callerName) {
   try {
-    const snapshot = await gameRecordsCollectionRef.get();
+    const collectionRef = db.collection(`users/${userId}/gameRecords`);
+    const snapshot = await collectionRef.get();
     const gameRecords = {};
 
     snapshot.forEach((doc) => {
@@ -167,23 +345,40 @@ exports.getUserGameRecords = onCall(async (request) => {
       }
     });
 
-    return { data: gameRecords, success: true };
+    return gameRecords;
   }
   catch (error) {
-    logger.error(`${fName}: error getting records:`, error);
+    logger.error(`${callerName}: error getting records:`, error);
     return { error: error.message, success: false };
   }
+}
+
+// read game records
+// exports.getUserGameRecords = onCall(async (request) => {
+exports.getUserGameRecords = onCall(async (request) => {
+  const fName = "getUserGameRecords";
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+  if (!requestHasUserId(request, fName)) return createMissingDataError("userId");
+
+  const { uid: userId } = request.auth;
+
+  const result = await getGameRecordsFromFirestore(userId, fName);
+
+  if (result.error) return result;
+
+  return { data: result, success: true };
 });
 
-// TODO: TEST THIS FN (in tandem with api.completeGameRecord)
 // - ensure that the dupe records are made correctly on completion
 // update game record
 exports.updateGameRecord = onCall(async (request) =>{
   logRequest(request, "updateGameRecord");
 
-  if (!requestAuthIsValid(request, "updateGameRecord")) return;
-  if (!requestHasGameRecord(request, "updateGameRecord")) return;
-  if (!requestHasGameRecordId(request, "updateGameRecord")) return;
+  if (!requestAuthIsValid(request, "updateGameRecord")) return invalidAuthError;
+  if (!requestHasGameRecord(request, "updateGameRecord")) return createMissingDataError("gameRecord");
+  if (!requestHasGameRecordId(request, "updateGameRecord")) return createMissingDataError("gameRecordId");
 
   const { uid: userId } = request.auth;
   const { gameRecord, gameRecordId } = request.data;
@@ -193,15 +388,14 @@ exports.updateGameRecord = onCall(async (request) =>{
   return checkAndReturnGameRecordIfValid(result, "updateGameRecord");
 });  
 
-// TODO: TEST THIS FN (in tandem with api.deleteGameRecord)
 // delete game record (won't delete global dupe for rankings... or should it?)
 exports.deleteGameRecord = onCall(async (request) => {
   const fName = "deleteGameRecord";
 
   logRequest(request, fName);
 
-  if (!requestAuthIsValid(request, fName)) return;
-  if (!requestHasGameRecordId(request, fName)) return;
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+  if (!requestHasGameRecordId(request, fName)) return createMissingDataError("gameRecordId");
 
   const { uid: userId } = request.auth;
   const { gameRecordId } = request.data;
@@ -221,11 +415,14 @@ exports.deleteGameRecord = onCall(async (request) => {
   }
 });
 
+// deletes all game records where gameRecord.testGameRecord === true. mainly for testing and debug,
+// not intended to be called in production.
+// TODO: Remove after gameRecord stuff is finished
 exports.deleteAllTestGameRecords = onCall(async (request) => {
   const fName = "deleteAllTestGameRecords";
   const { uid: userId } = request.auth;
 
-  if (!requestAuthIsValid(request, fName)) return;
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
 
   try {
     const batch = db.batch();
@@ -320,6 +517,338 @@ exports.duplicateGameRecordOnUpdate =
     }
   });
 
+//
+async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
+  const gameRecordsRef = db.collection('gameRecords');
+  
+  try {
+    const docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+    logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
+    const snapshot = await docRef.get();
+    // const result = snapshot.data();
+    // result.id = snapshot.id;
+    const result = await getDataWithIdFromSnapshot(snapshot)
+    logger.info("setTopLevelGameRecord: resultant data:", result);
+    return result;
+  }
+  catch (error) {
+    logger.error("setTopLevelGameRecord: error getting record data:", error);
+  }
+
+  return;
+};
+
+// helper function for any api function that needs to add or edit a gameRecord belonging
+// to a user
+// should only be called after auth is confirmed
+async function setGameRecordForUser(
+  userId,
+  // this is the initial data for create and an object with the updated fields for update 
+  gameRecordData, 
+  // if defined, will make this function update rather than create.
+  gameRecordId = undefined
+) { 
+  const fName = "setGameRecordForUser";
+  logger.info(`${fName} attempting to create new record in /users/${userId}/gameRecords/...`);
+  
+  try {
+    const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords'); 
+    let docRef;
+
+    if (!gameRecordId) {
+      // create scenario, no gameRecordId specified
+      docRef = await gameRecordsRef.add(gameRecordData);
+    }
+    else {
+      // update scenario, gameRecordId specified
+    
+      // opting to use set() below rather than update() as set() will add with a specific
+      //  id if the doc doesn't exist rather than throwing an error
+      // docRef = await gameRecordsRef.doc(gameRecordId).update(gameRecordData);
+      
+      docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+    }
+
+    logger.info(`setGameRecordForUser: finished creating record.`)
+    // return result;
+    const snapshot = await docRef.get();
+    const result = await getDataWithIdFromSnapshot(snapshot);
+    return logAndReturnSuccess(result, fName, "Successfully set record:");
+  }
+  catch (error) {
+    return logAndReturnError(error, fName, "Error getting record data");
+  }
+};
+
+// ====================
+// user CRUD operations
+// ====================
+
+// TODO: bring over ./firebase/api:createUserEntity
+//  - mind its one use in UserContext and what it expects to take in and return
+exports.createUser = onCall(async (request) => {
+  const fName = "createUser";
+  
+  try {
+    logRequest(request);
+
+    if (!requestHasNewUserData(request, fName)) return createMissingDataError("newUserData");
+
+    const { newUserData } = request.data;
+
+    if (!newUserDataIsValid(newUserData, fName)) return createInvalidDataError("newUserData");
+
+    /*
+      we expect newUserData to look like this:
+
+      {
+        email: "...", 
+        password: "...", 
+        displayName: "...", 
+      }
+    */
+  
+    const newUserRecord = await admin.auth().createUser({ ...newUserData });
+    // TODO: Currently doing nothing with verification 
+    // TODO: This is probably where we'd trigger a verification email
+
+    const newUserId = newUserRecord.uid;
+    const newUserTimestamp = Timestamp.now();
+    const usersCollectionRef = collection(db, "users");
+    
+    const newUserEntityData = {
+      name: newUserRecord.displayName,
+      createdTimestamp: newUserTimestamp,
+      updatedTimestamp: newUserTimestamp,
+    };
+    
+    await usersCollectionRef.doc(newUserId).set(newUserEntityData);
+    return logAndReturnSuccess(newUserEntityData, fName, "Successfully created new user in firestore");
+  }
+  catch (error) {
+    return logAndReturnError(error, fName, "Error creating new user");
+  }
+});
+
+// TODO: test this function
+exports.getUserProfile = onCall(async (request) => {
+  const fName = "getUserProfile";
+
+  logRequest(request, fName);
+
+  if (!requestHasUserId(request, fName)) return createMissingDataError("userId");
+  
+  try {
+    // here we assume we have recieved request.data.userId
+    const { userId } = request.data;
+
+    // get user profile data
+    const userProfileSnapshot = await db.collection(`users/${userId}`).get();
+    if (!userProfileSnapshot.exists()) return createEmptyDocumentError("userProfileSnapshot");
+    const userProfileData = userProfileSnapshot.data();
+
+    // get user's gameRecords
+    const userGameRecords = await getGameRecordsFromFirestore(userId, fName);
+
+    // check if records were successfully retrieved
+    if (userGameRecords.error) return userGameRecords;
+
+    // append gameRecords
+    userProfileData.gameRecords = userGameRecords;
+
+    return userProfileData;
+  } 
+  catch(error) {
+    return logAndReturnError(error, fName, "Error getting user profile"); 
+  }
+});
+
+// ======================
+// puzzle CRUD operations
+// ======================
+
+// TODO: bring over ./firebase/api:getPuzzles
+
+// --- FROM /picross-parser/firesbase/api ---
+
+// note: some of these are only necessary for the parser, but required to unify
+// the backend stuff with cloud functions
+
+/**
+ * Processes raw puzzle data from the parser client and stores it in a game-usable format.
+ * Hashes the puzzle grid, computes the row/col numbers, and tallies the minimum moves needed
+ * to solve.
+ * @param {Object} puzzleData the raw puzzle data object submitted from the client 
+ * @returns {Object} the processed puzzle data for storage in Firestore
+ */
+function processPuzzleData(puzzleData) {
+  // TODO: Should I do more work on processing the colors here?
+
+  // hash and store puzzle grid
+  puzzleData.gridHash = hashPuzzleGrid(puzzleData.grid, puzzleData.name);
+
+  // split the raw grid and get a rotated copy for columns
+  const splitPuzzleGrid = splitPuzzleGridByRowWidth(puzzleData.grid, puzzleData.width);
+  const rotatedPuzzleGrid = rotate2dArray(splitPuzzleGrid);
+  rotatedPuzzleGrid.reverse(); // why am I doing this again?
+
+  // =========================================================================================
+  // kept from old code - I called this to set rowNumbers and colNumbers in the parser.
+  //  I don't think that I need to stringify the array anymore, but keeping this here
+  //  in case I need to revert.
+  
+  // helper function to get 2d array in a format for firestore
+  // const getGridNumbers = (input) => JSON.stringify(input.map((row) => sumRowNumbers(row)));
+  // =========================================================================================
+  
+  // compute row and column numbers
+  puzzleData.rowNumbers = splitPuzzleGrid.map((row) => sumRowNumbers(row));
+  puzzleData.colNumbers = rotatedPuzzleGrid.map((row) => sumRowNumbers(row));
+  
+  // compute minimum moves
+  puzzleData.minimumMoves = puzzleData.grid.reduce((sum, current) => sum + current, 0);
+
+
+  // TODO: REMOVE THIS AFTER NEW PUZZLE CODE IS WORKING
+  // DEBUG: mark the puzzles created via the CF
+  puzzleData.createdViaCF = true;
+  
+  // return processed puzzle data for storage in firestore
+  return puzzleData;
+}
+
+// TODO: Test this in the picross parser
+// TODO: prune extra comments
+exports.createPuzzle = onCall(async (request) => {
+  /*
+    This is going to need some testing.
+
+    You need to see where you can socket this in to the existing functionality in the 
+    Picross Parser - what data do we expect to submit and when? What are we expecting
+    to receive back in the client? What client code can we prune in each case?
+  */
+  const fName = "createPuzzle";
+
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+  if (!requestHasPuzzleData(request, fName)) return createMissingDataError("puzzleData");
+
+  const { puzzleData } = request.data;
+
+  if (!puzzleDataIsValid(puzzleData, fName)) return createInvalidDataError("puzzleData");
+
+  /*
+    we expect the submitted puzzleData to look like this:
+
+    {
+      "author": // author name as a string
+      "authorId": // author id (string?)
+      "colors": // array of puzzle color pallete as RGBA hex strings
+      "grid": // the binary, flat array (1 filled, 0 empty) of the puzzle grid
+      "height": // height of grid as an int
+      "group": // (optional?) the group that the puzzle belongs to
+      "name": // name of the puzzle as a string
+      "width": // width of grid as an int
+    }
+
+    ... keep in mind we're not checking that it's ONLY these keys, so we could potentially
+    have some extra stuff coming along for the ride. Maybe check for this?
+  */
+
+  // process the puzzle data
+  const newPuzzleData = processPuzzleData(puzzleData);
+
+  // store puzzle data in firestore
+  try {
+    // TODO: Check what parts of this can be abstracted to reduce reuse in updatePuzzle
+    // create timestamp 
+    const puzzleCreatedTimestamp = Timestamp.now();
+    newPuzzleData.createdTimestamp = puzzleCreatedTimestamp;
+    newPuzzleData.updatedTimestamp = puzzleCreatedTimestamp;
+
+    // pull out the grid so the answer isn't stored with the data the client receives
+    const { grid } = newPuzzleData;
+    delete newPuzzleData.grid;
+
+    // start a batch to reduce firestore write ops
+    const batch = db.batch();
+
+    // add the puzzle and append the id
+    // const newPuzzleRef = await db.collection('puzzles').add(newPuzzleData);
+    // this doesn't create the doc, but generates its id
+    const newPuzzleRef = db.collection('puzzles').doc();
+    batch.set(newPuzzleRef, newPuzzleData);
+    const newPuzzleId = newPuzzleRef.id;
+    newPuzzleData.id = newPuzzleId;
+
+    // add the answer grid to a subcollection of the new puzzle
+    // this object structure came from "makeGridSubdocFromGridString" in the parser client
+    const gridSubdoc = { gridString: grid }; 
+    const gridDocRef = db.collection(`puzzles/${newPuzzleId}/grid`).doc("answer");
+    batch.set(gridDocRef, gridSubdoc);
+    // await gridSubcollection.doc("answer").set(gridSubdoc);
+
+    // commit the batch
+    await batch.commit();
+
+    return logAndReturnSuccess(newPuzzleData, fName, "Successfully created new puzzle");
+  }
+  catch (error) {
+    return logAndReturnError(error, fName, "Puzzle creation failed");
+  }
+});
+
+// TODO: Implement and test
+// Updates the puzzleData for a given puzzle. Passed in as request.data.puzzleData
+exports.updatePuzzle = onCall(async (request) => {
+  const fName = "updatePuzzle";
+
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+  if (!requestHasPuzzleData(request, fName)) return;
+
+  const { puzzleData } = request.data;
+
+  // important consideration for this - is any of the resubmitted puzzle data already processed?
+  //  can I not use processPuzzleData as a result? I'm not sure, so look how updated data is 
+  //  submitted via the parser tool before we implement this
+});
+
+// TODO: test this function
+exports.deletePuzzle = onCall(async (request) => {
+  const fName = "deletePuzzle";
+
+  logRequest(request, fName);
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+  if (!requestHasPuzzleId(request, fName)) return createMissingDataError("puzzleId");
+
+  const { puzzleId } = request.data;
+
+  try {
+    // create a batch to delete grid answer and puzzle
+    const batch = db.batch();
+
+    // delete answer grid subdoc
+    // note - no considerations taken if this grid answer doc doesn't exist
+    const gridAnswerRef = db.doc(`puzzles/${puzzleId}/grid/answer`);
+    batch.delete(gridAnswerRef);
+
+    // delete puzzle doc 
+    const puzzleDocRef = db.doc(`puzzles/${puzzleId}`);
+    batch.delete(puzzleDocRef);
+
+    await batch.commit();
+    return logAndReturnSuccess(null, fName, `Successfully deleted puzzle ${puzzleId}`);
+  }
+  catch (error) {
+    return logAndReturnError(error, fName, `Error deleting puzzle ${puzzleId}`);
+  }
+});
+
+
 // ==================================
 // gameRecord data analysis functions
 // ==================================
@@ -365,63 +894,5 @@ exports.countGameRecords = onRequest(async (req, res) => {
   }
 });
 
-async function setTopLevelGameRecord(gameRecordId, gameRecordData) {
-  const gameRecordsRef = db.collection('gameRecords');
-  
-  try {
-    const docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
-    logger.info(`setTopLevelGameRecord: successfully created /gameRecord/${gameRecordId}:`, gameRecordData);
-    const snapshot = await docRef.get();
-    // const result = snapshot.data();
-    // result.id = snapshot.id;
-    const result = await getDataWithIdFromSnapshot(snapshot)
-    logger.info("setTopLevelGameRecord: resultant data:", result);
-    return result;
-  }
-  catch (error) {
-    logger.error("setTopLevelGameRecord: error getting record data:", error);
-  }
 
-  return;
-}
-
-// should only be called after auth is confirmed
-async function setGameRecordForUser(
-  userId,
-  // this is the initial data for create and an object with the updated fields for update 
-  gameRecordData, 
-  // if defined, will make this function update rather than create.
-  gameRecordId = undefined
-) { 
-  logger.info(`setGameRecordForUser: attempting to create new record in /users/${userId}/gameRecords/...`);
-  const gameRecordsRef = db.collection('users').doc(userId).collection('gameRecords'); 
-
-  let docRef;
-
-  if (!gameRecordId) {
-    // create scenario, no gameRecordId specified
-    docRef = await gameRecordsRef.add(gameRecordData);
-  }
-  else {
-    // update scenario, gameRecordId specified
-    // docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
-    docRef = await gameRecordsRef.doc(gameRecordId).update(gameRecordData);
-  }
-
-  logger.info("setGameRecordForUser: finished creating record.")
-  // return result;
-  try {
-    const snapshot = await docRef.get();
-    // const result = await snapshot.data();
-    // result.id = snapshot.id;
-    const result = await getDataWithIdFromSnapshot(snapshot);
-
-    logger.info("setGameRecordForUser: resultant data:", result);
-    return { data: result, success: true };
-  }
-  catch (error) {
-    logger.error("setGameRecordsForUser: error getting record data:", error);
-    return { error: error.message, success: false };
-  }
-}
 

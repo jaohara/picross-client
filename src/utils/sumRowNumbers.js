@@ -1,5 +1,8 @@
+// sums up the row numbers in sequence to from a sequence of filled or unfilled 
+// squares to the picross sequence for the row and column gutters.
+//
+// example: 0,1,1,0,1 -> 2 1
 export default function sumRowNumbers(row) {
-  // 0,1,1,0,1 becomes 2 1
   if (!Array.isArray(row) && row.length <= 0) {
     return null;
   }
@@ -27,20 +30,3 @@ export default function sumRowNumbers(row) {
 
   return result.length > 0 ? result : [0];
 };
-
-
-// test it out
-function testSumRowNumbers() {
-  let rows = [
-    [1,1,1,1,1], // 5
-    [0,0,0,0,0], // 0
-    [1,1,0,1,1], // 2, 2
-    [1,0,1,1,1], // 1,3
-    [1,0,1,0,1], // 1,1,1
-  ];
-  
-  rows.forEach((row) => {
-    const rowSum = sumRowNumbers(row);
-    console.log(`sumRowNumbers(${row}) = ${rowSum}`);
-  });
-}
