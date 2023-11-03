@@ -16,4 +16,10 @@
     echo;    
     cat ./src/utils/splitPuzzleGridByRowWidth.js;
     echo;
-} > ./functions/shared-utils.js
+} > ./functions/temp-shared-utils.js
+
+# Replace 'export default function' with 'export function'
+sed 's/export default function/export function/g' ./functions/temp-shared-utils.js > ./functions/shared-utils.js
+
+# remove the temp file
+rm ./functions/temp-shared-utils.js

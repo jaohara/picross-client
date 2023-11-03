@@ -11,7 +11,7 @@
 import { createHash } from 'sha256-uint8array';
 
 // creates the puzzle grid hash for checking/storing answers
-export default function hashPuzzleGrid(
+export function hashPuzzleGrid(
   puzzleGrid, // flat array of the current grid
   puzzleName, // the name stored at puzzleData.name
 ) {
@@ -22,7 +22,7 @@ export default function hashPuzzleGrid(
 };
 
 // rotates a 2d array 90 degrees clockwise
-export default function rotate2dArray(input) {
+export function rotate2dArray(input) {
   // assumes a square, which is fine for our purposes
   const rows = input.length;
   const cols = input[0].length;
@@ -46,7 +46,7 @@ export default function rotate2dArray(input) {
 // squares to the picross sequence for the row and column gutters.
 //
 // example: 0,1,1,0,1 -> 2 1
-export default function sumRowNumbers(row) {
+export function sumRowNumbers(row) {
   if (!Array.isArray(row) && row.length <= 0) {
     return null;
   }
@@ -94,7 +94,7 @@ export default function sumRowNumbers(row) {
       [ 21, 22, 23, 24, 25 ]
     ]
 */
-export default function splitPuzzleGridByRowWidth (puzzleGrid, rowWidth) {
+export function splitPuzzleGridByRowWidth (puzzleGrid, rowWidth) {
   const result = [];
 
   // is this kind of gross?
