@@ -20,6 +20,11 @@ import {
   PUZZLE_SQUARE_DELIMITER,
 } from "../../constants";
 
+
+// TODO: REMOVE AFTER REDESIGN IS FINISHED
+// const USE_REDESIGNED_SQUARE = false;
+const USE_REDESIGNED_SQUARE = true;
+
 const Board = ({
   // gridViewActive,
   puzzleData,
@@ -48,6 +53,7 @@ const Board = ({
 
   const puzzleSize = { height, width };
 
+  // whether we're viewing the b&w grid (game in session) or the image itself (game finished)
   const gridViewActive = !puzzleIsSolved;
 
   // colNumbers and rowNumbers are saved as strings, parse back into arrays
@@ -79,7 +85,7 @@ const Board = ({
   }, [puzzleData]);
 
 
-  const puzzleIsValid = () => puzzle && Array.isArray(puzzle) && puzzle.length > 0;
+  const puzzleIsValid = puzzle && Array.isArray(puzzle) && puzzle.length > 0;
 
   const parseSquareData = (squareData) => {
     // squareData comes in as "pixelCount:colorIndex";
@@ -90,7 +96,20 @@ const Board = ({
       color: colors[splitSquareData[1]],
       pixelCount: splitSquareData[0],
     });
-  }
+  };
+
+  // TODO: append the "color" or whatever className indicates the square is showing
+  //  the solved state
+  const getSquareClassNames = (squareData) => `
+    ${USE_REDESIGNED_SQUARE ? "redesigned-" : ""}board-square
+    ${gridViewActive && squareData.isFilled ? "filled" : ""}
+    ${gridViewActive && !squareData.isFilled && squareData.isX ? "x" : ""}
+    ${gridViewActive && squareData.hasLeftBorder ? "border-left" : ""}
+    ${gridViewActive && squareData.hasTopBorder ? "border-top" : ""}
+    ${gridViewActive && squareData.hasBottomGuideBorder ? "guide-border-bottom" : ""}
+    ${gridViewActive && squareData.hasRightGuideBorder ? "guide-border-right" : ""}
+    ${!gridViewActive ? "completed" : ""}
+  `;
 
   useEffect(() => {
     console.log("Board: puzzleData is:", puzzleData);
@@ -131,8 +150,9 @@ const Board = ({
           onMouseLeave={() => setMouseButtonDown(false)}
         >
           {
-            puzzleIsValid() && puzzle.map((rowData, index) => (
+            puzzleIsValid && puzzle.map((rowData, index) => (
               <Row
+                getSquareClassNames={getSquareClassNames}
                 gridViewActive={gridViewActive}
                 key={`row-${index}`}
                 mouseButtonDown={mouseButtonDown}
@@ -214,6 +234,7 @@ function RowNumbers ({
 
 function Row ({ 
   // colors,
+  getSquareClassNames,
   gridViewActive,
   puzzleSize,
   mouseButtonDown,
@@ -228,10 +249,11 @@ function Row ({
   return (
     <div className="board-row">
       {
-        rowData.map((squareData, index) => (
+        rowData.map((rawSquareData, index) => (
           // <Square
           <MemoizedSquare
             // color={getColorFromSquareData(squareData)}
+            getSquareClassNames={getSquareClassNames}
             gridViewActive={gridViewActive}
             key={`square-${index}`}
             // isFilled={false}
@@ -240,7 +262,7 @@ function Row ({
             puzzleGrid={puzzleGrid}
             puzzleOpacity={puzzleOpacity}
             puzzleSize={puzzleSize}
-            squareData={squareData}
+            rawSquareData={rawSquareData}
             togglePuzzleGridSquare={togglePuzzleGridSquare}
           />
         ))
@@ -249,6 +271,140 @@ function Row ({
   );
 }
 
+function RedesignedSquare ({
+  // color = "#FF0000",
+  getSquareClassNames, 
+  gridViewActive,
+  // isFilled,
+  mouseButtonDown,
+  parseSquareData,
+  puzzleGrid,
+  puzzleOpacity = 1,
+  puzzleSize,
+  // puzzleOpacity = .75,
+  rawSquareData,
+  togglePuzzleGridSquare,
+}) {
+  const { color, colorIndex, pixelCount } = (() => {
+    // console.log(`parsingSquareData for ${squareData}...`);
+    // const timeStarted = Date.now();
+    const result = parseSquareData(rawSquareData);
+    // const timeElapsed = Date.now() - timeStarted;
+    // console.log(`parsedSquareData in ${timeElapsed}`);
+    return result;
+  })();
+
+  const isFilled = puzzleGrid[pixelCount] === 1;
+  const isX = puzzleGrid[pixelCount] === 2;
+
+  
+  // guideline and border calculations
+  const columnIndex = pixelCount % puzzleSize.width;
+  const rowIndex = Math.floor(pixelCount / puzzleSize.width);
+  
+  const canHaveGuides = puzzleSize.width > 5 && puzzleSize.height > 5;
+
+  const hasRightGuideBorder = canHaveGuides && 
+    columnIndex !== puzzleSize.width - 1 &&
+    columnIndex % 5 === 4;
+
+  const hasBottomGuideBorder = canHaveGuides &&
+    rowIndex !== puzzleSize.height - 1 &&
+    rowIndex % 5 === 4;
+  
+  const hasLeftBorder = columnIndex === 0;
+  const hasTopBorder = rowIndex === 0;
+
+  const squareData = {
+    // canHaveGuides,
+    hasBottomGuideBorder,
+    hasLeftBorder,
+    hasRightGuideBorder,
+    hasTopBorder,
+    isFilled,
+    isX,
+  }
+
+
+  const toggleSquare = (e, continuedFill = null) => {
+    e.preventDefault();
+    console.log("toggleSquare: event:", e);
+    console.log("toggleSquare: mouseButtonDown:", mouseButtonDown);
+    console.log("toggleSquare: continuedFill:", continuedFill);
+    let fillType;
+
+    if (e.button === 0) {
+      fillType = "fill";
+    }
+
+    if (e.button === 2) {
+      fillType = "x";
+    }
+
+    if (continuedFill) {
+      fillType = continuedFill;
+    }
+
+    console.log("toggleSquare: fillType: ", fillType);
+
+    // if (continuedFill) {
+    //   fillType = continuedFill;
+    // }
+    // else {
+    //   // left click happened
+    //   if (e.button === 0) {
+    //     fillType = "fill";
+    //   }
+
+    //   // right click happened
+    //   else if (e.button === 2) {
+    //     fillType = "x";
+    //   }
+    // }
+    
+    gridViewActive && togglePuzzleGridSquare(pixelCount, fillType);
+  };
+
+  // TODO: Use these to build click and drag functionality
+
+  const handleMouseIn = (event) => {
+    console.log(`handleMouseIn firing on Square ${pixelCount}`, event);
+
+    if (mouseButtonDown === 0 || mouseButtonDown === 2) {
+      const continuedFill = mouseButtonDown === 2 ? "x" : "fill";
+      console.log("handleMouseIn: mouseButtonDown is set to: ", mouseButtonDown);
+      toggleSquare(event, continuedFill);
+    }
+    else {
+      console.log("handleMouseIn: mouseButton is not down");
+    }
+    // mouseButtonDown && toggleSquare(event);
+  };
+
+  // const handleMouseOut = (event) => {
+  //   console.log(`handleMouseOut firing on Square ${pixelCount}`, event);
+  // };
+
+  
+
+  return (
+    <div 
+      className={getSquareClassNames(squareData)}
+      // onClick={toggleSquare}
+      // onContextMenu={toggleSquare}
+      onContextMenu={e => e.preventDefault()}
+      onMouseDown={toggleSquare}
+      // TODO: Uncomment when working on click-and-drag functionality
+      onMouseEnter={handleMouseIn}
+      // onMouseOver={handleMouseIn}
+      // onMouseLeave={handleMouseOut}
+      style={{
+        backgroundColor: gridViewActive ? undefined : color,
+      }}
+    >
+    </div>
+  )
+}
 
 function Square ({
   // color = "#FF0000", 
@@ -260,13 +416,13 @@ function Square ({
   puzzleOpacity = 1,
   puzzleSize,
   // puzzleOpacity = .75,
-  squareData,
+  rawSquareData,
   togglePuzzleGridSquare,
 }) {
   const { color, colorIndex, pixelCount } = (() => {
     // console.log(`parsingSquareData for ${squareData}...`);
     // const timeStarted = Date.now();
-    const result = parseSquareData(squareData);
+    const result = parseSquareData(rawSquareData);
     // const timeElapsed = Date.now() - timeStarted;
     // console.log(`parsedSquareData in ${timeElapsed}`);
     return result;
@@ -489,6 +645,6 @@ function Square ({
   )
 }
 
-const MemoizedSquare = React.memo(Square);
+const MemoizedSquare = USE_REDESIGNED_SQUARE ? React.memo(RedesignedSquare) : React.memo(Square);
  
 export default Board;

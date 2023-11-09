@@ -37,8 +37,78 @@
 
 .board-square-rect {  
   &:hover {
-    cursor: crosshair;
+    // this doesn't actually look good
+    // cursor: crosshair;
     stroke: g.$board-square-hover-color !important;
+  }
+}
+
+// ============================
+// REDESIGNED BOARD SQUARE WORK
+// ============================
+.redesigned-board-square {
+  align-items: center;
+  aspect-ratio: 1/1;
+  background-color: g.$board-square-empty-color;
+  // border: g.$board-square-border-width solid g.$board-square-border-color;
+  border-bottom: g.$board-square-border-width solid g.$board-square-border-color;
+  border-right: g.$board-square-border-width solid g.$board-square-border-color;
+  // border: 2px solid red;
+  display: flex;
+  height: g.$board-square-size;
+  justify-content: center;
+  transform: scale(1.0);
+  transition: 
+    g.$ui-fast-transition transform,
+    g.$ui-fast-transition background-color;
+  // width: 100%;
+  width: g.$board-square-size;
+
+  &:hover {
+    background-color: g.$board-square-hover-color;
+    transform: scale(1.25);
+    z-index: 100;
+  }
+
+  &.x {
+    // "x" state (right click)
+    // background-color: red;
+  }
+
+  &.x::before, &.x::after {
+    // pseudo-elements for the x
+    background-color: g.$board-square-x-color;
+    // border-radius: 0px;
+    border-radius: g.$board-square-size;
+    content: '';
+    height: g.$board-square-size;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transition: background-color g.$ui-fast-transition;
+    transform-origin: center;
+    width: g.$board-square-x-width; // TODO: replace with a variable
+  }
+
+  &.x::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  
+  &.x::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  } 
+
+  &.filled {
+    // filled state (left click)
+    background-color: g.$board-square-fill-color;
+  }
+
+  &.completed {
+    transition: g.$board-reveal-transition background-color;
+  }
+
+  &::before, &::after {
+
   }
 }
 

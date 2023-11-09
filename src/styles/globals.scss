@@ -1,6 +1,8 @@
 @use "sass:color";
 
+// ======================
 // common sizes/variables
+// ======================
 $app-body-padding: .5rem;
 $app-padding-top: 5.4rem;
 $board-screen-blur: 4px;
@@ -31,17 +33,23 @@ $message-icon-font-size: 10rem;
 $profile-menu-container-bottom-margin: 3rem;
 $section-header-font-size: 1.4rem;
 
+// =====
 // fonts
+// =====
 $body-font: "Inter Tight";
 $mono-font: "JetBrains Mono";
 
+// ================
 // transition times
+// ================
 $ui-fast-transition: 100ms;
 $ui-slow-transition: 250ms;
 $background-color-transition: 1000ms;
 $board-reveal-transition: 1500ms;
 
+// =================
 // colors (specific)
+// =================
 $dark-gray-100: #626466;
 $dark-gray-200: #4c4e50;
 $dark-gray-300: #353638;
@@ -53,7 +61,9 @@ $red-100: #ff6666;
 $red-200: #da4c4c;
 $red-300: #de3333;
 
+// ====================
 // colors (temp shades)
+// ====================
 $cerulean: #37718E;
 $indigo-dye: #254E70;
 $silver-lake-blue: #4F86C6;
@@ -62,12 +72,15 @@ $slate-blue: #3299d0;
 
 $square-gray: #35363866;
 
+// =============
 // colors (role)
+// =============
 
-// pulled from picross-parser
-//  These might not be necessary, but I'm pulling them out of this commented
-//  block if I have a need for them
 /*
+  pulled from picross-parser:
+    These might not be necessary, but I'm pulling them out of this commented
+    block if I have a need for them
+
 // should be darker than $app-background-color; used for highlighting active areas
 // $button-hover-background-color: $light-gray-200;
 $diagnostic-button-font-hover-color: $dark-gray-300;
@@ -125,28 +138,41 @@ $text-dark-color: $dark-gray-300;
 $text-input-active-border-color: $light-gray-100;
 $text-input-error-border-color: $red-100;
 
-// $a: #65ff0ff
-// #71821ff
-// #e0f8cfff
-// #86c06cff
-// #306850ff
+// ============================
+// game board related variables
+// ============================
 
-@mixin section-header-styles {
-  font-size: $section-header-font-size;
-  margin-top: 0rem;
-  padding-bottom: .5rem;
-  border-bottom: 2px solid $button-border-color;
-}
+// ======
+// colors
+// ======
+$board-square-base-color: $dark-gray-300;
+$board-square-border-color: rgba($board-square-base-color, .15);
+$board-square-empty-color: #fefefe;
+$board-square-fill-color: $board-square-base-color;
+$board-square-guideline-color: #000;
+$board-square-hover-color: #fff;
+// $board-square-x-color: rgba($board-square-base-color, .5);
+$board-square-x-color: lighten($board-square-base-color, 40%);
 
-// set responsive widths
+// =====
+// sizes
+// =====
+$board-square-border-width: 1px;
+$board-square-guideline-border-width: 2px;
+$board-square-size: 28px; // TODO: Maybe make this larger?
+$board-square-x-width: 3px; // TODO: Maybe make this larger?
 
+// ======================
 // responsive breakpoints
+// ======================
 $xs-breakpoint: 375px;
 $s-breakpoint: 768px;
 $m-breakpoint: 1280px;
 $l-breakpoint: 1920px;
 
+// ======
 // mixins
+// ======
 @mixin set-responsive-widths($xs-width, $s-width, $m-width, $l-width) {
   //375px
   width: $xs-width;
@@ -183,6 +209,13 @@ $l-breakpoint: 1920px;
   @media (min-width: $l-breakpoint) {
     width: 1440px;
   }
+}
+
+@mixin section-header-styles {
+  font-size: $section-header-font-size;
+  margin-top: 0rem;
+  padding-bottom: .5rem;
+  border-bottom: 2px solid $button-border-color;
 }
 
 @mixin common-border-styling ($border-color) {
