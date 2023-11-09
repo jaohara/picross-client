@@ -146,28 +146,43 @@ $text-input-error-border-color: $red-100;
 // colors
 // ======
 $board-square-base-color: $dark-gray-300;
+$board-shadow-color: rgba($dark-gray-300, .6);
+$board-shadow-completed-color: rgba($dark-gray-300, .3);
 $board-number-background-color: rgba($board-square-base-color, .8);
-$board-square-border-color: rgba($board-square-base-color, .15);
-$board-square-empty-color: #fbfbfb;
-$board-square-fill-color: $board-square-base-color;
+$board-square-border-empty-color: rgba($board-square-base-color, .15);
+$board-square-border-filled-color: darken($light-gray-400, 45%);
+// $board-square-border-filled-color: red;
+$board-square-empty-color: #f0f0f0;
+$board-square-fill-color: darken($board-square-base-color, 8%);
+// $board-square-fill-color: $board-square-base-color;
 $board-square-guideline-color: #000;
-$board-square-hover-color: #fff;
-$board-square-hover-shadow-color: rgba($dark-gray-100, .2);
+$board-square-hover-empty-color: #fff;
+$board-square-hover-filled-color: lighten($dark-gray-300, 4%);
+// $board-square-hover-border-color: rgba($dark-gray-100, .5);
+$board-square-hover-complete-border-color: rgba($dark-gray-100, .2);
+$board-square-hover-empty-border-color: $light-gray-300;
+$board-square-hover-filled-border-color: $dark-gray-100;
+$board-square-hover-empty-shadow-color: rgba($dark-gray-100, .2);
+$board-square-hover-filled-shadow-color: rgba($dark-gray-300, .6);
 // $board-square-x-color: rgba($board-square-base-color, .5);
 $board-square-x-color: lighten($board-square-base-color, 40%);
 
 // =====
 // sizes
 // =====
+$board-number-large-size: 48px; // TODO: Maybe make this larger?
 $board-number-size: 42px; // TODO: Maybe make this larger?
 $board-number-small-size: 28px; // TODO: Maybe make this larger?
 $board-number-margin: 4px;
 $board-square-border-width: 1px;
-$board-square-border-radius: 4px;
+$board-square-hover-border-width: 3px;
+$board-square-border-radius: 8px;
 $board-square-guideline-border-width: 2px;
 // $board-square-size: 28px; // TODO: Maybe make this larger?
+$board-square-large-size: 54px; // TODO: Maybe make this larger?
 $board-square-size: 48px; // TODO: Maybe make this larger?
-$board-square-small-size: 34px; // TODO: Maybe make this larger?
+$board-square-small-size: 34px; 
+
 $board-square-x-width: 3px; // TODO: Maybe make this larger?
 
 // ======================

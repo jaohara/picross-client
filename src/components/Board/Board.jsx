@@ -108,10 +108,10 @@ const Board = ({
     ${gridViewActive && squareData.hasTopBorder ? "border-top" : ""}
     ${gridViewActive && squareData.hasBottomGuideBorder ? "guide-border-bottom" : ""}
     ${gridViewActive && squareData.hasRightGuideBorder ? "guide-border-right" : ""}
-    ${gridViewActive && squareData.hasBottomLeftBorderRadius ? "border-radius-bottom-left" : ""}
-    ${gridViewActive && squareData.hasBottomRightBorderRadius ? "border-radius-bottom-right" : ""}
-    ${gridViewActive && squareData.hasTopLeftBorderRadius ? "border-radius-top-left" : ""}
-    ${gridViewActive && squareData.hasTopRightBorderRadius ? "border-radius-top-right" : ""}
+    ${squareData.hasBottomLeftBorderRadius ? "border-radius-bottom-left" : ""}
+    ${squareData.hasBottomRightBorderRadius ? "border-radius-bottom-right" : ""}
+    ${squareData.hasTopLeftBorderRadius ? "border-radius-top-left" : ""}
+    ${squareData.hasTopRightBorderRadius ? "border-radius-top-right" : ""}
     ${!gridViewActive ? "completed" : ""}
   `;
 
@@ -138,6 +138,8 @@ const Board = ({
   const boardWrapperClassNames = `
     board-wrapper
     ${ puzzleSize.width > 15 ? "small-squares" : "" }
+    ${ puzzleSize.width < 10 ? "large-squares" : "" }
+    ${ puzzleIsSolved ? "completed" : "in-progress" }
   `;
 
   return ( 
