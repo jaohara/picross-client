@@ -146,20 +146,28 @@ $text-input-error-border-color: $red-100;
 // colors
 // ======
 $board-square-base-color: $dark-gray-300;
+$board-number-background-color: rgba($board-square-base-color, .8);
 $board-square-border-color: rgba($board-square-base-color, .15);
-$board-square-empty-color: #fefefe;
+$board-square-empty-color: #fbfbfb;
 $board-square-fill-color: $board-square-base-color;
 $board-square-guideline-color: #000;
 $board-square-hover-color: #fff;
+$board-square-hover-shadow-color: rgba($dark-gray-100, .2);
 // $board-square-x-color: rgba($board-square-base-color, .5);
 $board-square-x-color: lighten($board-square-base-color, 40%);
 
 // =====
 // sizes
 // =====
+$board-number-size: 42px; // TODO: Maybe make this larger?
+$board-number-small-size: 28px; // TODO: Maybe make this larger?
+$board-number-margin: 4px;
 $board-square-border-width: 1px;
+$board-square-border-radius: 4px;
 $board-square-guideline-border-width: 2px;
-$board-square-size: 28px; // TODO: Maybe make this larger?
+// $board-square-size: 28px; // TODO: Maybe make this larger?
+$board-square-size: 48px; // TODO: Maybe make this larger?
+$board-square-small-size: 34px; // TODO: Maybe make this larger?
 $board-square-x-width: 3px; // TODO: Maybe make this larger?
 
 // ======================

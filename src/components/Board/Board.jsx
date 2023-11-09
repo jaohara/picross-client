@@ -108,6 +108,10 @@ const Board = ({
     ${gridViewActive && squareData.hasTopBorder ? "border-top" : ""}
     ${gridViewActive && squareData.hasBottomGuideBorder ? "guide-border-bottom" : ""}
     ${gridViewActive && squareData.hasRightGuideBorder ? "guide-border-right" : ""}
+    ${gridViewActive && squareData.hasBottomLeftBorderRadius ? "border-radius-bottom-left" : ""}
+    ${gridViewActive && squareData.hasBottomRightBorderRadius ? "border-radius-bottom-right" : ""}
+    ${gridViewActive && squareData.hasTopLeftBorderRadius ? "border-radius-top-left" : ""}
+    ${gridViewActive && squareData.hasTopRightBorderRadius ? "border-radius-top-right" : ""}
     ${!gridViewActive ? "completed" : ""}
   `;
 
@@ -130,8 +134,14 @@ const Board = ({
     setMouseButtonDown(e.button);
   }
 
+  // TODO: Define logic for different square sizes here
+  const boardWrapperClassNames = `
+    board-wrapper
+    ${ puzzleSize.width > 15 ? "small-squares" : "" }
+  `;
+
   return ( 
-    <div className="board-wrapper">
+    <div className={boardWrapperClassNames}>
       <ColumnNumbers 
         colNumbers={parsedColNumbers}
       />
@@ -175,12 +185,7 @@ function ColumnNumbers ({
   colNumbers,
 }) {
   const numberElements = colNumbers.map((colNumberGroup) => (
-    <div 
-      className="board-number-container"
-      style={{
-        "width": BOARD_SQUARE_SIZE, 
-      }}
-    >
+    <div className="board-number-container">
       {
         colNumberGroup.map((colNumber) => (
           <div className="board-number">
@@ -204,12 +209,7 @@ function RowNumbers ({
   rowNumbers,
 }) {
   const numberElements = rowNumbers.map((rowNumberGroup) => (
-    <div 
-      className="board-number-container"
-      style={{
-        "height": BOARD_SQUARE_SIZE,
-      }}
-    >
+    <div className="board-number-container">
       {
         rowNumberGroup.map((rowNumber) => (
           <div 
@@ -315,12 +315,22 @@ function RedesignedSquare ({
   const hasLeftBorder = columnIndex === 0;
   const hasTopBorder = rowIndex === 0;
 
+  const hasTopLeftBorderRadius = rowIndex === 0 && columnIndex === 0;
+  const hasBottomLeftBorderRadius = rowIndex === (puzzleSize.height - 1) && columnIndex === 0;
+  const hasTopRightBorderRadius = rowIndex === 0 && columnIndex === (puzzleSize.width - 1);
+  const hasBottomRightBorderRadius = 
+    rowIndex === (puzzleSize.height - 1) && columnIndex === (puzzleSize.width - 1);
+
   const squareData = {
     // canHaveGuides,
     hasBottomGuideBorder,
+    hasBottomLeftBorderRadius,
+    hasBottomRightBorderRadius,
     hasLeftBorder,
     hasRightGuideBorder,
     hasTopBorder,
+    hasTopLeftBorderRadius,
+    hasTopRightBorderRadius,
     isFilled,
     isX,
   }
