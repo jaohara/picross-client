@@ -1,6 +1,7 @@
 import React, { 
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -19,7 +20,11 @@ const Board = ({
   puzzleIsSolved,
   togglePuzzleGridSquare,
 }) => {
-  const [ mouseButtonDown, setMouseButtonDown ] = useState(false);
+  // TODO: cleanup after board event delegation is finished
+  // const [ mouseButtonDown, setMouseButtonDown ] = useState(false);
+  const isMouseDown = useRef(false);
+  const initialFillAction = useRef(false);
+  const toggledSquareBatch = useRef([]);
 
   // I don't think I want to pull these directly to avoid the rerenders when the timer updates
   //  and refreshes the context
@@ -106,8 +111,9 @@ const Board = ({
     console.log("Board: puzzleGrid is:", puzzleGrid);
   }, []);
 
+  // TODO: cleanup after board event delegation is finished
+  // this was the old way of indicating a button hold
   const handleSettingMouseButtonDown = (e) => {
-
     if (mouseButtonDown) {
       console.log("handleSettingMouseButtonDown: already set, aborting");
       return;
@@ -120,7 +126,33 @@ const Board = ({
     setMouseButtonDown(e.button);
   }
 
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+
+    if (e.target.matches(".board-square")) {
+      mouseButtonDown.current = true;
+      toggledSquareBatch.current = [];
+      // assumes ids are like "board-square-x", where x is pixelCount
+      const pixelCount = e.target.id.split("-")[2];
+      // next, determine action type based on initial square fill
+      let fillType;
+
+
+    }
+  };
+
+  const handleMouseUp = (e) => {
+    mouseButtonDown.current = false;
+  };
+
+  const handleMouseEnter = (e) => {
+    if (e.buttons === 0) {
+      mouseButtonDown.current = false;
+    }
+  }
+
   // TODO: Define logic for different square sizes here
+  // TODO: Account for resolution - laptop can't display all squares in 15x15 or larger
   const boardWrapperClassNames = `
     board-wrapper
     ${ puzzleSize.width > 15 ? "small-squares" : "" }
@@ -142,10 +174,18 @@ const Board = ({
         <div 
           className="board"
           // onMouseDown={() => setMouseButtonDown(true)}
-          onMouseDown={handleSettingMouseButtonDown}
-          onContextMenu={handleSettingMouseButtonDown}
-          onMouseUp={() => setMouseButtonDown(false)}
-          onMouseLeave={() => setMouseButtonDown(false)}
+          onMouseDown={handleMouseDown}
+          onMouseEnter={handleMouseEnter}
+          // TODO: cleanup after board event delegation is finished
+          // onMouseDown={handleSettingMouseButtonDown}
+          onContextMenu={handleMouseDown}
+          // TODO: cleanup after board event delegation is finished
+          // onContextMenu={handleSettingMouseButtonDown}
+          // TODO: cleanup after board event delegation is finished
+          // onMouseUp={() => setMouseButtonDown(false)}
+          onMouseUp={handleMouseUp}
+          // TODO: Do I want this behavior? Does this avoid mouseUp never triggering?
+          // onMouseLeave={() => setMouseButtonDown(false)}
         >
           {
             puzzleIsValid && puzzle.map((rowData, index) => (
@@ -153,7 +193,7 @@ const Board = ({
                 getSquareClassNames={getSquareClassNames}
                 gridViewActive={gridViewActive}
                 key={`row-${index}`}
-                mouseButtonDown={mouseButtonDown}
+                // mouseButtonDown={mouseButtonDown}
                 parseSquareData={parseSquareData}
                 puzzleGrid={puzzleGrid}
                 puzzleOpacity={puzzleOpacity}
@@ -225,7 +265,7 @@ function Row ({
   getSquareClassNames,
   gridViewActive,
   puzzleSize,
-  mouseButtonDown,
+  // mouseButtonDown,
   parseSquareData,
   puzzleGrid,
   puzzleOpacity,
@@ -245,7 +285,7 @@ function Row ({
             gridViewActive={gridViewActive}
             key={`square-${index}`}
             // isFilled={false}
-            mouseButtonDown={mouseButtonDown}
+            // mouseButtonDown={mouseButtonDown}
             parseSquareData={parseSquareData}
             puzzleGrid={puzzleGrid}
             puzzleOpacity={puzzleOpacity}
@@ -264,7 +304,7 @@ function Square ({
   getSquareClassNames, 
   gridViewActive,
   // isFilled,
-  mouseButtonDown,
+  // mouseButtonDown,
   parseSquareData,
   puzzleGrid,
   puzzleOpacity = 1,
@@ -378,6 +418,8 @@ function Square ({
       className={getSquareClassNames(squareData)}
       // onClick={toggleSquare}
       // onContextMenu={toggleSquare}
+      id={`board-square-${pixelCount}`}
+      key={`board-square-${pixelCount}`}
       onContextMenu={e => e.preventDefault()}
       onMouseDown={toggleSquare}
       // TODO: Uncomment when working on click-and-drag functionality
