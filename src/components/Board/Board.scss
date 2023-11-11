@@ -1,11 +1,7 @@
 @use "../../styles/globals.scss" as g;
 
-
 .board, .board-row, .board-square {
   font-family: g.$mono-font;
-}
-
-.board-number, .board-number-container {
 }
 
 .board-number {
@@ -95,20 +91,21 @@
   width: 100%;
 }
 
-.board-square {
-  align-items: center;
-  aspect-ratio: 1/1;
-  display: flex;
-  justify-content: center;
-  transform: scale(1.0);
-  transition: g.$ui-fast-transition transform;
-  width: 100%;
+// OLD BOARD SQUARE STYLES
+// .board-square {
+//   align-items: center;
+//   aspect-ratio: 1/1;
+//   display: flex;
+//   justify-content: center;
+//   transform: scale(1.0);
+//   transition: g.$ui-fast-transition transform;
+//   width: 100%;
 
-  &:hover {
-    transform: scale(1.25);
-    z-index: 100;
-  }
-}
+//   &:hover {
+//     transform: scale(1.25);
+//     z-index: 100;
+//   }
+// }
 
 .board-square-rect {  
   &:hover {
@@ -121,7 +118,7 @@
 // ============================
 // REDESIGNED BOARD SQUARE WORK
 // ============================
-.redesigned-board-square {
+.board-square {
   /*
     Sub-classes:  
 

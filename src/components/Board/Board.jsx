@@ -7,23 +7,9 @@ import React, {
 import "./Board.scss";
 
 import {
-  BOARD_SQUARE_BORDER_COLOR,
-  BOARD_SQUARE_BORDER_RADIUS,
-  BOARD_SQUARE_CONTAINER_PADDING,
-  BOARD_SQUARE_EMPTY_COLOR,
-  BOARD_SQUARE_FILL_COLOR,
-  BOARD_SQUARE_GUIDELINE_COLOR,
-  BOARD_SQUARE_GUIDELINE_STROKE_WIDTH,
   BOARD_SQUARE_SIZE,
-  BOARD_SQUARE_STROKE_WIDTH,
-  BOARD_SQUARE_X_COLOR,
   PUZZLE_SQUARE_DELIMITER,
 } from "../../constants";
-
-
-// TODO: REMOVE AFTER REDESIGN IS FINISHED
-// const USE_REDESIGNED_SQUARE = false;
-const USE_REDESIGNED_SQUARE = true;
 
 const Board = ({
   // gridViewActive,
@@ -101,7 +87,7 @@ const Board = ({
   // TODO: append the "color" or whatever className indicates the square is showing
   //  the solved state
   const getSquareClassNames = (squareData) => `
-    ${USE_REDESIGNED_SQUARE ? "redesigned-" : ""}board-square
+    board-square
     ${gridViewActive && squareData.isFilled ? "filled" : ""}
     ${gridViewActive && !squareData.isFilled && squareData.isX ? "x" : ""}
     ${gridViewActive && squareData.hasLeftBorder ? "border-left" : ""}
@@ -273,7 +259,7 @@ function Row ({
   );
 }
 
-function RedesignedSquare ({
+function Square ({
   // color = "#FF0000",
   getSquareClassNames, 
   gridViewActive,
@@ -337,42 +323,29 @@ function RedesignedSquare ({
     isX,
   }
 
-
+  
   const toggleSquare = (e, continuedFill = null) => {
     e.preventDefault();
-    console.log("toggleSquare: event:", e);
-    console.log("toggleSquare: mouseButtonDown:", mouseButtonDown);
-    console.log("toggleSquare: continuedFill:", continuedFill);
+    //TODO: Prune these leftover logs
+    // console.log("toggleSquare: event:", e);
+    // console.log("toggleSquare: mouseButtonDown:", mouseButtonDown);
+    // console.log("toggleSquare: continuedFill:", continuedFill);
     let fillType;
 
     if (e.button === 0) {
-      fillType = "fill";
+      fillType = e.ctrlKey ? "x" : "fill";
     }
 
     if (e.button === 2) {
       fillType = "x";
     }
-
+    
     if (continuedFill) {
       fillType = continuedFill;
     }
-
-    console.log("toggleSquare: fillType: ", fillType);
-
-    // if (continuedFill) {
-    //   fillType = continuedFill;
-    // }
-    // else {
-    //   // left click happened
-    //   if (e.button === 0) {
-    //     fillType = "fill";
-    //   }
-
-    //   // right click happened
-    //   else if (e.button === 2) {
-    //     fillType = "x";
-    //   }
-    // }
+    
+    //TODO: Prune these leftover logs
+    // console.log("toggleSquare: fillType: ", fillType);
     
     gridViewActive && togglePuzzleGridSquare(pixelCount, fillType);
   };
@@ -380,24 +353,25 @@ function RedesignedSquare ({
   // TODO: Use these to build click and drag functionality
 
   const handleMouseIn = (event) => {
-    console.log(`handleMouseIn firing on Square ${pixelCount}`, event);
+    // console.log(`handleMouseIn firing on Square ${pixelCount}`, event);
 
     if (mouseButtonDown === 0 || mouseButtonDown === 2) {
-      const continuedFill = mouseButtonDown === 2 ? "x" : "fill";
-      console.log("handleMouseIn: mouseButtonDown is set to: ", mouseButtonDown);
+      const continuedFill = (() => {
+        if (mouseButtonDown === 2) {
+          return "x"
+        } 
+        
+        return event.ctrlKey ? "x" : "fill";
+      })();
+      // console.log("handleMouseIn: mouseButtonDown is set to: ", mouseButtonDown);
       toggleSquare(event, continuedFill);
     }
-    else {
-      console.log("handleMouseIn: mouseButton is not down");
-    }
+    //TODO: Prune these leftover logs
+    // else {
+    //   console.log("handleMouseIn: mouseButton is not down");
+    // }
     // mouseButtonDown && toggleSquare(event);
-  };
-
-  // const handleMouseOut = (event) => {
-  //   console.log(`handleMouseOut firing on Square ${pixelCount}`, event);
-  // };
-
-  
+  };  
 
   return (
     <div 
@@ -409,7 +383,6 @@ function RedesignedSquare ({
       // TODO: Uncomment when working on click-and-drag functionality
       onMouseEnter={handleMouseIn}
       // onMouseOver={handleMouseIn}
-      // onMouseLeave={handleMouseOut}
       style={{
         backgroundColor: gridViewActive ? undefined : color,
       }}
@@ -418,245 +391,6 @@ function RedesignedSquare ({
   )
 }
 
-function Square ({
-  // color = "#FF0000", 
-  gridViewActive,
-  // isFilled,
-  mouseButtonDown,
-  parseSquareData,
-  puzzleGrid,
-  puzzleOpacity = 1,
-  puzzleSize,
-  // puzzleOpacity = .75,
-  rawSquareData,
-  togglePuzzleGridSquare,
-}) {
-  const { color, colorIndex, pixelCount } = (() => {
-    // console.log(`parsingSquareData for ${squareData}...`);
-    // const timeStarted = Date.now();
-    const result = parseSquareData(rawSquareData);
-    // const timeElapsed = Date.now() - timeStarted;
-    // console.log(`parsedSquareData in ${timeElapsed}`);
-    return result;
-  })();
-
-  
-  // kinda redundant, but a little easier to work with
-  const borderColor = BOARD_SQUARE_BORDER_COLOR;
-  const containerPadding = BOARD_SQUARE_CONTAINER_PADDING;
-  const emptyColor = BOARD_SQUARE_EMPTY_COLOR;
-  const fillColor = BOARD_SQUARE_FILL_COLOR;
-  const guideColor = BOARD_SQUARE_GUIDELINE_COLOR
-  const guideStrokeWidth = BOARD_SQUARE_GUIDELINE_STROKE_WIDTH;
-  const strokeWidth = BOARD_SQUARE_STROKE_WIDTH;
-  const xColor = BOARD_SQUARE_X_COLOR
-
-  const isFilled = puzzleGrid[pixelCount] === 1;
-  const isX = puzzleGrid[pixelCount] === 2;
-
-  // maybe calculate these based on current screen width?
-  const squareSize = BOARD_SQUARE_SIZE;
-  const borderRadius = BOARD_SQUARE_BORDER_RADIUS;
-
-  const toggleSquare = (e, continuedFill = null) => {
-    e.preventDefault();
-    console.log("toggleSquare: event:", e);
-    console.log("toggleSquare: mouseButtonDown:", mouseButtonDown);
-    console.log("toggleSquare: continuedFill:", continuedFill);
-    let fillType;
-
-    if (e.button === 0) {
-      fillType = "fill";
-    }
-
-    if (e.button === 2) {
-      fillType = "x";
-    }
-
-    if (continuedFill) {
-      fillType = continuedFill;
-    }
-
-    console.log("toggleSquare: fillType: ", fillType);
-
-    // if (continuedFill) {
-    //   fillType = continuedFill;
-    // }
-    // else {
-    //   // left click happened
-    //   if (e.button === 0) {
-    //     fillType = "fill";
-    //   }
-
-    //   // right click happened
-    //   else if (e.button === 2) {
-    //     fillType = "x";
-    //   }
-    // }
-    
-    gridViewActive && togglePuzzleGridSquare(pixelCount, fillType);
-  }
-
-  const puzzleSquareColor = isFilled ? fillColor : emptyColor;
-  
-  const puzzleGridOpacity = gridViewActive ? puzzleOpacity : 0;
-  
-  // guideline calculations
-  const canHaveGuides = puzzleSize.width > 5 && puzzleSize.height > 5;
-  
-  const columnIndex = pixelCount % puzzleSize.width;
-  const rowIndex = Math.floor(pixelCount / puzzleSize.width);
-
-  const hasRightGuideBorder = canHaveGuides && 
-    columnIndex !== puzzleSize.width - 1 &&
-    columnIndex % 5 === 4;
-
-  const hasBottomGuideBorder = canHaveGuides &&
-    rowIndex !== puzzleSize.height - 1 &&
-    rowIndex % 5 === 4;
-
-
-  // TODO: Use these to build click and drag functionality
-
-  const handleMouseIn = (event) => {
-    console.log(`handleMouseIn firing on Square ${pixelCount}`, event);
-
-    if (mouseButtonDown === 0 || mouseButtonDown === 2) {
-      const continuedFill = mouseButtonDown === 2 ? "x" : "fill";
-      console.log("handleMouseIn: mouseButtonDown is set to: ", mouseButtonDown);
-      toggleSquare(event, continuedFill);
-    }
-    else {
-      console.log("handleMouseIn: mouseButton is not down");
-    }
-    // mouseButtonDown && toggleSquare(event);
-  };
-
-  // const handleMouseOut = (event) => {
-  //   console.log(`handleMouseOut firing on Square ${pixelCount}`, event);
-  // };
-
-  return (
-    <div 
-      className="board-square"
-      // onClick={toggleSquare}
-      // onContextMenu={toggleSquare}
-      onContextMenu={e => e.preventDefault()}
-      onMouseDown={toggleSquare}
-      // TODO: Uncomment when working on click-and-drag functionality
-      onMouseEnter={handleMouseIn}
-      // onMouseOver={handleMouseIn}
-      // onMouseLeave={handleMouseOut}
-    >
-      <svg
-        height={squareSize + (2 * containerPadding)}
-        width={squareSize + (2 * containerPadding)}
-      >
-        <rect
-          className="board-square-rect color-rect"
-          height={squareSize}
-          width={squareSize}
-          rx={borderRadius}
-          style={{
-            // fill: getSquareColor(),
-            fill: color,
-            // stroke: borderColor,
-            // strokeWidth: strokeWidth, 
-          }}
-          x={containerPadding}
-          y={containerPadding}
-        />
-        <rect
-          className="board-square-rect puzzle-rect"
-          height={squareSize}
-          width={squareSize}
-          rx={borderRadius}
-          style={{
-            fill: puzzleSquareColor,
-            opacity: puzzleGridOpacity,
-            // stroke: borderColor,
-            // strokeWidth: strokeWidth, 
-          }}
-          x={containerPadding}
-          y={containerPadding}
-        />
-
-        {/* top line */}
-        <line
-          className="board-square-top-border"
-          x1={0}
-          y1={0}
-          x2={squareSize}
-          y2={0}
-          stroke={borderColor}
-          strokeWidth={strokeWidth}
-        />
-
-        {/* right line */}
-        <line
-          className="board-square-right-border"
-          x1={squareSize}
-          y1={0}
-          x2={squareSize}
-          y2={squareSize}
-          stroke={hasRightGuideBorder ? guideColor : borderColor}
-          strokeWidth={hasRightGuideBorder ? guideStrokeWidth : strokeWidth}
-        />
-
-        {/* look, here's the bottom line */}
-        <line
-          className="board-square-bottom-border"
-          x1={squareSize}
-          y1={squareSize}
-          x2={0}
-          y2={squareSize}
-          stroke={hasBottomGuideBorder ? guideColor : borderColor}
-          strokeWidth={hasBottomGuideBorder ? guideStrokeWidth : strokeWidth}
-        />
-
-        {/* left line */}
-        <line
-          className="board-square-left-border"
-          x1={0}
-          y1={squareSize}
-          x2={0}
-          y2={0}
-          stroke={borderColor}
-          strokeWidth={strokeWidth}
-        />
-
-        {
-          isX && gridViewActive && (
-            <>
-              {/* X line 1 */}
-              <line
-                className="board-square-x-line-one"
-                x1={4}
-                y1={4}
-                x2={squareSize - 4}
-                y2={squareSize - 4}
-                stroke={xColor}
-                strokeWidth={guideStrokeWidth}
-              />
-
-              {/* X line 2 */}
-              <line
-                className="board-square-x-line-two"
-                x1={4}
-                y1={squareSize - 4}
-                x2={squareSize - 4}
-                y2={4}
-                stroke={xColor}
-                strokeWidth={guideStrokeWidth}
-              />
-            </>
-          )
-        }
-      </svg>
-    </div>
-  )
-}
-
-const MemoizedSquare = USE_REDESIGNED_SQUARE ? React.memo(RedesignedSquare) : React.memo(Square);
+const MemoizedSquare = React.memo(Square);
  
 export default Board;
