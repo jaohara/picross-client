@@ -12,6 +12,12 @@ import {
   PUZZLE_SQUARE_DELIMITER,
 } from "../../constants";
 
+import {
+  getNewSquareStatus,
+  maxValidSquareStatusCode,
+  squareStatusCodes,
+} from "../../utils/squareUtils";
+
 const Board = ({
   // gridViewActive,
   puzzleData,
@@ -22,8 +28,8 @@ const Board = ({
 }) => {
   // TODO: cleanup after board event delegation is finished
   // const [ mouseButtonDown, setMouseButtonDown ] = useState(false);
-  const isMouseDown = useRef(false);
-  const initialFillAction = useRef(null);
+  const mouseButtonDown = useRef(false);
+  const clickAction = useRef(null);
   const toggledSquareBatch = useRef([]);
 
   // I don't think I want to pull these directly to avoid the rerenders when the timer updates
@@ -125,27 +131,24 @@ const Board = ({
   `;
 
   /**
-   * Gets the current status of the square at a given pixelCount index.
+   * Gets the current status of the square in the puzzleGrid at a given pixelCount index.
    * @param {any} pixelCount the number of the square in the grid to toggle (string or number?) 
    * @returns {string|null} the parsed square status string ("empty", etc.) or null on failure
    */
+  // TODO: use this to determine the newClickAction in handleMouseDown
   const getCurrentSquareStatus = (pixelCount) => {
-    if (pixelCount > !puzzleGrid.length) {
+    if (pixelCount > puzzleGrid.length) {
       // shouldn't happen, but it would be bad if it did
-      console.error(`getCurrentSquareStatus: index '${pixelCount}' outside bounds of puzzleGrid.`);
+      console.error(`getCurrentSquareStatus: index '${pixelCount}' outside bounds of puzzleGrid (> ${puzzleGrid.length})`);
       return null;
     }
 
-    const squareStatusCodes = {
-      0: "empty",
-      1: "fill",
-      2: "x"
-    };
-
-    // TODO: Hardcoded to prevent overhead of "Object.keys().includes()" 
-    const maxValidSquareStatusCode = 2;
-
+    console.log(`getCurrentSquareStatus: puzzleGrid before:`, puzzleGrid);
     const squareStatus = puzzleGrid[pixelCount];
+
+    console.log(`getCurrentSquareStatus: ${pixelCount} is '${squareStatus}'`);
+    console.log(`getCurrentSquareStatus: puzzleGrid after:`, puzzleGrid);
+
 
     if (squareStatus > maxValidSquareStatusCode) {
       console.error(`getCurrentSquareStatus: '${squareStatus}' is not a valid square status code.`);
@@ -155,32 +158,55 @@ const Board = ({
     return squareStatusCodes[squareStatus];
   }
 
-  useEffect(() => {
-    console.log("Board: puzzleData is:", puzzleData);
-    console.log("Board: puzzleGrid is:", puzzleGrid);
-  }, []);
+  // applies the current status of initialClickAction.current
+  //  - this is triggered after a click is processed or on enter in the case of a
+  //    click-and-drag event
+  function applyActionToSquare (clickAction, pixelCount) {
+    // const clickAction = clickAction.current;
+
+    if (!clickAction) {
+      console.error(`applyActionToSquare: no current clickAction`);
+      return;
+    }
+
+    togglePuzzleGridSquare(pixelCount, clickAction);
+    toggleSquareInBatch(pixelCount);
+  }
+
 
   // helper function to reset the relevant refs after a mouse action
   const resetMouseRefs = () => {
-    initialFillAction.current = null;
+    clickAction.current = null;
     mouseButtonDown.current = false;
     toggledSquareBatch.current = [];
   }
 
+  // This handles the logic for clicking on a square
   const handleMouseDown = (e) => {
+    console.log("handleMouseDown: puzzleGrid at start:", puzzleGrid);
     e.preventDefault();
+    resetMouseRefs();
 
     if (e.target.matches(".board-square")) {
       mouseButtonDown.current = true;
-      toggledSquareBatch.current = [];
       // assumes ids are like "board-square-x", where x is pixelCount
       const pixelCount = e.target.id.split("-")[2];
       // next, determine action type based on initial square fill
-      let fillAction;
-      
+      console.log("handleMouseDown: puzzleGrid before getCurrentSquarStatus:", puzzleGrid);
+      const currentSquareStatus = getCurrentSquareStatus(pixelCount);
+      const squareIsFilled = currentSquareStatus === "fill";
+      const squareIsEmpty = currentSquareStatus === "empty";
+      const squareIsX = currentSquareStatus === "x";
+
+      let newClickAction;
+
+      const ctrlKey = e.ctrlKey;
+      const leftClick = e.button === 0 && !ctrlKey;
+      const rightClick = e.button === 2 || (e.button === 0 && ctrlKey);
+
       // TODO: RESUME WORKING ON THIS LOGIC
       /*
-        fillAction is assigned to initialFillAction and can be any one of these:
+        newClickAction is assigned to initialClickAction and can be any one of these:
 
           - "fill" - change empty to filled
           - "x" - change empty to x
@@ -190,27 +216,47 @@ const Board = ({
         in the case of the non-emptying actions ("fill" and "x"), any newly toggled square
         will be added to the toggledSquareBatch via toggleSquareInBatch(pixelCount). This 
         allows a user to undo the fill or x action while the mouse button is still held down.
+
+
+        REMEMBER: you wrote some helper functions:
+          - getCurrentSquareStatus
+          - toggleSquareInBatch
       */
-
-
-      // MOSTLY OLD CODE PAST HERE, BUT SOME IS STILL USEFUL
-      if (e.button === 0) {
-        // needs logic here to break out early if attempting to fill an "x" square
-
-        // if attempting to toggle 
-        fillAction = e.ctrlKey ? "x" : "fill";
-      }
-  
-      if (e.button === 2) {
-        // similarly needs logic to avoid "x"ing a filled square
-        fillAction = "x";
-      }
       
-      if (continuedFill) {
-        fillAction = continuedFill;
+      // square is empty, simple case
+      if (leftClick && squareIsEmpty) {
+        console.log("handleMouseDown: fill an empty path");
+        newClickAction = "fill";
+      }
+      else if (leftClick && squareIsFilled) {
+        console.log("handleMouseDown: empty a fill path");
+        newClickAction = "empty-fill";
+      }
+      else if (rightClick && squareIsEmpty) {
+        console.log("handleMouseDown: x an empty path");
+        newClickAction = "x";
+      }
+      else if (rightClick && squareIsX) {
+        console.log("handleMouseDown: empty an x path");
+        newClickAction = "empty-x";
       }
 
-      
+      const LONG_DEBUG_LOGS = true;
+
+      if (LONG_DEBUG_LOGS) {
+        console.log(`handleMouseDown: e.button: ${e.button}`);
+        console.log(`handleMouseDown: pixelCount: ${pixelCount}`);
+        console.log(`handleMouseDown: ctrlKey: ${ctrlKey}`);
+        console.log(`handleMouseDown: leftClick: ${leftClick}`);
+        console.log(`handleMouseDown: rightClick: ${rightClick}`);
+        console.log(`handleMouseDown: currentSquareStatus: ${currentSquareStatus}`);
+        console.log(`handleMouseDown: newClickAction: ${newClickAction}`);
+      }
+
+
+      // set initialClickAction to remember for mouse over events
+      clickAction.current = newClickAction;
+      applyActionToSquare(newClickAction, pixelCount);
     }
   };
 
@@ -236,9 +282,9 @@ const Board = ({
 
     // TODO: RETURN TO TYPE OUT THIS LOGIC AFTER handleMouseDown LOGIC MAKES SENSE
 
-    // now check to see what initialFillAction is
+    // now check to see what initialClickAction is
 
-    // if the square is empty, apply the initialFillAction to it
+    // if the square is empty, apply the initialClickAction to it
 
     // if the square is not-empty, check to see if it 
   };
@@ -251,6 +297,12 @@ const Board = ({
     ${ puzzleSize.width < 10 ? "large-squares" : "" }
     ${ puzzleIsSolved ? "completed" : "in-progress" }
   `;
+
+  // initial load useEffect
+  useEffect(() => {
+    console.log("Board: puzzleData is:", puzzleData);
+    console.log("Board: puzzleGrid is:", puzzleGrid);
+  }, []);
 
   return ( 
     <div className={boardWrapperClassNames}>
@@ -270,11 +322,8 @@ const Board = ({
           onMouseEnter={handleMouseEnter}
           // TODO: cleanup after board event delegation is finished
           // onMouseDown={handleSettingMouseButtonDown}
-          onContextMenu={handleMouseDown}
-          // TODO: cleanup after board event delegation is finished
-          // onContextMenu={handleSettingMouseButtonDown}
-          // TODO: cleanup after board event delegation is finished
-          // onMouseUp={() => setMouseButtonDown(false)}
+          onContextMenuDown={handleMouseDown} // only fire on down, not up
+          onContextMenu={(e) => e.preventDefault()} // smother right click menu
           onMouseUp={handleMouseUp}
           // TODO: Do I want this behavior? Does this avoid mouseUp never triggering?
           // onMouseLeave={() => setMouseButtonDown(false)}
@@ -285,6 +334,7 @@ const Board = ({
                 getSquareClassNames={getSquareClassNames}
                 gridViewActive={gridViewActive}
                 handleMouseEnter={handleSquareMouseEnter}
+                handleMouseDown={handleMouseDown}
                 key={`row-${index}`}
                 // mouseButtonDown={mouseButtonDown}
                 parseSquareData={parseSquareData}
@@ -292,7 +342,7 @@ const Board = ({
                 puzzleOpacity={puzzleOpacity}
                 puzzleSize={puzzleSize}
                 rowData={rowData}
-                toggleSquare={togglePuzzleGridSquare}
+                // toggleSquare={togglePuzzleGridSquare}
               />
             ))
           }
@@ -364,7 +414,7 @@ function Row ({
   puzzleGrid,
   puzzleOpacity,
   rowData,
-  toggleSquare,
+  // toggleSquare,
 }) {
 
   // this is assuming rowData is valid
@@ -386,7 +436,7 @@ function Row ({
             puzzleOpacity={puzzleOpacity}
             puzzleSize={puzzleSize}
             rawSquareData={rawSquareData}
-            toggleSquare={toggleSquare}
+            // toggleSquare={toggleSquare}
           />
         ))
       }
@@ -407,7 +457,7 @@ function Square ({
   puzzleSize,
   // puzzleOpacity = .75,
   rawSquareData,
-  toggleSquare,
+  // toggleSquare,
 }) {
   const { color, colorIndex, pixelCount } = (() => {
     // console.log(`parsingSquareData for ${squareData}...`);
@@ -457,57 +507,7 @@ function Square ({
     hasTopRightBorderRadius,
     isFilled,
     isX,
-  }
-
-  
-  const originalToggleSquare = (e, continuedFill = null) => {
-    e.preventDefault();
-    //TODO: Prune these leftover logs
-    // console.log("toggleSquare: event:", e);
-    // console.log("toggleSquare: mouseButtonDown:", mouseButtonDown);
-    // console.log("toggleSquare: continuedFill:", continuedFill);
-    let fillType;
-
-    if (e.button === 0) {
-      fillType = e.ctrlKey ? "x" : "fill";
-    }
-
-    if (e.button === 2) {
-      fillType = "x";
-    }
-    
-    if (continuedFill) {
-      fillType = continuedFill;
-    }
-    
-    //TODO: Prune these leftover logs
-    // console.log("toggleSquare: fillType: ", fillType);
-    
-    gridViewActive && togglePuzzleGridSquare(pixelCount, fillType);
   };
-
-  // TODO: originally intended to use these to build click and drag functionality
-
-  const oldHandleMouseIn = (event) => {
-    // console.log(`handleMouseIn firing on Square ${pixelCount}`, event);
-
-    // if (mouseButtonDown === 0 || mouseButtonDown === 2) {
-    //   const continuedFill = (() => {
-    //     if (mouseButtonDown === 2) {
-    //       return "x"
-    //     } 
-        
-    //     return event.ctrlKey ? "x" : "fill";
-    //   })();
-    //   // console.log("handleMouseIn: mouseButtonDown is set to: ", mouseButtonDown);
-    //   toggleSquare(event, continuedFill);
-    // }
-    //TODO: Prune these leftover logs
-    // else {
-    //   console.log("handleMouseIn: mouseButton is not down");
-    // }
-    // mouseButtonDown && toggleSquare(event);
-  };  
 
   return (
     <div 
@@ -516,9 +516,9 @@ function Square ({
       // onContextMenu={toggleSquare}
       id={`board-square-${pixelCount}`}
       key={`board-square-${pixelCount}`}
-      onContextMenu={e => e.preventDefault()}
+      // onContextMenu={e => e.preventDefault()}
       // onMouseDown={originalToggleSquare}
-      onMouseDown={toggleSquare}
+      // onMouseDown={toggleSquare}
       // TODO: Uncomment when working on click-and-drag functionality
       onMouseEnter={handleMouseEnter}
       // onMouseOver={handleMouseIn}

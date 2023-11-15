@@ -8,6 +8,13 @@ import React, {
 import hashPuzzleGrid from "../utils/hashPuzzleGrid";
 import sortHexColors from "../utils/sortHexColors";
 
+import {
+  getNewSquareStatus,
+  getNewSquareStatusAsIndex,
+  getSquareStatusCodeFromStatusIndex,
+  getSquareStatusIndexFromStatusCode,
+} from "../utils/squareUtils";
+
 
 // TODO: import necessary api functions
 
@@ -33,6 +40,8 @@ const GameContextProvider = ({ children }) => {
   const [ menuIsActive, setMenuIsActive ] = useState(true);
   // number of toggleSquare actions that have been performed
   const moveCountRef = useRef(0);
+  // list of moves as an array of strings describing actions
+  const moveListRef = useRef([]);
   // used to block toggling the menu (when no board is loaded, etc)
   // const [ menuScreenToggleLock, setMenuScreenToggleLock ] = useState(false);
   // duration for a pause to measure offset
@@ -58,6 +67,14 @@ const GameContextProvider = ({ children }) => {
   const incrementMoveCount = () => moveCountRef.current = moveCountRef.current + 1;
   const resetMoveCount = () => moveCountRef.current = 0;
 
+  // assumes pixelCount and newStatusIndex are valid
+  const addMoveToList = (pixelCount, newStatusIndex) => {
+    moveListRef.current.push(`${pixelCount}-${newStatusIndex}`);
+    incrementMoveCount();
+  }
+
+  const resetMoveList = () => moveListRef.current = [];
+
   // TODO: Include some way to save current background colors, as well as 
   // a function to get current background colors from a puzzle
   //
@@ -77,6 +94,8 @@ const GameContextProvider = ({ children }) => {
     resetPuzzleGrid();
     // reset move count
     resetMoveCount();
+    // empty list of moves
+    resetMoveList();
     // reset game start timestamp
     resetAndRestart ? startGameTimer() : stopGameTimer();
     // setStartTime(resetAndRestart ? Date.now() : null); 
@@ -104,30 +123,26 @@ const GameContextProvider = ({ children }) => {
     setCurrentPuzzleGrid(grid);
   };
 
-  // flips the value of the given square, the count being the index in the puzzle grid array
-  const togglePuzzleGridSquare = (pixelCount, fillType = "fill") => {
+  // assigns a new value to a square based on the its current state and the action it is 
+  //  receiving - dependant on codes in squareConstants
+  const togglePuzzleGridSquare = (pixelCount, clickAction) => {
     if (!currentPuzzleGrid || pixelCount > currentPuzzleGrid.length || puzzleIsSolved){
       return;
     }
 
-    console.log(`togglePuzzleGridSquare firing on ${pixelCount} with fillType = ${fillType}`);
+    console.log(`togglePuzzleGridSquare firing on ${pixelCount} with clickAction = ${clickAction}`);
     
     setCurrentPuzzleGrid(currentGrid => {
       const newGrid = [...currentGrid];
-      const currentFill = newGrid[pixelCount];
-
-      if (fillType === "fill" && currentFill !== 2){
-        console.log("We made it, setting a fill to 1");
-        newGrid[pixelCount] = currentFill === 1 ? 0 : 1;
-      }
-      else if (fillType === "x" && currentFill !== 1) {
-        console.log("We made it, setting a fill to 2");
-        newGrid[pixelCount] = currentFill === 2 ? 0 : 2; 
-      }
-
+      const currentSquareStatus = getSquareStatusCodeFromStatusIndex(newGrid[pixelCount]);
+      // TODO: prune this code
+      // const newSquareStatus = getNewSquareStatus(clickAction, currentSquareStatus);
+      // const newSquareValue = getSquareStatusIndexFromStatusCode(newSquareStatus);
+      const newSquareValue = getNewSquareStatusAsIndex(clickAction, currentSquareStatus);
+      newGrid[pixelCount] = newSquareValue;
+      addMoveToList(pixelCount, newSquareValue);
       return newGrid;
     });
-    incrementMoveCount();
   };
 
   // gets current game time, 0 if no game is active
