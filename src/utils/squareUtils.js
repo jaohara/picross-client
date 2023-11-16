@@ -90,3 +90,8 @@ export const getNewSquareStatusAsIndex = (clickAction, currentSquareStatus) => {
   const newStatus = getNewSquareStatus(clickAction, currentSquareStatus);
   return getSquareStatusIndexFromStatusCode(newStatus);
 }
+
+// gets the pixelCount that is stored in the id of the DOM element for the square
+//    assumes ids are like "board-square-x", where x is pixelCount
+// const pixelCount = e.target.id.split("-")[2];
+export const getPixelCountFromDOMId = (idString) => idString.split("-")[2]; 

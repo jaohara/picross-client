@@ -14,9 +14,12 @@ import {
 
 import {
   getNewSquareStatus,
+  getPixelCountFromDOMId,
   maxValidSquareStatusCode,
   squareStatusCodes,
 } from "../../utils/squareUtils";
+
+const getPixelCountFromMouseEvent = (e) => getPixelCountFromDOMId(e.target.id);
 
 const Board = ({
   // gridViewActive,
@@ -161,18 +164,22 @@ const Board = ({
   // applies the current status of initialClickAction.current
   //  - this is triggered after a click is processed or on enter in the case of a
   //    click-and-drag event
+  /**
+   * Applies the provided clickAction to the square at the given pixelCount and adds 
+   * the pixelCount to the current toggledSquareBatch.
+   * @param {string} clickAction clickAction string (from clickActions in squareUtils)
+   * @param {string|number} pixelCount index of the square in the puzzleGrid
+   * @returns {boolean} whether the action was successfully applied
+   */
   function applyActionToSquare (clickAction, pixelCount) {
-    // const clickAction = clickAction.current;
-
     if (!clickAction) {
-      console.error(`applyActionToSquare: no current clickAction`);
-      return;
+      return false;
     }
 
     togglePuzzleGridSquare(pixelCount, clickAction);
     toggleSquareInBatch(pixelCount);
+    return true;
   }
-
 
   // helper function to reset the relevant refs after a mouse action
   const resetMouseRefs = () => {
@@ -189,59 +196,41 @@ const Board = ({
 
     if (e.target.matches(".board-square")) {
       mouseButtonDown.current = true;
-      // assumes ids are like "board-square-x", where x is pixelCount
-      const pixelCount = e.target.id.split("-")[2];
-      // next, determine action type based on initial square fill
-      console.log("handleMouseDown: puzzleGrid before getCurrentSquarStatus:", puzzleGrid);
+      const pixelCount = getPixelCountFromMouseEvent(e);
       const currentSquareStatus = getCurrentSquareStatus(pixelCount);
+      let newClickAction;
+      
+      // some boolean flags
       const squareIsFilled = currentSquareStatus === "fill";
       const squareIsEmpty = currentSquareStatus === "empty";
       const squareIsX = currentSquareStatus === "x";
-
-      let newClickAction;
-
       const ctrlKey = e.ctrlKey;
       const leftClick = e.button === 0 && !ctrlKey;
       const rightClick = e.button === 2 || (e.button === 0 && ctrlKey);
-
-      // TODO: RESUME WORKING ON THIS LOGIC
-      /*
-        newClickAction is assigned to initialClickAction and can be any one of these:
-
-          - "fill" - change empty to filled
-          - "x" - change empty to x
-          - "empty-fill" - change fill to empty
-          - "empty-x" - change x to empty
-
-        in the case of the non-emptying actions ("fill" and "x"), any newly toggled square
-        will be added to the toggledSquareBatch via toggleSquareInBatch(pixelCount). This 
-        allows a user to undo the fill or x action while the mouse button is still held down.
-
-
-        REMEMBER: you wrote some helper functions:
-          - getCurrentSquareStatus
-          - toggleSquareInBatch
-      */
       
-      // square is empty, simple case
+      // fill an empty square
       if (leftClick && squareIsEmpty) {
-        console.log("handleMouseDown: fill an empty path");
+        // console.log("handleMouseDown: fill an empty path");
         newClickAction = "fill";
       }
+      // empty a filled square
       else if (leftClick && squareIsFilled) {
-        console.log("handleMouseDown: empty a fill path");
+        // console.log("handleMouseDown: empty a fill path");
         newClickAction = "empty-fill";
       }
+      // x an empty square
       else if (rightClick && squareIsEmpty) {
-        console.log("handleMouseDown: x an empty path");
+        // console.log("handleMouseDown: x an empty path");
         newClickAction = "x";
       }
+      // empty an x'd square
       else if (rightClick && squareIsX) {
-        console.log("handleMouseDown: empty an x path");
+        // console.log("handleMouseDown: empty an x path");
         newClickAction = "empty-x";
       }
 
-      const LONG_DEBUG_LOGS = true;
+      // TODO: prune these logs
+      const LONG_DEBUG_LOGS = false;
 
       if (LONG_DEBUG_LOGS) {
         console.log(`handleMouseDown: e.button: ${e.button}`);
@@ -253,8 +242,7 @@ const Board = ({
         console.log(`handleMouseDown: newClickAction: ${newClickAction}`);
       }
 
-
-      // set initialClickAction to remember for mouse over events
+      // set clickAction.current to remember for mouse over events
       clickAction.current = newClickAction;
       applyActionToSquare(newClickAction, pixelCount);
     }
@@ -263,7 +251,6 @@ const Board = ({
   const handleMouseUp = (e) => {
     // mouseButtonDown.current = false;
     resetMouseRefs();
-
   };
 
   const handleMouseEnter = (e) => {
@@ -273,21 +260,42 @@ const Board = ({
     }
   };
 
-  const handleSquareMouseEnter = (e) => {
-    // logic for entering a square
-    if (!mouseButtonDown.current) {
-      // no mouse button held, exit
+  function handleSquareMouseEnter (e, mouseRefs) {
+    // TODO: prune log code
+    const DEBUG_LOGS = false;
+
+    if (!mouseRefs) {
+      DEBUG_LOGS && console.error("handleSquareMouseEnter: no mouseRefs provided, aborting");
       return;
     }
 
-    // TODO: RETURN TO TYPE OUT THIS LOGIC AFTER handleMouseDown LOGIC MAKES SENSE
+    const { mouseButtonDownRef, clickActionRef } = mouseRefs;
 
-    // now check to see what initialClickAction is
+    // TODO: prune log code
+    if (DEBUG_LOGS) {
+      console.log(`handleMouseSquareEnter: mouseButtonDownRef.current: ${mouseButtonDownRef.current}`);
+      console.log(`handleMouseSquareEnter: clickActionRef.current: ${clickActionRef.current}`);
+    }
 
-    // if the square is empty, apply the initialClickAction to it
+    console.log("handleSquareMouseEnter firing");
+    // logic for entering a square
+    if (!mouseButtonDownRef?.current || !clickActionRef.current) {
+      // no mouse button held, exit
+      // console.log("handleSquareMouseEnter: no button held or saved action, aborting");
+      return;
+    }
 
-    // if the square is not-empty, check to see if it 
-  };
+    const clickAction = clickActionRef.current;
+    const pixelCount = getPixelCountFromMouseEvent(e);
+
+    // TODO: prune log code
+    if (DEBUG_LOGS) {
+      console.log(`handleSquareMouseEnter: clickAction: ${clickAction}`);
+      console.log(`handleSquareMouseEnter: pixelCount: ${pixelCount}`);
+    }
+
+    applyActionToSquare(clickAction, pixelCount);
+  }
 
   // TODO: Define logic for different square sizes here
   // TODO: Account for resolution - laptop can't display all squares in 15x15 or larger
@@ -303,6 +311,12 @@ const Board = ({
     console.log("Board: puzzleData is:", puzzleData);
     console.log("Board: puzzleGrid is:", puzzleGrid);
   }, []);
+
+  // omitting toggledSquareBatch - what am I using this for?
+  const mouseRefs = { 
+    clickActionRef: clickAction, 
+    mouseButtonDownRef: mouseButtonDown,
+  };
 
   return ( 
     <div className={boardWrapperClassNames}>
@@ -333,10 +347,11 @@ const Board = ({
               <Row
                 getSquareClassNames={getSquareClassNames}
                 gridViewActive={gridViewActive}
-                handleMouseEnter={handleSquareMouseEnter}
                 handleMouseDown={handleMouseDown}
+                handleSquareMouseEnter={handleSquareMouseEnter}
                 key={`row-${index}`}
                 // mouseButtonDown={mouseButtonDown}
+                mouseRefs={mouseRefs}
                 parseSquareData={parseSquareData}
                 puzzleGrid={puzzleGrid}
                 puzzleOpacity={puzzleOpacity}
@@ -407,7 +422,8 @@ function Row ({
   // colors,
   getSquareClassNames,
   gridViewActive,
-  handleMouseEnter,
+  handleSquareMouseEnter,
+  mouseRefs,
   puzzleSize,
   // mouseButtonDown,
   parseSquareData,
@@ -427,10 +443,11 @@ function Row ({
             // color={getColorFromSquareData(squareData)}
             getSquareClassNames={getSquareClassNames}
             gridViewActive={gridViewActive}
-            handleMouseEnter={handleMouseEnter}
+            handleSquareMouseEnter={handleSquareMouseEnter}
             key={`square-${index}`}
             // isFilled={false}
             // mouseButtonDown={mouseButtonDown}
+            mouseRefs={mouseRefs}
             parseSquareData={parseSquareData}
             puzzleGrid={puzzleGrid}
             puzzleOpacity={puzzleOpacity}
@@ -445,12 +462,10 @@ function Row ({
 }
 
 function Square ({
-  // color = "#FF0000",
   getSquareClassNames, 
   gridViewActive,
-  handleMouseEnter,
-  // isFilled,
-  // mouseButtonDown,
+  handleSquareMouseEnter,
+  mouseRefs,
   parseSquareData,
   puzzleGrid,
   puzzleOpacity = 1,
@@ -471,7 +486,6 @@ function Square ({
   const isFilled = puzzleGrid[pixelCount] === 1;
   const isX = puzzleGrid[pixelCount] === 2;
 
-  
   // guideline and border calculations
   const columnIndex = pixelCount % puzzleSize.width;
   const rowIndex = Math.floor(pixelCount / puzzleSize.width);
@@ -508,6 +522,8 @@ function Square ({
     isFilled,
     isX,
   };
+
+  const handleMouseEnter = (e) => handleSquareMouseEnter(e, mouseRefs);
 
   return (
     <div 
