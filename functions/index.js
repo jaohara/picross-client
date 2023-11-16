@@ -689,6 +689,7 @@ function processPuzzleData(puzzleData) {
 
   // split the raw grid and get a rotated copy for columns
   const splitPuzzleGrid = splitPuzzleGridByRowWidth(puzzleData.grid, puzzleData.width);
+  // TODO: update this to use second arg for clockwise and avoid needing to reverse
   const rotatedPuzzleGrid = rotate2dArray(splitPuzzleGrid);
   rotatedPuzzleGrid.reverse(); // why am I doing this again?
 

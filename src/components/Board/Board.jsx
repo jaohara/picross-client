@@ -277,7 +277,6 @@ const Board = ({
       console.log(`handleMouseSquareEnter: clickActionRef.current: ${clickActionRef.current}`);
     }
 
-    console.log("handleSquareMouseEnter firing");
     // logic for entering a square
     if (!mouseButtonDownRef?.current || !clickActionRef.current) {
       // no mouse button held, exit
@@ -297,8 +296,8 @@ const Board = ({
     applyActionToSquare(clickAction, pixelCount);
   }
 
-  // TODO: Define logic for different square sizes here
   // TODO: Account for resolution - laptop can't display all squares in 15x15 or larger
+  //  - maybe handle these with media queries in the SCSS?
   const boardWrapperClassNames = `
     board-wrapper
     ${ puzzleSize.width > 15 ? "small-squares" : "" }
