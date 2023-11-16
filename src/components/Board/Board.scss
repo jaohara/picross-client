@@ -307,9 +307,20 @@
   font-weight: bold;
   justify-content: center;
   opacity: 1;
-  transition: opacity g.$board-reveal-transition;
-
+  // transition: opacity g.$board-reveal-transition;
+  transition: opacity g.$ui-fast-transition;
+  
   .solved & {
+    transition: opacity g.$board-reveal-transition;
+    opacity: 0;
+  }
+
+  // state for when this number is already filled in on the board
+  &.completed {
+    opacity: .25;
+  }
+
+  .solved &.completed {
     opacity: 0;
   }
 }

@@ -27,6 +27,7 @@ const Board = ({
   puzzleGrid,
   puzzleOpacity,
   puzzleIsSolved,
+  rowAndColumnSums,
   togglePuzzleGridSquare,
 }) => {
   // TODO: cleanup after board event delegation is finished
@@ -50,6 +51,11 @@ const Board = ({
     rowNumbers,
     width,
   } = puzzleData;
+
+  // const {
+  //   rows: rowSums,
+  //   cols: colSums,
+  // } = rowAndColumnSums;
 
   const puzzleSize = { height, width };
 
@@ -83,7 +89,6 @@ const Board = ({
 
     return result;
   }, [puzzleData]);
-
 
   const puzzleIsValid = puzzle && Array.isArray(puzzle) && puzzle.length > 0;
 
@@ -146,12 +151,7 @@ const Board = ({
       return null;
     }
 
-    console.log(`getCurrentSquareStatus: puzzleGrid before:`, puzzleGrid);
     const squareStatus = puzzleGrid[pixelCount];
-
-    console.log(`getCurrentSquareStatus: ${pixelCount} is '${squareStatus}'`);
-    console.log(`getCurrentSquareStatus: puzzleGrid after:`, puzzleGrid);
-
 
     if (squareStatus > maxValidSquareStatusCode) {
       console.error(`getCurrentSquareStatus: '${squareStatus}' is not a valid square status code.`);
@@ -161,12 +161,10 @@ const Board = ({
     return squareStatusCodes[squareStatus];
   }
 
-  // applies the current status of initialClickAction.current
-  //  - this is triggered after a click is processed or on enter in the case of a
-  //    click-and-drag event
   /**
    * Applies the provided clickAction to the square at the given pixelCount and adds 
-   * the pixelCount to the current toggledSquareBatch.
+   * the pixelCount to the current toggledSquareBatch. To be triggered after a click is 
+   * processed or on enter in the case of a click-and-drag-event.
    * @param {string} clickAction clickAction string (from clickActions in squareUtils)
    * @param {string|number} pixelCount index of the square in the puzzleGrid
    * @returns {boolean} whether the action was successfully applied
@@ -190,7 +188,6 @@ const Board = ({
 
   // This handles the logic for clicking on a square
   const handleMouseDown = (e) => {
-    console.log("handleMouseDown: puzzleGrid at start:", puzzleGrid);
     e.preventDefault();
     resetMouseRefs();
 
@@ -317,15 +314,22 @@ const Board = ({
     mouseButtonDownRef: mouseButtonDown,
   };
 
+  const colSums = rowAndColumnSums ? rowAndColumnSums?.cols : null;
+  const rowSums = rowAndColumnSums ? rowAndColumnSums?.rows : null;
+
   return ( 
     <div className={boardWrapperClassNames}>
       <ColumnNumbers 
         colNumbers={parsedColNumbers}
+        // colSums={colSums}
+        colSums={rowAndColumnSums?.cols}
       />
 
       <div className="board-row-and-board-wrapper">
         <RowNumbers
           rowNumbers={parsedRowNumbers}
+          // rowSums={rowSums}
+          rowSums={rowAndColumnSums?.rows}
         />
 
         <div 
@@ -366,20 +370,86 @@ const Board = ({
   );
 }
 
-function ColumnNumbers ({
-  colNumbers,
-}) {
-  const numberElements = colNumbers.map((colNumberGroup) => (
-    <div className="board-number-container">
+const getClassIfRowOrColSumMatches = (number, sums, groupIndex, numberIndex, id = undefined) => {
+  if (!number || !sums || !groupIndex || !numberIndex) return "";
+
+  const sum = sums[groupIndex][numberIndex];
+
+  console.log(`getClassIfRowOrColSumMatches: '${id}' - matching sum '${sum}'`)
+
+  if (!sum) return "";
+  
+  // id && console.log(`id: ${id}`);
+  // console.log("sums array: ", sums);
+  // console.log(`lookup at sums[${groupIndex}][${numberIndex}]`);
+  console.log(`Comparing ${number} to ${sum}`);
+  
+  if (number === sum) {
+    console.log(`getClassIfRowOrColSumMatches: ${id} is completed`);
+    return "completed";
+  }
+};
+
+/**
+ * Builds JSX elements for RowNumbers and ColNumbers
+ * @param {any} numbers the array of row or column numbers
+ * @param {any} sums the current row or column sums 
+ * @param {"row"|"col"} axisType whether you're building numbers for the rows or columns
+ * @returns Array of JSX elements to render
+ */
+function buildNumberElements(numbers, sums, axisType = "col") {
+  // console.log("buildNumberElements: building number elements with numbers, sums:", numbers, sums);
+
+  return numbers.map((numberGroup, groupIndex) => (
+    <div 
+      className={`board-number-container ${!sums ? `no-${axisType}-sums` : ""}`}
+      id={`${axisType}-group-${groupIndex}`}
+      key={`${axisType}-group-${groupIndex}`}
+    >
       {
-        colNumberGroup.map((colNumber) => (
-          <div className="board-number">
-            {colNumber}
-          </div>
-        ))
+        numberGroup.map((number, numberIndex) => {
+          let classString = "";
+          
+          if (sums) {
+            const sumGroup = sums[groupIndex];
+
+            if (sumGroup) {
+              const sum = sumGroup[numberIndex]
+              // console.log(`buildNumberElements: number: ${number}, sum: ${sum}`);
+  
+              if (sum === number && sums[groupIndex].length <= numberGroup.length) {
+                classString += "completed"
+              }
+            }
+          }
+
+          return (
+            <div 
+              className={`board-number ${classString}`}
+              id={`${axisType}-number-${groupIndex}-${numberIndex}`}
+              key={`${axisType}-number-${groupIndex}-${numberIndex}`}
+            >
+              {number}
+            </div>
+          )
+        })
       }
     </div>
   ));
+};
+
+// TODO: a lot of code reuse here, find a way to combine this and RowNumbers
+function ColumnNumbers ({
+  colNumbers,
+  colSums,
+}) {
+  const [ numberElements, setNumberElements ] = useState([]);
+
+  useEffect(() => {
+    console.log(`ColumnNumbers: colNumbers:`, colNumbers);
+    console.log(`ColumnNumbers: colSums:`, colSums);
+    setNumberElements(buildNumberElements(colNumbers, colSums, "col"));
+  }, [colNumbers, colSums]);
 
   return (
     <div className="board-column-numbers">
@@ -392,23 +462,13 @@ function ColumnNumbers ({
 // different classNames on the wrapping divs. Maybe refactor sometime later?
 function RowNumbers ({
   rowNumbers,
+  rowSums,
 }) {
-  const numberElements = rowNumbers.map((rowNumberGroup) => (
-    <div className="board-number-container">
-      {
-        rowNumberGroup.map((rowNumber) => (
-          <div 
-            className="board-number"
-            style={{
-              "width": BOARD_SQUARE_SIZE,
-            }}
-          >
-            {rowNumber}
-          </div>
-        ))
-      }
-    </div>
-  ))
+  const [ numberElements, setNumberElements ] = useState([]);
+
+  useEffect(() => {
+    setNumberElements(buildNumberElements(rowNumbers, rowSums, "row"));
+  }, [rowNumbers, rowSums]);
 
   return (
     <div className="board-row-numbers">

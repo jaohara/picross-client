@@ -43,6 +43,7 @@ const BoardScreen = () => {
     pauseDuration,
     puzzleIsSolved,
     quitGame,
+    rowAndColumnSums,
     setGameIsActive,
     startTime,
     togglePuzzleGridSquare,
@@ -146,6 +147,7 @@ const BoardScreen = () => {
                   puzzleData={currentPuzzle}
                   puzzleGrid={currentPuzzleGrid}
                   puzzleIsSolved={puzzleIsSolved}
+                  rowAndColumnSums={rowAndColumnSums}
                   togglePuzzleGridSquare={togglePuzzleGridSquare}
                 />
               )
