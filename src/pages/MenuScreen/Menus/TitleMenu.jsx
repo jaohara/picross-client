@@ -88,7 +88,7 @@ const TitleMenu = () => {
         />
 
         <div className="menu-body">
-          <CloudFunctionTester />
+          <CloudFunctionTester disabled />
 
           <p>
             You need to put some more thought into what should be displayed on this main screen.

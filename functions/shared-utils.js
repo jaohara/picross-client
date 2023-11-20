@@ -21,8 +21,8 @@ export function hashPuzzleGrid(
   return gridHash;
 };
 
-// rotates a 2d array 90 degrees clockwise
-export function rotate2dArray(input) {
+// rotates a 2d array 90 degrees counter-clockwise
+export function rotate2dArray(input, clockwise = false) {
   // assumes a square, which is fine for our purposes
   const rows = input.length;
   const cols = input[0].length;
@@ -39,9 +39,32 @@ export function rotate2dArray(input) {
     rotatedArray.push(newRow);
   }
 
+  if (clockwise) {
+    rotatedArray.reverse();
+  }
+
   return rotatedArray;
 }
 
+function testRotate2dArray() {
+  const input = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9],
+  ];
+
+  console.log("input: ", input);
+
+  let output = rotate2dArray(input);
+
+  console.log("output: ", output);
+
+  output = rotate2dArray(input, true);
+
+  console.log("clockwise output: ", output);
+}
+
+testRotate2dArray();
 // sums up the row numbers in sequence to from a sequence of filled or unfilled 
 // squares to the picross sequence for the row and column gutters.
 //
@@ -56,7 +79,8 @@ export function sumRowNumbers(row) {
 
   for (let i = 0; i < row.length; i++) {
     // console.log(`row[${i}] = ${row[i]}`)
-    if (row[i] !== 0) {
+    // if (row[i] !== 0) { 
+    if (row[i] === 1) {
       // console.log(`adding to current sum...`);
       currentSum++;
     }

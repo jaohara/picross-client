@@ -82,7 +82,6 @@ const GameContextProvider = ({ children }) => {
 
   const stopGameTimer = () => setStopTime(Date.now());
 
-
   const clearGameTimer = () => {
     clearStartTime();
     clearStopTime();
@@ -453,6 +452,7 @@ const GameContextProvider = ({ children }) => {
         navigateToPuzzleGroup,
         menuIsActive,
         moveCountRef,
+        moveListRef,
         pauseDuration,
         puzzleIsSolved,
         quitGame,

@@ -35,7 +35,7 @@ import {
 
 import convertDataFromObjectWithIdKeysToArray from '../../utils/convertDataFromObjectWithIdKeysToArray';
 
-const CloudFunctionTester = () => {
+const CloudFunctionTester = ({ disabled = false }) => {
   const [ completeGameRecordId, setCompleteGameRecordId ] = useState("");
   const [ createRecordIsComplete, setCreateRecordIsComplete ] = useState(false);
   const [ createRecordTestString, setCreateRecordTestString ] = useState("");
@@ -148,17 +148,16 @@ const CloudFunctionTester = () => {
     // load the test records for the purpose of using these api calls in this component
 
     // load once here and manually reload on change, just to test
-    handleGetUserGameRecords();
+    !disabled && handleGetUserGameRecords();
   }, [user]);
 
   const testGameRecordsArray = 
     testGameRecords ? convertDataFromObjectWithIdKeysToArray(testGameRecords) : null;
 
-  return ( 
-    <div className="cloud-function-tester">
-      <h1>Cloud Function Tester</h1>
-
-      <HorizontalDivider extraBottomMargin/>
+  const cloudFunctionTesterBody = disabled ? (
+    <code>Disabled.</code>
+  ) : (
+    <>
       <p>
         <code>
           testGameRecords { testGameRecordsLoading ? "loading..." : "loaded"}
@@ -290,6 +289,15 @@ const CloudFunctionTester = () => {
           </Button>
         </p>
       </div>
+    </>
+  );
+
+  return ( 
+    <div className="cloud-function-tester">
+      <h1>Cloud Function Tester</h1>
+
+      <HorizontalDivider extraBottomMargin/>
+      {cloudFunctionTesterBody}
     </div>
   );
 }

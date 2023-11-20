@@ -185,6 +185,12 @@ $board-square-small-size: 34px;
 
 $board-square-x-width: 3px; // TODO: Maybe make this larger?
 
+// ====
+// misc
+// ====
+// for use with "text-shadow: val" and "filter: drop-shadow(val)"
+$board-screen-shadow-value: 0px 2px 5px $board-shadow-color;
+
 // ======================
 // responsive breakpoints
 // ======================

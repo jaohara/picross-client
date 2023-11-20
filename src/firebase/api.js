@@ -154,6 +154,9 @@ function parameterExists(parameter, paramName, callerName) {
 // checks if the response from a callable was successful via the
 // presence/state of the response.data.success boolean.
 function checkIfResponseWasSuccessful(response, callerName) {
+  console.log(`${callerName}: response:`, response);
+  console.log(`${callerName}: response.data:`, response.data);
+
   const { success } = response.data;
 
   if (success) {
@@ -173,12 +176,10 @@ function checkIfResponseWasSuccessful(response, callerName) {
   return false;
 }
 
-// TODO: Test this function
 // takes in a user object (UserContext.user) and the gameRecord data
 // as a js object, validates presence of required keys, and creates
 // a new document in firestore
 export async function createGameRecord(user, gameRecordData) {
-  //TODO: Should this add the one-off record to the local gameRecords in context here?
   const userId = checkIfUserExistsAndGetUid(user);
   
   if (!gameRecordData) {
@@ -193,7 +194,6 @@ export async function createGameRecord(user, gameRecordData) {
 
   // use this as the alias for the callable cloud function
   const callable = getCallable('createGameRecord');
-
   
   // TODO: Does this record need anything more attached to it?
   gameRecordData['userId'] = userId;
@@ -337,54 +337,90 @@ export async function createUserEntity(newUser, id) {
   }
 }
 
+// TODO: Revisit this to optimize
+// TODO: Change this to a callable approach
 export async function getUserProfile(userId) {
-  console.log("getUserProfile: received userId: ", userId);
+  const fName = "getUserProfile";
+  // const USE_NEW_IMPLEMENTATION = false;
+  const USE_NEW_IMPLEMENTATION = true;
 
-  try {
-    // get ref to user doc and snapshot of doc
-    console.log("getUserProfile: starting try block...");
-    const userProfileDocRef = doc(usersCollectionRef, userId);
-    const userProfileSnapshot = await getDoc(userProfileDocRef);
+  console.log(`${fName}: USE_NEW_IMPLEMENTATION?`, USE_NEW_IMPLEMENTATION);
 
-    // console.log("getUserProfile: got userProfileSnapshot: ", userProfileSnapshot);
-    
-    if (!userProfileSnapshot.exists()) {
-      // bad scenario, no user profile exists
-      console.error("getUserProfile: user profile does not exist");
+  console.log(`${fName}: received userId: `, userId);
+
+  // ==================
+  // OLD IMPLEMENTATION
+  // ==================
+  if (!USE_NEW_IMPLEMENTATION) {
+    try {
+      // get ref to user doc and snapshot of doc
+      const userProfileDocRef = doc(usersCollectionRef, userId);
+      const userProfileSnapshot = await getDoc(userProfileDocRef);
+  
+      if (!userProfileSnapshot.exists()) {
+        // bad scenario, no user profile exists
+        console.error("getUserProfile: user profile does not exist");
+        return null;
+      }
+      
+      // profile exists, get the data
+      const userProfileData = userProfileSnapshot.data();
+  
+      console.log("getUserProfile: got userProfileData: ", userProfileData);
+  
+      // TODO: Move this operation out of here and into its own function
+      // get the gameRecords subcollection
+      const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
+      const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
+  
+      // console.log("getUserProfile: got gameRecordsSnapshot:", gameRecordsSnapshot);
+  
+      // get the data from each doc in the gameRecords subcollection
+      const gameRecords = {};
+      gameRecordsSnapshot.forEach((doc) => gameRecords[doc.id] = doc.data());
+  
+      console.log("getUserProfile: got gameRecords data:", gameRecords);
+  
+      // add the gameRecords subcollection data to the userProfileData
+      userProfileData.gameRecords = gameRecords;
+  
+      // console.log("getUserProfile: fetched user profile with gameRecords:", userProfileData);
+  
+      return userProfileData;
+    }
+    catch (error) {
+      console.error("getUserProfile: error: ", error);
       return null;
     }
-    
-    // profile exists, get the data
-    const userProfileData = userProfileSnapshot.data();
-
-    console.log("getUserProfile: got userProfileData: ", userProfileData);
-
-    // TODO: Move this operation out of here and into its own function
-    // get the gameRecords subcollection
-    const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
-    const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
-
-    // console.log("getUserProfile: got gameRecordsSnapshot:", gameRecordsSnapshot);
-
-    // get the data from each doc in the gameRecords subcollection
-    const gameRecords = {};
-    gameRecordsSnapshot.forEach((doc) => gameRecords[doc.id] = doc.data());
-
-    console.log("getUserProfile: got gameRecords data:", gameRecords);
-
-    // add the gameRecords subcollection data to the userProfileData
-    userProfileData.gameRecords = gameRecords;
-
-    console.log("getUserProfile: fetched user profile with gameRecords:", userProfileData);
-
-    return userProfileData;
   }
-  catch (error) {
-    console.error("getUserProfile: error: ", error);
-    return null;
+  // ==================
+  // NEW IMPLEMENTATION
+  // ==================
+  else {
+    console.log(`${fName}: Using new implementation`);
+
+    const callable = getCallable("getUserProfile");
+
+    try {
+      const response = await callable({ userId });
+
+      console.log(`${fName}: got response from callable:`, response);
+
+      // TODO: Is there a better way to handle errors here?
+      if (checkIfResponseWasSuccessful(response, fName)) {
+        console.log(`${fName}: NEW IMPLEMENTATION: response received:`, response);
+        
+        const { data: userProfileData } = response.data;
+        return userProfileData;
+      }
+    }
+    catch (error) {
+      console.error(`${fName}: error getting user profile:`, error);
+    }
   }
 }
 
+// TODO: REMOVE
 // achievement-related api functions
 export async function getAchievements() {
   console.log("api: getAchievements: fetching achievements");

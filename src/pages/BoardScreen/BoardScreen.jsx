@@ -5,8 +5,6 @@ import React, {
   useState,
 } from 'react';
 
-import { Timestamp } from 'firebase/firestore';
-
 import "./BoardScreen.scss";
 
 import {
@@ -31,6 +29,7 @@ import convertMillisToMinutesAndSeconds from '../../utils/convertMillisToMinutes
 
 const BoardScreen = () => {
   const [ displayTimer, setDisplayTimer ] = useState(0);
+  const timerAnimationIdRef = useRef(null);
 
   const {
     boardIsReady,
@@ -40,11 +39,11 @@ const BoardScreen = () => {
     gameIsPaused,
     getCurrentGameTimeInMillis,
     moveCountRef,
+    moveListRef,
     pauseDuration,
     puzzleIsSolved,
     quitGame,
     rowAndColumnSums,
-    setGameIsActive,
     startTime,
     togglePuzzleGridSquare,
   } = useContext(GameContext);
@@ -60,69 +59,84 @@ const BoardScreen = () => {
     ${puzzleIsSolved ? "solved" : ""}
   `;
 
-  /*
-    TODO: RESUME HERE
-
-    - Make the board screen show whether the game is paused, active, etc
-    - show the start time
-    - show the puzzleGrid
-    - maybe show the game timer?
-
-  */
-
-
-  // TODO: Temp logic functions for buttons
-  const handleCompleteClick = () => {
-    console.log("handleCompleteClick fired");
-    
-    const currentPuzzleId = currentPuzzle.id;
+  // creates a gameRecord object for storage in Firestore from the supplied game data
+  function buildGameRecordFromGameData (
+    id,
+    moveCountRef,
+    moveListRef,
+    pauseDuration,
+    completed = true,
+  ) {
+    const MARK_DEV_RECORDS = true;
 
     const puzzleRecord = {
-      // This is the "computed poperty name syntax", and it rules
-      [currentPuzzleId] : {
-        completed: true,
-        // not sure I like this logic like this
-        gameTimer: getCurrentGameTimeInMillis(Date.now(), pauseDuration),
-        id: currentPuzzleId,
-        lastPlayed: Timestamp.now(),
-        moveCount: moveCountRef.current,
-      }
+      // [id]: {
+      completed,
+      gameTimer: getCurrentGameTimeInMillis(Date.now(), pauseDuration),
+      puzzleId: id,
+      // lastPlayed is added in api.createGameRecord
+      moveCount: moveCountRef.current,
+      moveList: moveListRef.current,
+      // }
     };
 
-    console.log("BoardScreen: handleCompleteClick: puzzleRecord created:", puzzleRecord);
+    // TODO: remove after testing
+    // marks logs made during development for easy access/removal
+    if (MARK_DEV_RECORDS) {
+      puzzleRecord["devRecord"] = true;
+    }
+
+    return puzzleRecord;
+  }
+
+  // used for shared code between handleCompleteClick (saving complete gameRecord at end of puzzle)
+  //  and handleSaveClick (save incomplete gameRecord to resume later)
+  const handleGameRecordClick = (recordIsComplete = true) => {
+    const { id } = currentPuzzle;
+
+    const puzzleRecord = 
+      buildGameRecordFromGameData(id, moveCountRef, moveListRef, pauseDuration, recordIsComplete);
+
+    // console.log("BoardScreen: handleCompleteClick: puzzleRecord created:", puzzleRecord);
     addPuzzleRecord(puzzleRecord);
     quitGame();
   };
-  
-  const handleSaveClick = () => {
-    console.log("handleSaveClick fired");
 
-    // TODO: build this - the extra property you need is "puzzleGrid", which is 
-    //  the current puzzleGrid string.
-  };
-  
-  const handleQuitClick = () => {
-    // console.log("handleQuitClick fired");
-    quitGame();
-  };
+  // TODO: Remove code after testing
+  // const handleCompleteClick = () => {
+  //   const { id } = currentPuzzle;
+
+  //   const puzzleRecord = 
+  //     buildGameRecordFromGameData(id, moveCountRef, moveListRef, pauseDuration);
+
+  //   // console.log("BoardScreen: handleCompleteClick: puzzleRecord created:", puzzleRecord);
+  //   addPuzzleRecord(puzzleRecord);
+  //   quitGame();
+  // };
+  const handleCompleteClick = () => handleGameRecordClick(true);
+  const handleQuitClick = () => quitGame();
+  const handleSaveClick = () => handleGameRecordClick(false);
 
   // calculate the timer logic
   useEffect(() => {
-    let requestedFrameId;
-
     const advanceTimer = () => {
       // console.log("BoardScreen: useEffect: advanceTimer: calling with pauseDuration:", pauseDuration);
       const currentGameTime = getCurrentGameTimeInMillis(Date.now(), pauseDuration);
       setDisplayTimer(currentGameTime);
-      requestedFrameId = requestAnimationFrame(advanceTimer);
+      timerAnimationIdRef.current = requestAnimationFrame(advanceTimer);
     };
 
-    requestedFrameId = requestAnimationFrame(advanceTimer);
+    timerAnimationIdRef.current = requestAnimationFrame(advanceTimer);
 
     return () => {
-      cancelAnimationFrame(requestedFrameId);
+      cancelAnimationFrame(timerAnimationIdRef.current);
     };
   }, [startTime, pauseDuration]);
+
+  // logic to stop the timer when puzzle is solved
+  useEffect(() => {
+    puzzleIsSolved && cancelAnimationFrame(timerAnimationIdRef.current);
+  }, [puzzleIsSolved]);
 
   return ( 
     <div className={boardScreenClassNames}>
@@ -187,5 +201,7 @@ const BoardScreen = () => {
     </div>
   );
 }
+
+
  
 export default BoardScreen;
