@@ -1,6 +1,7 @@
 import React, {
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -168,22 +169,28 @@ const TEMP_GAME_RECORDS = [
 
 // TODO: Also temp, but I might reuse this name later on
 //  this should also be a prop
-const gameRecords = TEMP_GAME_RECORDS.map((record) => {
-  record.lastPlayed = convertFromFirestoreTimestampToDate(record.lastPlayed);
-  return record;
-});
+// const gameRecords = TEMP_GAME_RECORDS.map((record) => {
+//   record.lastPlayed = convertFromFirestoreTimestampToDate(record.lastPlayed);
+//   return record;
+// });
+
+const processGameRecords = (records) => records.map((record) => ({
+  ...record,
+  lastPlayed: convertFromFirestoreTimestampToDate(record.lastPlayed),
+}));
 
 const ProfileMenu = () => {
   const {
-    achievements,
-  } = useContext(DataContext);
-
-  const {
+    completedGameRecords,
     logout,
     puzzleRecords,
     user,
     userProfile,
   } = useContext(UserContext);
+
+  const gameRecords = useMemo(
+    () => processGameRecords(completedGameRecords), [completedGameRecords]
+  );
 
   if (!user || !userProfile) {
     return (<Navigate to="/login" />);
@@ -200,10 +207,7 @@ const ProfileMenu = () => {
     ),
   ];
 
-  const achievementRecords = userProfile.gameRecords.achievements;
-  // const puzzleRecords = userProfile.gameRecords.puzzles;
-  const puzzleRecordKeys = Object.keys(puzzleRecords);
-  const userAchievements = Object.keys(achievementRecords);
+  const puzzleRecordKeys = Object.keys(puzzleRecords); 
 
   const stats = {
     "Completed Puzzles": {
@@ -234,12 +238,6 @@ const ProfileMenu = () => {
     }
 
     stats["Total Puzzle Time"].value += puzzle.gameTimer;
-  })
-
-  useEffect(() => {
-    console.log("ProfileMenu: userProfile is:", userProfile);
-    console.log("ProfileMenu: achievementRecords is:", achievementRecords);
-    console.log("ProfileMenu: userAchievements is:", userAchievements);
   });
 
   const recordLineItems = statKeys.map((statKey, index) => (
@@ -249,7 +247,7 @@ const ProfileMenu = () => {
       recordValue={stats[statKey].value}
       isTime={stats[statKey].isTime}
     />
-  ))
+  ));
 
   return ( 
     <div className="profile-menu menu">
@@ -285,20 +283,6 @@ const ProfileMenu = () => {
 
             <p><strong>TODO:</strong> Add "Longest Unbroken Streak"</p>
           </div>
-
-
-          {/* TODO: Do I actually want to use these? */}
-          {/* 
-          <div className="profile-achievements">
-            <h1>Achievements</h1>
-
-            <AchievementContainer
-              achievements={achievements}
-              userAchievements={userAchievements}
-            />
-          </div> 
-          */}
-
 
           {/* TODO: Remove this garbage */}
           <div className="profile-todo">

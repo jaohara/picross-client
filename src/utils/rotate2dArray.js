@@ -41,4 +41,4 @@ function testRotate2dArray() {
   console.log("clockwise output: ", output);
 }
 
-testRotate2dArray();
+// testRotate2dArray();

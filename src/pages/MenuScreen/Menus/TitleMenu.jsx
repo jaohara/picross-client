@@ -5,14 +5,13 @@ import React, {
 
 import "./Menu.scss";
 
-
-// remove as necessary
 import { UserContext } from '../../../contexts/UserContext';
+import { DataContext } from '../../../contexts/DataContext';
 
-import Button from '../../../components/Button/Button';
+// import Button from '../../../components/Button/Button';
 import MenuHeader from '../../../components/MenuHeader/MenuHeader';
 import MenuLinks from '../../../components/MenuLinks/MenuLinks';
-import TextInput from '../../../components/TextInput/TextInput';
+// import TextInput from '../../../components/TextInput/TextInput';
 import { menuRoutes } from '../../../routes';
 
 // TODO: for testing cloud functions
@@ -20,7 +19,6 @@ import CloudFunctionTester from '../../../components/CloudFunctionTester/CloudFu
 
 import { 
   APP_TITLE,
-  MENU_HEADER_ICON_SIZE as ICON_SIZE,
 } from "../../../constants";
 
 const defaultExcludedRoutes = [
@@ -84,7 +82,7 @@ const TitleMenu = () => {
         <MenuLinks 
           excluded={excludedRoutes}
           renamedMappings={renamedRoutes}
-          showDiagnosticRoute={true}
+          // showDiagnosticRoute={true}
         />
 
         <div className="menu-body">

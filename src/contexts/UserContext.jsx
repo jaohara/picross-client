@@ -38,10 +38,13 @@ const UserContextProvider = ({ children }) => {
   // the useProfile created by createUserEntity. contains user profile data
   //  and gameRecords as a field
   const [ userProfile, setUserProfile ] = useState();
+  const [ userProfileIsLoading, setUserProfileIsLoading ] = useState(false);
 
   // hook for updating completedGameRecords on userProfile change
   useEffect(() => {
     if (!userProfile) return;
+
+    setUserProfileIsLoading(false);
 
     const { gameRecords } = userProfile;
 
@@ -65,33 +68,7 @@ const UserContextProvider = ({ children }) => {
     setPuzzleRecords({...filteredGameRecords});
   }, [userProfile]);
 
-  // hook for updating completedGameRecords when puzzleRecords changes
-  useEffect(() => {
-    if (!puzzleRecords) {
-      return;
-    }
 
-    console.log("UserContext: puzzleRecords callback: puzzleRecords are:", puzzleRecords);
-    
-    const newPuzzleRecordIds = Object.keys(puzzleRecords);
-    const newCompletedPuzzles = [];
-    const newCompletedPuzzleIds = [];
-    
-    newPuzzleRecordIds.forEach((newPuzzleRecordId) => {
-      const newPuzzleRecord = puzzleRecords[newPuzzleRecordId];
-      
-      if (newPuzzleRecord.completed) {
-        // console.log(`UserContext: puzzleRecords callback: ${newPuzzleRecord.id} is complete`);
-        newPuzzleRecord.id = newPuzzleRecordId;
-        const { puzzleId } = newPuzzleRecord;
-        newCompletedPuzzleIds.push(puzzleId);
-        newCompletedPuzzles.push(newPuzzleRecord);
-      }
-    });
-
-    setCompletedPuzzleIds([...new Set(newCompletedPuzzleIds)]);
-    setCompletedGameRecords(newCompletedPuzzles);
-  }, [puzzleRecords]);
 
   // adds a puzzleRecord to the puzzleRecords state value
   const addPuzzleRecord = (newGameRecord) => {
@@ -168,18 +145,9 @@ const UserContextProvider = ({ children }) => {
     let userResult = null;
 
     return createUserWithEmailAndPassword(auth, email, password)
-      // .then((userCredentials) => {
-      //   console.log("register: success, userCredentials are:", userCredentials);
-      //   user = userCredentials.user;
-        
-      //   // user has been created, create user entity with updated profile
-      //   return updateProfile(user, { displayName });
-      // })
       .then((userCredentials) => {
         console.log("register: success, userCredentials are:", userCredentials);
         userResult = userCredentials.user;
-        // create the user entity in firestore
-        // console.log("register: success, displayName added.");
         return createUserEntity({ name: displayName }, userResult.uid);
       })
       .then((userEntityCreationSuccess) => {
@@ -226,14 +194,47 @@ const UserContextProvider = ({ children }) => {
       })
   }
 
+  // hook for updating completedGameRecords when puzzleRecords changes
+  useEffect(() => {
+    if (!puzzleRecords) {
+      return;
+    }
+
+    console.log("UserContext: puzzleRecords callback: puzzleRecords are:", puzzleRecords);
+    
+    const newPuzzleRecordIds = Object.keys(puzzleRecords);
+    const newCompletedPuzzles = [];
+    const newCompletedPuzzleIds = [];
+    
+    newPuzzleRecordIds.forEach((newPuzzleRecordId) => {
+      const newPuzzleRecord = puzzleRecords[newPuzzleRecordId];
+      
+      if (newPuzzleRecord.completed) {
+        // console.log(`UserContext: puzzleRecords callback: ${newPuzzleRecord.id} is complete`);
+        newPuzzleRecord.id = newPuzzleRecordId;
+        const { puzzleId } = newPuzzleRecord;
+        newCompletedPuzzleIds.push(puzzleId);
+        newCompletedPuzzles.push(newPuzzleRecord);
+      }
+    });
+
+    setCompletedPuzzleIds([...new Set(newCompletedPuzzleIds)]);
+    setCompletedGameRecords(newCompletedPuzzles);
+  }, [puzzleRecords]);
+
+  // hook for adding an auth listener on initial page load to fetch the userProfile and assign it
+  //  to a state value when a user logs in
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user ? user : null);
 
       // TODO: get user profile
       if (user) {
+        setUserProfileIsLoading(true);
+
         const fetchData = async () => {
           const userProfileData = await getUserProfile(user.uid);
+          console.log(`UserContext: data getUserProfile result is:`, userProfileData);
           userProfileData.id = user.uid;
           setUserProfile(userProfileData);
         };
@@ -258,6 +259,7 @@ const UserContextProvider = ({ children }) => {
         register,
         user,
         userProfile,
+        userProfileIsLoading,
       }}
     >
       {children}

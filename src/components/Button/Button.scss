@@ -19,7 +19,7 @@
     color g.$ui-fast-transition, 
     opacity g.$ui-fast-transition;
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled), &:hover:not(.loading) {
     @include g.glow-border(g.$button-border-hover-color);
     background-color: g.$button-hover-background-color;
     // border-color: g.$button-border-hover-color;
@@ -39,7 +39,7 @@
     }
   }
 
-  &:disabled {
+  &:disabled, &.loading {
     opacity: .5;
   }
 
@@ -60,7 +60,7 @@
     margin-right: 0rem;
   }
 
-  &.waiting {
+  &.waiting, &.loading {
     animation: spin 1s linear infinite;
   }
 }

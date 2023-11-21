@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { 
+  useContext,
+  useEffect,
+} from 'react';
 
 import { 
   Link, 
@@ -6,6 +9,9 @@ import {
   useLocation,
   useNavigate, 
 } from 'react-router-dom';
+
+import { DataContext } from '../../contexts/DataContext';
+import { UserContext } from '../../contexts/UserContext';
 
 import Button from '../Button/Button';
 
@@ -30,10 +36,18 @@ const MenuLinks = ({
   const navigate = useNavigate();
   const location = useLocation();
   const currentRouteName = location.pathname.replace("/", "");
-  
-  // const history = navigate.history.entries;
 
   const renamedMappingKeys = Object.keys(renamedMappings);
+
+  const { 
+    userProfileIsLoading, 
+  } = useContext(UserContext);
+
+  const { 
+    puzzlesAreLoading,
+  } = useContext(DataContext);
+
+  const resourcesAreLoading = userProfileIsLoading || puzzlesAreLoading;
   
   // hides excluded routes as well as current route
   const filteredRoutes = menuRoutes.filter(
@@ -60,6 +74,8 @@ const MenuLinks = ({
       key={`menu-link-list-item-${index}`}
     >
       <Button
+        // disabled={resourcesAreLoading}
+        loading={resourcesAreLoading}
         iconType={route}
         onClick={() => navigate(`/${route}`) }
       >

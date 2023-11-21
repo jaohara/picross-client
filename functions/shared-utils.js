@@ -8,10 +8,11 @@
   Any changes should be made in the appropriate utility module file.
 */
 
-import { createHash } from 'sha256-uint8array';
+// Cloud Functions uses CommonJS rather than ES6 modules
+const { createHash } = require('sha256-uint8array');
 
 // creates the puzzle grid hash for checking/storing answers
-export function hashPuzzleGrid(
+function hashPuzzleGrid(
   puzzleGrid, // flat array of the current grid
   puzzleName, // the name stored at puzzleData.name
 ) {
@@ -21,8 +22,9 @@ export function hashPuzzleGrid(
   return gridHash;
 };
 
+// exports.hashPuzzleGrid = hashPuzzleGrid;
 // rotates a 2d array 90 degrees counter-clockwise
-export function rotate2dArray(input, clockwise = false) {
+function rotate2dArray(input, clockwise = false) {
   // assumes a square, which is fine for our purposes
   const rows = input.length;
   const cols = input[0].length;
@@ -64,12 +66,12 @@ function testRotate2dArray() {
   console.log("clockwise output: ", output);
 }
 
-testRotate2dArray();
+// testRotate2dArray();
 // sums up the row numbers in sequence to from a sequence of filled or unfilled 
 // squares to the picross sequence for the row and column gutters.
 //
 // example: 0,1,1,0,1 -> 2 1
-export function sumRowNumbers(row) {
+function sumRowNumbers(row) {
   if (!Array.isArray(row) && row.length <= 0) {
     return null;
   }
@@ -118,7 +120,7 @@ export function sumRowNumbers(row) {
       [ 21, 22, 23, 24, 25 ]
     ]
 */
-export function splitPuzzleGridByRowWidth (puzzleGrid, rowWidth) {
+function splitPuzzleGridByRowWidth (puzzleGrid, rowWidth) {
   const result = [];
 
   // is this kind of gross?
@@ -143,3 +145,11 @@ export function splitPuzzleGridByRowWidth (puzzleGrid, rowWidth) {
   return result;
 }
 
+// appended to use CommonJS export syntax.
+
+// This needs to match the function names appended via `prepareSharedUtils.sh`.
+
+exports.hashPuzzleGrid = hashPuzzleGrid;
+exports.rotate2dArray = rotate2dArray;
+exports.sumRowNumbers = sumRowNumbers;
+exports.splitPuzzleGridByRowWidth = splitPuzzleGridByRowWidth;
