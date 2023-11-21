@@ -12,7 +12,8 @@ export default function sumRowNumbers(row) {
 
   for (let i = 0; i < row.length; i++) {
     // console.log(`row[${i}] = ${row[i]}`)
-    if (row[i] !== 0) {
+    // if (row[i] !== 0) { 
+    if (row[i] === 1) {
       // console.log(`adding to current sum...`);
       currentSum++;
     }

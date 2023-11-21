@@ -27,13 +27,20 @@
 }
 
 .board-screen-header, .board-screen-footer {
-  background-color: g.$board-screen-section-temp-background-color;
+  // background-color: g.$board-screen-section-temp-background-color;
+  // text-shadow: 0px 2px 5px g.$board-shadow-color;
+  text-shadow: g.$board-screen-shadow-value;
+}
+
+.timer-icon {
+  // filter: drop-shadow(0px 2px 5px g.$board-shadow-color);
+  filter: drop-shadow(g.$board-screen-shadow-value);
 }
 
 .board-screen-content-container {
   // background-color: red;
   // align-items: center;
-  background-color: g.$board-screen-section-temp-background-color;
+  // background-color: g.$board-screen-section-temp-background-color;
   flex-grow: 1;
 }
 

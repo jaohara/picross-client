@@ -25,12 +25,12 @@ const PuzzleIcon = ({
       const { colors, height, width } = puzzleData;
 
       if (!canvas) {
-        console.log("PuzzleIcon: useEffect: cannot find canvas, aborting");
+        // console.log("PuzzleIcon: useEffect: cannot find canvas, aborting");
         return;
       }
 
       if (!colors || !height || !width) {
-        console.error("PuzzleIcon: useEffect: invalid puzzleData");
+        // console.error("PuzzleIcon: useEffect: invalid puzzleData");
         return;
       }
 

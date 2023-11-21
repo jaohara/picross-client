@@ -34,7 +34,16 @@ const PuzzleGroupContainer = ({
       return false;
     }
 
-    return completedPuzzleIds.includes(puzzle.id);
+    console.log(`PuzzleGroup: checkIfPuzzleIsComplete: checking for puzzle ${puzzle.id}: "${puzzle.name}" in completedPuzzleIds:`, completedPuzzleIds);
+
+    // Note: On puzzles, the id is just "puzzle.id", NOT "puzzle.puzzleId". gameRecords use "puzzleId".
+
+    const result = completedPuzzleIds.includes(puzzle.id);
+
+    console.log(`PuzzleGroup: checkIfPuzzleIsComplete: is "${puzzle.name}" complete?`, result)
+
+    // return completedPuzzleIds.includes(puzzle.id);
+    return result;
   };
 
   const checkIfPuzzleGroupIsComplete = (puzzleGroup) => 

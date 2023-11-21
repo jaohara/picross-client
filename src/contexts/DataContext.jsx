@@ -15,10 +15,10 @@ const DataContext = createContext(undefined);
 const DataContextProvider = ({ children }) => {
   // the set of all possible achievements
   const [ achievements, setAchievements ] = useState([])
-  // whether the achievements are loaded
-  // const [ achievementsAreLoading, setAchievementsAreLoading ] = useState(false)
   // the set of all available puzzles
   const [ puzzles, setPuzzles ] = useState();
+  // whether puzzles are loading
+  const [ puzzlesAreLoading, setPuzzlesAreLoading ] = useState(false);
 
   // cached puzzle Group data
   const [ puzzlesSortedByGroup, puzzleGroups ] = useMemo(() => {
@@ -46,6 +46,8 @@ const DataContextProvider = ({ children }) => {
     console.log("DataContext: computed puzzlesSortedByGroup:", puzzlesSortedByGroup);
     console.log("DataContext: computed puzzleGroups:", puzzleGroups);
 
+    setPuzzlesAreLoading(false);
+
     return [ puzzlesSortedByGroup, puzzleGroups ];
   }, [puzzles]);
 
@@ -62,17 +64,18 @@ const DataContextProvider = ({ children }) => {
 
     const fetchData = async () => {
       // fetch achievements
-      try {
-        const achievementsResult = await getAchievements();
-        console.log("DataContext: useEffect: fetchData: got achievements:", achievementsResult);
-        setAchievements(achievementsResult);
-      }
-      catch (error) {
-        console.error("DataContext: useEffect: fetchData: error getting achievements:", error);
-      }
+      // try {
+      //   const achievementsResult = await getAchievements();
+      //   console.log("DataContext: useEffect: fetchData: got achievements:", achievementsResult);
+      //   setAchievements(achievementsResult);
+      // }
+      // catch (error) {
+      //   console.error("DataContext: useEffect: fetchData: error getting achievements:", error);
+      // }
 
       // fetch puzzles
       try {
+        setPuzzlesAreLoading(true);
         const puzzlesResult = await getPuzzles();
         console.log("DataContext: useEffect: fetchData: got puzzles:", puzzlesResult);
         setPuzzles(puzzlesResult);
@@ -91,6 +94,7 @@ const DataContextProvider = ({ children }) => {
         achievements,
         isPuzzleGroup,
         puzzles,
+        puzzlesAreLoading,
         puzzleGroups,
         puzzlesSortedByGroup,
       }}

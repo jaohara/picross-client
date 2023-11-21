@@ -1,24 +1,25 @@
 import React, { 
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import "./Board.scss";
 
 import {
-  BOARD_SQUARE_BORDER_COLOR,
-  BOARD_SQUARE_BORDER_RADIUS,
-  BOARD_SQUARE_CONTAINER_PADDING,
-  BOARD_SQUARE_EMPTY_COLOR,
-  BOARD_SQUARE_FILL_COLOR,
-  BOARD_SQUARE_GUIDELINE_COLOR,
-  BOARD_SQUARE_GUIDELINE_STROKE_WIDTH,
   BOARD_SQUARE_SIZE,
-  BOARD_SQUARE_STROKE_WIDTH,
-  BOARD_SQUARE_X_COLOR,
   PUZZLE_SQUARE_DELIMITER,
 } from "../../constants";
+
+import {
+  getNewSquareStatus,
+  getPixelCountFromDOMId,
+  maxValidSquareStatusCode,
+  squareStatusCodes,
+} from "../../utils/squareUtils";
+
+const getPixelCountFromMouseEvent = (e) => getPixelCountFromDOMId(e.target.id);
 
 const Board = ({
   // gridViewActive,
@@ -26,9 +27,14 @@ const Board = ({
   puzzleGrid,
   puzzleOpacity,
   puzzleIsSolved,
+  rowAndColumnSums,
   togglePuzzleGridSquare,
 }) => {
-  const [ mouseButtonDown, setMouseButtonDown ] = useState(false);
+  // TODO: cleanup after board event delegation is finished
+  // const [ mouseButtonDown, setMouseButtonDown ] = useState(false);
+  const mouseButtonDown = useRef(false);
+  const clickAction = useRef(null);
+  const toggledSquareBatch = useRef([]);
 
   // I don't think I want to pull these directly to avoid the rerenders when the timer updates
   //  and refreshes the context
@@ -46,8 +52,14 @@ const Board = ({
     width,
   } = puzzleData;
 
+  // const {
+  //   rows: rowSums,
+  //   cols: colSums,
+  // } = rowAndColumnSums;
+
   const puzzleSize = { height, width };
 
+  // whether we're viewing the b&w grid (game in session) or the image itself (game finished)
   const gridViewActive = !puzzleIsSolved;
 
   // colNumbers and rowNumbers are saved as strings, parse back into arrays
@@ -78,8 +90,25 @@ const Board = ({
     return result;
   }, [puzzleData]);
 
+  const puzzleIsValid = puzzle && Array.isArray(puzzle) && puzzle.length > 0;
 
-  const puzzleIsValid = () => puzzle && Array.isArray(puzzle) && puzzle.length > 0;
+  /**
+   * A function to toggle whether a square is in the batch via its pixelCount index 
+   * @param {any} pixelCount the number of the square in the grid to toggle (string or number?) 
+   * @returns true when a square is toggled on, false when a square is toggled off
+   */
+  const toggleSquareInBatch = (pixelCount) => {
+    const index = toggledSquareBatch.current.indexOf(pixelCount);
+
+    if (index === -1) {
+      // mutating a ref array like this rather than reassigning is fine, even if it seems strange
+      toggledSquareBatch.current.push(pixelCount);
+      return true;
+    }
+
+    toggledSquareBatch.current.splice(index, 1);
+    return false;
+  }
 
   const parseSquareData = (squareData) => {
     // squareData comes in as "pixelCount:colorIndex";
@@ -90,58 +119,248 @@ const Board = ({
       color: colors[splitSquareData[1]],
       pixelCount: splitSquareData[0],
     });
+  };
+
+  // TODO: append the "color" or whatever className indicates the square is showing
+  //  the solved state
+  const getSquareClassNames = (squareData) => `
+    board-square
+    ${gridViewActive && squareData.isFilled ? "filled" : ""}
+    ${gridViewActive && !squareData.isFilled && squareData.isX ? "x" : ""}
+    ${gridViewActive && squareData.hasLeftBorder ? "border-left" : ""}
+    ${gridViewActive && squareData.hasTopBorder ? "border-top" : ""}
+    ${gridViewActive && squareData.hasBottomGuideBorder ? "guide-border-bottom" : ""}
+    ${gridViewActive && squareData.hasRightGuideBorder ? "guide-border-right" : ""}
+    ${squareData.hasBottomLeftBorderRadius ? "border-radius-bottom-left" : ""}
+    ${squareData.hasBottomRightBorderRadius ? "border-radius-bottom-right" : ""}
+    ${squareData.hasTopLeftBorderRadius ? "border-radius-top-left" : ""}
+    ${squareData.hasTopRightBorderRadius ? "border-radius-top-right" : ""}
+    ${!gridViewActive ? "completed" : ""}
+  `;
+
+  /**
+   * Gets the current status of the square in the puzzleGrid at a given pixelCount index.
+   * @param {any} pixelCount the number of the square in the grid to toggle (string or number?) 
+   * @returns {string|null} the parsed square status string ("empty", etc.) or null on failure
+   */
+  // TODO: use this to determine the newClickAction in handleMouseDown
+  const getCurrentSquareStatus = (pixelCount) => {
+    if (pixelCount > puzzleGrid.length) {
+      // shouldn't happen, but it would be bad if it did
+      console.error(`getCurrentSquareStatus: index '${pixelCount}' outside bounds of puzzleGrid (> ${puzzleGrid.length})`);
+      return null;
+    }
+
+    const squareStatus = puzzleGrid[pixelCount];
+
+    if (squareStatus > maxValidSquareStatusCode) {
+      console.error(`getCurrentSquareStatus: '${squareStatus}' is not a valid square status code.`);
+      return null;
+    }
+
+    return squareStatusCodes[squareStatus];
   }
 
+  /**
+   * Applies the provided clickAction to the square at the given pixelCount and adds 
+   * the pixelCount to the current toggledSquareBatch. To be triggered after a click is 
+   * processed or on enter in the case of a click-and-drag-event.
+   * @param {string} clickAction clickAction string (from clickActions in squareUtils)
+   * @param {string|number} pixelCount index of the square in the puzzleGrid
+   * @returns {boolean} whether the action was successfully applied
+   */
+  function applyActionToSquare (clickAction, pixelCount) {
+    if (!clickAction) {
+      return false;
+    }
+
+    togglePuzzleGridSquare(pixelCount, clickAction);
+    toggleSquareInBatch(pixelCount);
+    return true;
+  }
+
+  // helper function to reset the relevant refs after a mouse action
+  const resetMouseRefs = () => {
+    clickAction.current = null;
+    mouseButtonDown.current = false;
+    toggledSquareBatch.current = [];
+  }
+
+  // This handles the logic for clicking on a square
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    resetMouseRefs();
+
+    if (e.target.matches(".board-square")) {
+      mouseButtonDown.current = true;
+      const pixelCount = getPixelCountFromMouseEvent(e);
+      const currentSquareStatus = getCurrentSquareStatus(pixelCount);
+      let newClickAction;
+      
+      // some boolean flags
+      const squareIsFilled = currentSquareStatus === "fill";
+      const squareIsEmpty = currentSquareStatus === "empty";
+      const squareIsX = currentSquareStatus === "x";
+      const ctrlKey = e.ctrlKey;
+      const leftClick = e.button === 0 && !ctrlKey;
+      const rightClick = e.button === 2 || (e.button === 0 && ctrlKey);
+      
+      // fill an empty square
+      if (leftClick && squareIsEmpty) {
+        // console.log("handleMouseDown: fill an empty path");
+        newClickAction = "fill";
+      }
+      // empty a filled square
+      else if (leftClick && squareIsFilled) {
+        // console.log("handleMouseDown: empty a fill path");
+        newClickAction = "empty-fill";
+      }
+      // x an empty square
+      else if (rightClick && squareIsEmpty) {
+        // console.log("handleMouseDown: x an empty path");
+        newClickAction = "x";
+      }
+      // empty an x'd square
+      else if (rightClick && squareIsX) {
+        // console.log("handleMouseDown: empty an x path");
+        newClickAction = "empty-x";
+      }
+
+      // TODO: prune these logs
+      const LONG_DEBUG_LOGS = false;
+
+      if (LONG_DEBUG_LOGS) {
+        console.log(`handleMouseDown: e.button: ${e.button}`);
+        console.log(`handleMouseDown: pixelCount: ${pixelCount}`);
+        console.log(`handleMouseDown: ctrlKey: ${ctrlKey}`);
+        console.log(`handleMouseDown: leftClick: ${leftClick}`);
+        console.log(`handleMouseDown: rightClick: ${rightClick}`);
+        console.log(`handleMouseDown: currentSquareStatus: ${currentSquareStatus}`);
+        console.log(`handleMouseDown: newClickAction: ${newClickAction}`);
+      }
+
+      // set clickAction.current to remember for mouse over events
+      clickAction.current = newClickAction;
+      applyActionToSquare(newClickAction, pixelCount);
+    }
+  };
+
+  const handleMouseUp = (e) => {
+    // mouseButtonDown.current = false;
+    resetMouseRefs();
+  };
+
+  const handleMouseEnter = (e) => {
+    if (e.buttons === 0) {
+      // mouseButtonDown.current = false;
+      resetMouseRefs();
+    }
+  };
+
+  function handleSquareMouseEnter (e, mouseRefs) {
+    // TODO: prune log code
+    const DEBUG_LOGS = false;
+
+    if (!mouseRefs) {
+      DEBUG_LOGS && console.error("handleSquareMouseEnter: no mouseRefs provided, aborting");
+      return;
+    }
+
+    const { mouseButtonDownRef, clickActionRef } = mouseRefs;
+
+    // TODO: prune log code
+    if (DEBUG_LOGS) {
+      console.log(`handleMouseSquareEnter: mouseButtonDownRef.current: ${mouseButtonDownRef.current}`);
+      console.log(`handleMouseSquareEnter: clickActionRef.current: ${clickActionRef.current}`);
+    }
+
+    // logic for entering a square
+    if (!mouseButtonDownRef?.current || !clickActionRef.current) {
+      // no mouse button held, exit
+      // console.log("handleSquareMouseEnter: no button held or saved action, aborting");
+      return;
+    }
+
+    const clickAction = clickActionRef.current;
+    const pixelCount = getPixelCountFromMouseEvent(e);
+
+    // TODO: prune log code
+    if (DEBUG_LOGS) {
+      console.log(`handleSquareMouseEnter: clickAction: ${clickAction}`);
+      console.log(`handleSquareMouseEnter: pixelCount: ${pixelCount}`);
+    }
+
+    applyActionToSquare(clickAction, pixelCount);
+  }
+
+  // TODO: Account for resolution - laptop can't display all squares in 15x15 or larger
+  //  - maybe handle these with media queries in the SCSS?
+  const boardWrapperClassNames = `
+    board-wrapper
+    ${ puzzleSize.width > 15 ? "small-squares" : "" }
+    ${ puzzleSize.width < 10 ? "large-squares" : "" }
+    ${ puzzleIsSolved ? "completed" : "in-progress" }
+  `;
+
+  // initial load useEffect
   useEffect(() => {
     console.log("Board: puzzleData is:", puzzleData);
     console.log("Board: puzzleGrid is:", puzzleGrid);
   }, []);
 
-  const handleSettingMouseButtonDown = (e) => {
+  // omitting toggledSquareBatch - what am I using this for?
+  const mouseRefs = { 
+    clickActionRef: clickAction, 
+    mouseButtonDownRef: mouseButtonDown,
+  };
 
-    if (mouseButtonDown) {
-      console.log("handleSettingMouseButtonDown: already set, aborting");
-      return;
-    }
-
-    e.preventDefault();
-
-    console.log("handleSettingMouseButtonDown: e.button:", e.button);
-
-    setMouseButtonDown(e.button);
-  }
+  const colSums = rowAndColumnSums ? rowAndColumnSums?.cols : null;
+  const rowSums = rowAndColumnSums ? rowAndColumnSums?.rows : null;
 
   return ( 
-    <div className="board-wrapper">
+    <div className={boardWrapperClassNames}>
       <ColumnNumbers 
         colNumbers={parsedColNumbers}
+        // colSums={colSums}
+        colSums={rowAndColumnSums?.cols}
       />
 
       <div className="board-row-and-board-wrapper">
         <RowNumbers
           rowNumbers={parsedRowNumbers}
+          // rowSums={rowSums}
+          rowSums={rowAndColumnSums?.rows}
         />
 
         <div 
           className="board"
           // onMouseDown={() => setMouseButtonDown(true)}
-          onMouseDown={handleSettingMouseButtonDown}
-          onContextMenu={handleSettingMouseButtonDown}
-          onMouseUp={() => setMouseButtonDown(false)}
-          onMouseLeave={() => setMouseButtonDown(false)}
+          onMouseDown={handleMouseDown}
+          onMouseEnter={handleMouseEnter}
+          // TODO: cleanup after board event delegation is finished
+          // onMouseDown={handleSettingMouseButtonDown}
+          onContextMenuDown={handleMouseDown} // only fire on down, not up
+          onContextMenu={(e) => e.preventDefault()} // smother right click menu
+          onMouseUp={handleMouseUp}
+          // TODO: Do I want this behavior? Does this avoid mouseUp never triggering?
+          // onMouseLeave={() => setMouseButtonDown(false)}
         >
           {
-            puzzleIsValid() && puzzle.map((rowData, index) => (
+            puzzleIsValid && puzzle.map((rowData, index) => (
               <Row
+                getSquareClassNames={getSquareClassNames}
                 gridViewActive={gridViewActive}
+                handleMouseDown={handleMouseDown}
+                handleSquareMouseEnter={handleSquareMouseEnter}
                 key={`row-${index}`}
-                mouseButtonDown={mouseButtonDown}
+                // mouseButtonDown={mouseButtonDown}
+                mouseRefs={mouseRefs}
                 parseSquareData={parseSquareData}
                 puzzleGrid={puzzleGrid}
                 puzzleOpacity={puzzleOpacity}
                 puzzleSize={puzzleSize}
                 rowData={rowData}
-                togglePuzzleGridSquare={togglePuzzleGridSquare}
+                // toggleSquare={togglePuzzleGridSquare}
               />
             ))
           }
@@ -151,25 +370,86 @@ const Board = ({
   );
 }
 
-function ColumnNumbers ({
-  colNumbers,
-}) {
-  const numberElements = colNumbers.map((colNumberGroup) => (
+const getClassIfRowOrColSumMatches = (number, sums, groupIndex, numberIndex, id = undefined) => {
+  if (!number || !sums || !groupIndex || !numberIndex) return "";
+
+  const sum = sums[groupIndex][numberIndex];
+
+  console.log(`getClassIfRowOrColSumMatches: '${id}' - matching sum '${sum}'`)
+
+  if (!sum) return "";
+  
+  // id && console.log(`id: ${id}`);
+  // console.log("sums array: ", sums);
+  // console.log(`lookup at sums[${groupIndex}][${numberIndex}]`);
+  console.log(`Comparing ${number} to ${sum}`);
+  
+  if (number === sum) {
+    console.log(`getClassIfRowOrColSumMatches: ${id} is completed`);
+    return "completed";
+  }
+};
+
+/**
+ * Builds JSX elements for RowNumbers and ColNumbers
+ * @param {any} numbers the array of row or column numbers
+ * @param {any} sums the current row or column sums 
+ * @param {"row"|"col"} axisType whether you're building numbers for the rows or columns
+ * @returns Array of JSX elements to render
+ */
+function buildNumberElements(numbers, sums, axisType = "col") {
+  // console.log("buildNumberElements: building number elements with numbers, sums:", numbers, sums);
+
+  return numbers.map((numberGroup, groupIndex) => (
     <div 
-      className="board-number-container"
-      style={{
-        "width": BOARD_SQUARE_SIZE, 
-      }}
+      className={`board-number-container ${!sums ? `no-${axisType}-sums` : ""}`}
+      id={`${axisType}-group-${groupIndex}`}
+      key={`${axisType}-group-${groupIndex}`}
     >
       {
-        colNumberGroup.map((colNumber) => (
-          <div className="board-number">
-            {colNumber}
-          </div>
-        ))
+        numberGroup.map((number, numberIndex) => {
+          let classString = "";
+          
+          if (sums) {
+            const sumGroup = sums[groupIndex];
+
+            if (sumGroup) {
+              const sum = sumGroup[numberIndex]
+              // console.log(`buildNumberElements: number: ${number}, sum: ${sum}`);
+  
+              if (sum === number && sums[groupIndex].length <= numberGroup.length) {
+                classString += "completed"
+              }
+            }
+          }
+
+          return (
+            <div 
+              className={`board-number ${classString}`}
+              id={`${axisType}-number-${groupIndex}-${numberIndex}`}
+              key={`${axisType}-number-${groupIndex}-${numberIndex}`}
+            >
+              {number}
+            </div>
+          )
+        })
       }
     </div>
   ));
+};
+
+// TODO: a lot of code reuse here, find a way to combine this and RowNumbers
+function ColumnNumbers ({
+  colNumbers,
+  colSums,
+}) {
+  const [ numberElements, setNumberElements ] = useState([]);
+
+  useEffect(() => {
+    console.log(`ColumnNumbers: colNumbers:`, colNumbers);
+    console.log(`ColumnNumbers: colSums:`, colSums);
+    setNumberElements(buildNumberElements(colNumbers, colSums, "col"));
+  }, [colNumbers, colSums]);
 
   return (
     <div className="board-column-numbers">
@@ -182,28 +462,13 @@ function ColumnNumbers ({
 // different classNames on the wrapping divs. Maybe refactor sometime later?
 function RowNumbers ({
   rowNumbers,
+  rowSums,
 }) {
-  const numberElements = rowNumbers.map((rowNumberGroup) => (
-    <div 
-      className="board-number-container"
-      style={{
-        "height": BOARD_SQUARE_SIZE,
-      }}
-    >
-      {
-        rowNumberGroup.map((rowNumber) => (
-          <div 
-            className="board-number"
-            style={{
-              "width": BOARD_SQUARE_SIZE,
-            }}
-          >
-            {rowNumber}
-          </div>
-        ))
-      }
-    </div>
-  ))
+  const [ numberElements, setNumberElements ] = useState([]);
+
+  useEffect(() => {
+    setNumberElements(buildNumberElements(rowNumbers, rowSums, "row"));
+  }, [rowNumbers, rowSums]);
 
   return (
     <div className="board-row-numbers">
@@ -214,34 +479,40 @@ function RowNumbers ({
 
 function Row ({ 
   // colors,
+  getSquareClassNames,
   gridViewActive,
+  handleSquareMouseEnter,
+  mouseRefs,
   puzzleSize,
-  mouseButtonDown,
+  // mouseButtonDown,
   parseSquareData,
   puzzleGrid,
   puzzleOpacity,
   rowData,
-  togglePuzzleGridSquare,
+  // toggleSquare,
 }) {
 
   // this is assuming rowData is valid
   return (
     <div className="board-row">
       {
-        rowData.map((squareData, index) => (
+        rowData.map((rawSquareData, index) => (
           // <Square
           <MemoizedSquare
             // color={getColorFromSquareData(squareData)}
+            getSquareClassNames={getSquareClassNames}
             gridViewActive={gridViewActive}
+            handleSquareMouseEnter={handleSquareMouseEnter}
             key={`square-${index}`}
             // isFilled={false}
-            mouseButtonDown={mouseButtonDown}
+            // mouseButtonDown={mouseButtonDown}
+            mouseRefs={mouseRefs}
             parseSquareData={parseSquareData}
             puzzleGrid={puzzleGrid}
             puzzleOpacity={puzzleOpacity}
             puzzleSize={puzzleSize}
-            squareData={squareData}
-            togglePuzzleGridSquare={togglePuzzleGridSquare}
+            rawSquareData={rawSquareData}
+            // toggleSquare={toggleSquare}
           />
         ))
       }
@@ -249,95 +520,36 @@ function Row ({
   );
 }
 
-
 function Square ({
-  // color = "#FF0000", 
+  getSquareClassNames, 
   gridViewActive,
-  // isFilled,
-  mouseButtonDown,
+  handleSquareMouseEnter,
+  mouseRefs,
   parseSquareData,
   puzzleGrid,
   puzzleOpacity = 1,
   puzzleSize,
   // puzzleOpacity = .75,
-  squareData,
-  togglePuzzleGridSquare,
+  rawSquareData,
+  // toggleSquare,
 }) {
   const { color, colorIndex, pixelCount } = (() => {
     // console.log(`parsingSquareData for ${squareData}...`);
     // const timeStarted = Date.now();
-    const result = parseSquareData(squareData);
+    const result = parseSquareData(rawSquareData);
     // const timeElapsed = Date.now() - timeStarted;
     // console.log(`parsedSquareData in ${timeElapsed}`);
     return result;
   })();
 
-  
-  // kinda redundant, but a little easier to work with
-  const borderColor = BOARD_SQUARE_BORDER_COLOR;
-  const containerPadding = BOARD_SQUARE_CONTAINER_PADDING;
-  const emptyColor = BOARD_SQUARE_EMPTY_COLOR;
-  const fillColor = BOARD_SQUARE_FILL_COLOR;
-  const guideColor = BOARD_SQUARE_GUIDELINE_COLOR
-  const guideStrokeWidth = BOARD_SQUARE_GUIDELINE_STROKE_WIDTH;
-  const strokeWidth = BOARD_SQUARE_STROKE_WIDTH;
-  const xColor = BOARD_SQUARE_X_COLOR
-
   const isFilled = puzzleGrid[pixelCount] === 1;
   const isX = puzzleGrid[pixelCount] === 2;
 
-  // maybe calculate these based on current screen width?
-  const squareSize = BOARD_SQUARE_SIZE;
-  const borderRadius = BOARD_SQUARE_BORDER_RADIUS;
-
-  const toggleSquare = (e, continuedFill = null) => {
-    e.preventDefault();
-    console.log("toggleSquare: event:", e);
-    console.log("toggleSquare: mouseButtonDown:", mouseButtonDown);
-    console.log("toggleSquare: continuedFill:", continuedFill);
-    let fillType;
-
-    if (e.button === 0) {
-      fillType = "fill";
-    }
-
-    if (e.button === 2) {
-      fillType = "x";
-    }
-
-    if (continuedFill) {
-      fillType = continuedFill;
-    }
-
-    console.log("toggleSquare: fillType: ", fillType);
-
-    // if (continuedFill) {
-    //   fillType = continuedFill;
-    // }
-    // else {
-    //   // left click happened
-    //   if (e.button === 0) {
-    //     fillType = "fill";
-    //   }
-
-    //   // right click happened
-    //   else if (e.button === 2) {
-    //     fillType = "x";
-    //   }
-    // }
-    
-    gridViewActive && togglePuzzleGridSquare(pixelCount, fillType);
-  }
-
-  const puzzleSquareColor = isFilled ? fillColor : emptyColor;
-  
-  const puzzleGridOpacity = gridViewActive ? puzzleOpacity : 0;
-  
-  // guideline calculations
-  const canHaveGuides = puzzleSize.width > 5 && puzzleSize.height > 5;
-  
+  // guideline and border calculations
   const columnIndex = pixelCount % puzzleSize.width;
   const rowIndex = Math.floor(pixelCount / puzzleSize.width);
+  
+  const canHaveGuides = puzzleSize.width > 5 && puzzleSize.height > 5;
 
   const hasRightGuideBorder = canHaveGuides && 
     columnIndex !== puzzleSize.width - 1 &&
@@ -346,145 +558,49 @@ function Square ({
   const hasBottomGuideBorder = canHaveGuides &&
     rowIndex !== puzzleSize.height - 1 &&
     rowIndex % 5 === 4;
+  
+  const hasLeftBorder = columnIndex === 0;
+  const hasTopBorder = rowIndex === 0;
 
+  const hasTopLeftBorderRadius = rowIndex === 0 && columnIndex === 0;
+  const hasBottomLeftBorderRadius = rowIndex === (puzzleSize.height - 1) && columnIndex === 0;
+  const hasTopRightBorderRadius = rowIndex === 0 && columnIndex === (puzzleSize.width - 1);
+  const hasBottomRightBorderRadius = 
+    rowIndex === (puzzleSize.height - 1) && columnIndex === (puzzleSize.width - 1);
 
-  // TODO: Use these to build click and drag functionality
-
-  const handleMouseIn = (event) => {
-    console.log(`handleMouseIn firing on Square ${pixelCount}`, event);
-
-    if (mouseButtonDown === 0 || mouseButtonDown === 2) {
-      const continuedFill = mouseButtonDown === 2 ? "x" : "fill";
-      console.log("handleMouseIn: mouseButtonDown is set to: ", mouseButtonDown);
-      toggleSquare(event, continuedFill);
-    }
-    else {
-      console.log("handleMouseIn: mouseButton is not down");
-    }
-    // mouseButtonDown && toggleSquare(event);
+  const squareData = {
+    // canHaveGuides,
+    hasBottomGuideBorder,
+    hasBottomLeftBorderRadius,
+    hasBottomRightBorderRadius,
+    hasLeftBorder,
+    hasRightGuideBorder,
+    hasTopBorder,
+    hasTopLeftBorderRadius,
+    hasTopRightBorderRadius,
+    isFilled,
+    isX,
   };
 
-  // const handleMouseOut = (event) => {
-  //   console.log(`handleMouseOut firing on Square ${pixelCount}`, event);
-  // };
+  const handleMouseEnter = (e) => handleSquareMouseEnter(e, mouseRefs);
 
   return (
     <div 
-      className="board-square"
+      className={getSquareClassNames(squareData)}
       // onClick={toggleSquare}
       // onContextMenu={toggleSquare}
-      onContextMenu={e => e.preventDefault()}
-      onMouseDown={toggleSquare}
+      id={`board-square-${pixelCount}`}
+      key={`board-square-${pixelCount}`}
+      // onContextMenu={e => e.preventDefault()}
+      // onMouseDown={originalToggleSquare}
+      // onMouseDown={toggleSquare}
       // TODO: Uncomment when working on click-and-drag functionality
-      onMouseEnter={handleMouseIn}
+      onMouseEnter={handleMouseEnter}
       // onMouseOver={handleMouseIn}
-      // onMouseLeave={handleMouseOut}
+      style={{
+        backgroundColor: gridViewActive ? undefined : color,
+      }}
     >
-      <svg
-        height={squareSize + (2 * containerPadding)}
-        width={squareSize + (2 * containerPadding)}
-      >
-        <rect
-          className="board-square-rect color-rect"
-          height={squareSize}
-          width={squareSize}
-          rx={borderRadius}
-          style={{
-            // fill: getSquareColor(),
-            fill: color,
-            // stroke: borderColor,
-            // strokeWidth: strokeWidth, 
-          }}
-          x={containerPadding}
-          y={containerPadding}
-        />
-        <rect
-          className="board-square-rect puzzle-rect"
-          height={squareSize}
-          width={squareSize}
-          rx={borderRadius}
-          style={{
-            fill: puzzleSquareColor,
-            opacity: puzzleGridOpacity,
-            // stroke: borderColor,
-            // strokeWidth: strokeWidth, 
-          }}
-          x={containerPadding}
-          y={containerPadding}
-        />
-
-        {/* top line */}
-        <line
-          className="board-square-top-border"
-          x1={0}
-          y1={0}
-          x2={squareSize}
-          y2={0}
-          stroke={borderColor}
-          strokeWidth={strokeWidth}
-        />
-
-        {/* right line */}
-        <line
-          className="board-square-right-border"
-          x1={squareSize}
-          y1={0}
-          x2={squareSize}
-          y2={squareSize}
-          stroke={hasRightGuideBorder ? guideColor : borderColor}
-          strokeWidth={hasRightGuideBorder ? guideStrokeWidth : strokeWidth}
-        />
-
-        {/* look, here's the bottom line */}
-        <line
-          className="board-square-bottom-border"
-          x1={squareSize}
-          y1={squareSize}
-          x2={0}
-          y2={squareSize}
-          stroke={hasBottomGuideBorder ? guideColor : borderColor}
-          strokeWidth={hasBottomGuideBorder ? guideStrokeWidth : strokeWidth}
-        />
-
-        {/* left line */}
-        <line
-          className="board-square-left-border"
-          x1={0}
-          y1={squareSize}
-          x2={0}
-          y2={0}
-          stroke={borderColor}
-          strokeWidth={strokeWidth}
-        />
-
-        {
-          isX && gridViewActive && (
-            <>
-              {/* X line 1 */}
-              <line
-                className="board-square-x-line-one"
-                x1={4}
-                y1={4}
-                x2={squareSize - 4}
-                y2={squareSize - 4}
-                stroke={xColor}
-                strokeWidth={guideStrokeWidth}
-              />
-
-              {/* X line 2 */}
-              <line
-                className="board-square-x-line-two"
-                x1={4}
-                y1={squareSize - 4}
-                x2={squareSize - 4}
-                y2={4}
-                stroke={xColor}
-                strokeWidth={guideStrokeWidth}
-              />
-            </>
-          )
-        }
-      </svg>
     </div>
   )
 }

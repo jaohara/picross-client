@@ -38,7 +38,7 @@ const {
 } = require("./shared-utils.js");
 
 // debug flags
-const DEBUG_LO_REQUESTS = true;
+const DEBUG_LOG_REQUESTS = true;
 
 // Maybe make its own module - expected keys for data
 const newUserDataExpectedKeys = ["email", "password", "displayName"];
@@ -98,7 +98,7 @@ async function getDataWithIdFromSnapshot(snapshot) {
     return;
   }
 
-  if (!snapshot.exists()) {
+  if (!snapshot.exists) {
     logger.error("getDataWithIdFromSnapshot: snapshot data does not exist");
     return;
   }
@@ -129,12 +129,13 @@ function logAndReturnError(
     return null;
   }
 
-  logger.error(`${fName}: ${intentMessage ? `${intentMessage}:` : ""} ${error}`);
+  logger.error(`${callerName}: ${intentMessage ? `${intentMessage}:` : ""} ${error}`);
   return { error: error.message, success: false }
 }
 
 /**
- * 
+ * Used to return data to the client wrapped with the proper structure to indicate success to
+ * the client. Should be called with any data to be returned to the client.
  * @param {*} data the successful data to be returned to the client
  * @param {string} callerName the name of caller
  * @param {string} intentMessage a short string describing what successfully completed
@@ -162,8 +163,8 @@ const createInvalidDataError = (invalidDataName) => ({
   success: false,
 });
 
-// TODO: Add me to all try/catch blocks where we don't check snapshot.exists()
-// creates an error message for non-existant document data - when !myFirestoreSnapshot.exists()
+// TODO: Add me to all try/catch blocks where we don't check snapshot.exists
+// creates an error message for non-existant document data - when !myFirestoreSnapshot.exists
 const createEmptyDocumentError = (snapshotName) => ({
   error: `The '${snapshotName}' document data does not exist.`,
   errorCode: "NONEXISTENT_DOCUMENT",
@@ -340,6 +341,11 @@ async function getGameRecordsFromFirestore(userId, callerName) {
 
       // TODO: eventually remove these subcollections, but just filter them out for now
       if (gameRecordId !== "achievements" && gameRecordId !== "puzzles") {
+        // avoids "Invalid Date" string for dates from Firestore Timestamp
+        if (gameRecord.lastPlayed && gameRecord.lastPlayed.toDate) {
+          gameRecord.lastPlayed = gameRecord.lastPlayed.toDate();
+        }
+
         gameRecord.id = gameRecordId;
         gameRecords[gameRecordId] = gameRecord;
       }
@@ -643,8 +649,9 @@ exports.getUserProfile = onCall(async (request) => {
     const { userId } = request.data;
 
     // get user profile data
-    const userProfileSnapshot = await db.collection(`users/${userId}`).get();
-    if (!userProfileSnapshot.exists()) return createEmptyDocumentError("userProfileSnapshot");
+    // const userProfileSnapshot = await db.collection(`users/${userId}`).get();
+    const userProfileSnapshot = await db.doc(`users/${userId}`).get();
+    if (!userProfileSnapshot.exists) return createEmptyDocumentError("userProfileSnapshot");
     const userProfileData = userProfileSnapshot.data();
 
     // get user's gameRecords
@@ -656,7 +663,8 @@ exports.getUserProfile = onCall(async (request) => {
     // append gameRecords
     userProfileData.gameRecords = userGameRecords;
 
-    return userProfileData;
+    return logAndReturnSuccess(userProfileData, fName, "Successfully fetched userProfile.");
+    // return userProfileData;
   } 
   catch(error) {
     return logAndReturnError(error, fName, "Error getting user profile"); 
@@ -689,6 +697,7 @@ function processPuzzleData(puzzleData) {
 
   // split the raw grid and get a rotated copy for columns
   const splitPuzzleGrid = splitPuzzleGridByRowWidth(puzzleData.grid, puzzleData.width);
+  // TODO: update this to use second arg for clockwise and avoid needing to reverse
   const rotatedPuzzleGrid = rotate2dArray(splitPuzzleGrid);
   rotatedPuzzleGrid.reverse(); // why am I doing this again?
 

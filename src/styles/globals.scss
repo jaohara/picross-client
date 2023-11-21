@@ -1,6 +1,8 @@
 @use "sass:color";
 
+// ======================
 // common sizes/variables
+// ======================
 $app-body-padding: .5rem;
 $app-padding-top: 5.4rem;
 $board-screen-blur: 4px;
@@ -31,17 +33,23 @@ $message-icon-font-size: 10rem;
 $profile-menu-container-bottom-margin: 3rem;
 $section-header-font-size: 1.4rem;
 
+// =====
 // fonts
+// =====
 $body-font: "Inter Tight";
 $mono-font: "JetBrains Mono";
 
+// ================
 // transition times
+// ================
 $ui-fast-transition: 100ms;
 $ui-slow-transition: 250ms;
 $background-color-transition: 1000ms;
 $board-reveal-transition: 1500ms;
 
+// =================
 // colors (specific)
+// =================
 $dark-gray-100: #626466;
 $dark-gray-200: #4c4e50;
 $dark-gray-300: #353638;
@@ -53,7 +61,9 @@ $red-100: #ff6666;
 $red-200: #da4c4c;
 $red-300: #de3333;
 
+// ====================
 // colors (temp shades)
+// ====================
 $cerulean: #37718E;
 $indigo-dye: #254E70;
 $silver-lake-blue: #4F86C6;
@@ -62,12 +72,15 @@ $slate-blue: #3299d0;
 
 $square-gray: #35363866;
 
+// =============
 // colors (role)
+// =============
 
-// pulled from picross-parser
-//  These might not be necessary, but I'm pulling them out of this commented
-//  block if I have a need for them
 /*
+  pulled from picross-parser:
+    These might not be necessary, but I'm pulling them out of this commented
+    block if I have a need for them
+
 // should be darker than $app-background-color; used for highlighting active areas
 // $button-hover-background-color: $light-gray-200;
 $diagnostic-button-font-hover-color: $dark-gray-300;
@@ -125,28 +138,70 @@ $text-dark-color: $dark-gray-300;
 $text-input-active-border-color: $light-gray-100;
 $text-input-error-border-color: $red-100;
 
-// $a: #65ff0ff
-// #71821ff
-// #e0f8cfff
-// #86c06cff
-// #306850ff
+// ============================
+// game board related variables
+// ============================
 
-@mixin section-header-styles {
-  font-size: $section-header-font-size;
-  margin-top: 0rem;
-  padding-bottom: .5rem;
-  border-bottom: 2px solid $button-border-color;
-}
+// ======
+// colors
+// ======
+$board-square-base-color: $dark-gray-300;
+$board-shadow-color: rgba($dark-gray-300, .6);
+$board-shadow-completed-color: rgba($dark-gray-300, .3);
+$board-number-background-color: rgba($board-square-base-color, .8);
+$board-square-border-empty-color: rgba($board-square-base-color, .15);
+$board-square-border-filled-color: darken($light-gray-400, 45%);
+// $board-square-border-filled-color: red;
+$board-square-empty-color: #f0f0f0;
+$board-square-fill-color: darken($board-square-base-color, 8%);
+// $board-square-fill-color: $board-square-base-color;
+$board-square-guideline-color: #000;
+$board-square-hover-empty-color: #fff;
+$board-square-hover-filled-color: lighten($dark-gray-300, 4%);
+// $board-square-hover-border-color: rgba($dark-gray-100, .5);
+$board-square-hover-complete-border-color: rgba($dark-gray-100, .2);
+$board-square-hover-empty-border-color: $light-gray-300;
+$board-square-hover-filled-border-color: $dark-gray-100;
+$board-square-hover-empty-shadow-color: rgba($dark-gray-100, .2);
+$board-square-hover-filled-shadow-color: rgba($dark-gray-300, .6);
+// $board-square-x-color: rgba($board-square-base-color, .5);
+$board-square-x-color: lighten($board-square-base-color, 40%);
 
-// set responsive widths
+// =====
+// sizes
+// =====
+$board-number-large-size: 48px; // TODO: Maybe make this larger?
+$board-number-size: 42px; // TODO: Maybe make this larger?
+$board-number-small-size: 28px; // TODO: Maybe make this larger?
+$board-number-margin: 4px;
+$board-square-border-width: 1px;
+$board-square-hover-border-width: 3px;
+$board-square-border-radius: 8px;
+$board-square-guideline-border-width: 2px;
+// $board-square-size: 28px; // TODO: Maybe make this larger?
+$board-square-large-size: 54px; // TODO: Maybe make this larger?
+$board-square-size: 48px; // TODO: Maybe make this larger?
+$board-square-small-size: 34px; 
 
+$board-square-x-width: 3px; // TODO: Maybe make this larger?
+
+// ====
+// misc
+// ====
+// for use with "text-shadow: val" and "filter: drop-shadow(val)"
+$board-screen-shadow-value: 0px 2px 5px $board-shadow-color;
+
+// ======================
 // responsive breakpoints
+// ======================
 $xs-breakpoint: 375px;
 $s-breakpoint: 768px;
 $m-breakpoint: 1280px;
 $l-breakpoint: 1920px;
 
+// ======
 // mixins
+// ======
 @mixin set-responsive-widths($xs-width, $s-width, $m-width, $l-width) {
   //375px
   width: $xs-width;
@@ -183,6 +238,13 @@ $l-breakpoint: 1920px;
   @media (min-width: $l-breakpoint) {
     width: 1440px;
   }
+}
+
+@mixin section-header-styles {
+  font-size: $section-header-font-size;
+  margin-top: 0rem;
+  padding-bottom: .5rem;
+  border-bottom: 2px solid $button-border-color;
 }
 
 @mixin common-border-styling ($border-color) {

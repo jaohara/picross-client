@@ -1,15 +1,86 @@
 @use "../../styles/globals.scss" as g;
 
-
 .board, .board-row, .board-square {
   font-family: g.$mono-font;
 }
 
-.board {
-  flex-direction: column;
+.board-number {
+  align-items: center;
+  background-color: g.$board-number-background-color;
+  border-radius: 50px;
+  margin: g.$board-number-margin;
+  max-height: g.$board-number-size;
+  min-height: g.$board-number-size;
+  max-width: g.$board-number-size;
+  min-width: g.$board-number-size;
+
+  .small-squares & {
+    max-height: g.$board-number-small-size;
+    min-height: g.$board-number-small-size;
+    max-width: g.$board-number-small-size;
+    min-width: g.$board-number-small-size;
+  }
+
+  .large-squares & {
+    max-height: g.$board-number-large-size;
+    min-height: g.$board-number-large-size;
+    max-width: g.$board-number-large-size;
+    min-width: g.$board-number-large-size;
+  }
+}
+
+.board-number-container {
+  align-items: center;
   display: flex;
+  justify-content: center;
+  max-height: g.$board-square-size;
+  min-height: g.$board-square-size;
+  max-width: g.$board-square-size;
+  min-width: g.$board-square-size;
+  padding: g.$board-number-margin;
+
+  .small-squares & {
+    max-height: g.$board-square-small-size;
+    min-height: g.$board-square-small-size;
+    max-width: g.$board-square-small-size;
+    min-width: g.$board-square-small-size;
+  }
+
+  .large-squares & {
+    max-height: g.$board-square-large-size;
+    min-height: g.$board-square-large-size;
+    max-width: g.$board-square-large-size;
+    min-width: g.$board-square-large-size;
+  }
+}
+
+.board {
+  border-radius: 0px;
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(0px 10px 15px g.$board-shadow-color);
   justify-content: space-between;
+  transform: none;
+  transition:
+    g.$board-reveal-transition border-radius,
+    g.$board-reveal-transition filter,
+    g.$board-reveal-transition transform;
   width: fit-content;
+
+  // these control the scale/presentation of the completed board for each square size
+  .completed & {
+    border-radius: g.$common-border-radius;
+    filter: drop-shadow(0px 15px 20px g.$board-shadow-completed-color);
+    transform: scale(1.4);
+  }
+  
+  .large-squares.completed & {
+    transform: scale(2.0);
+  }
+  
+  .small-squares.completed & {
+    transform: scale(1.2);
+  }
 }
 
 .board-row {
@@ -20,25 +91,186 @@
   width: 100%;
 }
 
-.board-square {
-  align-items: center;
-  aspect-ratio: 1/1;
-  display: flex;
-  justify-content: center;
-  transform: scale(1.0);
-  transition: g.$ui-fast-transition transform;
-  width: 100%;
+// OLD BOARD SQUARE STYLES
+// .board-square {
+//   align-items: center;
+//   aspect-ratio: 1/1;
+//   display: flex;
+//   justify-content: center;
+//   transform: scale(1.0);
+//   transition: g.$ui-fast-transition transform;
+//   width: 100%;
 
-  &:hover {
-    transform: scale(1.25);
-    z-index: 100;
-  }
-}
+//   &:hover {
+//     transform: scale(1.25);
+//     z-index: 100;
+//   }
+// }
 
 .board-square-rect {  
   &:hover {
-    cursor: crosshair;
+    // this doesn't actually look good
+    // cursor: crosshair;
     stroke: g.$board-square-hover-color !important;
+  }
+}
+
+// ============================
+// REDESIGNED BOARD SQUARE WORK
+// ============================
+.board-square {
+  /*
+    Sub-classes:  
+
+      - .empty -> a square that is empty (default state)
+      - .filled -> a square that is filled in (left click)
+      - .x -> a square marked with an "x" (right click)
+      - .completed -> a square in a completed puzzle (reveals square color)
+  */
+
+  align-items: center;
+  aspect-ratio: 1/1;
+  background-color: g.$board-square-empty-color;
+  // border: g.$board-square-border-width solid g.$board-square-border-color;
+  border-bottom: g.$board-square-border-width solid g.$board-square-border-empty-color;
+  border-radius: 0px;
+  border-right: g.$board-square-border-width solid g.$board-square-border-empty-color;
+  // border: 2px solid red;
+  display: flex;
+  filter: none;
+  height: g.$board-square-size;
+  justify-content: center;
+  transform: scale(1.0);
+  transition: 
+    g.$ui-fast-transition background-color,
+    g.$ui-fast-transition border-radius,
+    g.$ui-fast-transition filter,
+    g.$ui-fast-transition transform,
+    ;
+  // width: 100%;
+  width: g.$board-square-size;
+
+  // ============
+  // square sizes
+  // ============
+  .small-squares & {
+    height: g.$board-square-small-size;
+    width: g.$board-square-small-size;
+  }
+
+  .large-squares & {
+    height: g.$board-square-large-size;
+    width: g.$board-square-large-size;
+  }
+
+  // =======
+  // x class
+  // =======
+  &.x {
+    // "x" state (right click)
+    // background-color: red;
+  }
+
+  &.x::before, &.x::after {
+    // pseudo-elements for the x
+    background-color: g.$board-square-x-color;
+    // border-radius: 0px;
+    border-radius: g.$board-square-size;
+    content: '';
+    height: g.$board-square-size;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transition: background-color g.$ui-fast-transition;
+    transform-origin: center;
+    width: g.$board-square-x-width;
+  }
+
+  &.x::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  
+  &.x::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  } 
+
+  // ====================
+  // square state classes
+  // ====================
+  &.filled {
+    // filled state (left click)
+    background-color: g.$board-square-fill-color;
+    border-color: g.$board-square-border-filled-color;
+  }
+  
+  &.completed {
+    transition: 
+      g.$board-reveal-transition background-color,
+      g.$board-reveal-transition transform;
+      ;
+    transform: scale(1.02);
+  }
+  
+  // ===============================
+  // border and guide border classes
+  // ===============================
+  &.border-left {
+    border-left: g.$board-square-border-width solid g.$board-square-border-empty-color;
+  }
+
+  &.border-top {
+    border-top: g.$board-square-border-width solid g.$board-square-border-empty-color;
+  }
+  
+  &.guide-border-bottom {
+    border-bottom: g.$board-square-guideline-border-width solid g.$board-square-guideline-color;
+  }
+  
+  &.guide-border-right {
+    border-right: g.$board-square-guideline-border-width solid g.$board-square-guideline-color;
+  }
+
+  // =====================
+  // border-radius classes
+  // =====================
+  &.border-radius-bottom-left {
+    border-bottom-left-radius: g.$board-square-border-radius;
+  }
+
+  &.border-radius-bottom-right {
+    border-bottom-right-radius: g.$board-square-border-radius;
+  }
+
+  &.border-radius-top-left {
+    border-top-left-radius: g.$board-square-border-radius;
+  }
+
+  &.border-radius-top-right {
+    border-top-right-radius: g.$board-square-border-radius;
+  }
+
+  // ===========
+  // hover state
+  // ===========
+  &:hover {
+    background-color: g.$board-square-hover-empty-color;
+    border-radius: g.$board-square-border-radius;
+    border: g.$board-square-hover-border-width solid g.$board-square-hover-empty-border-color;
+    filter: drop-shadow(0px 3px 3px g.$board-square-hover-empty-shadow-color);
+    transform: scale(1.15);
+    z-index: 100;
+  }
+  
+  &.filled:hover {
+    background-color: g.$board-square-hover-filled-color;
+    border: g.$board-square-hover-border-width solid g.$board-square-hover-filled-border-color;
+    filter: drop-shadow(0px 3px 3px g.$board-square-hover-filled-shadow-color);
+  }
+
+  &.completed:hover {
+    border-radius: 0px;
+    border: g.$board-square-border-width solid transparent;
+    filter: none;
   }
 }
 
@@ -75,9 +307,20 @@
   font-weight: bold;
   justify-content: center;
   opacity: 1;
-  transition: opacity g.$board-reveal-transition;
-
+  // transition: opacity g.$board-reveal-transition;
+  transition: opacity g.$ui-fast-transition;
+  
   .solved & {
+    transition: opacity g.$board-reveal-transition;
+    opacity: 0;
+  }
+
+  // state for when this number is already filled in on the board
+  &.completed {
+    opacity: .25;
+  }
+
+  .solved &.completed {
     opacity: 0;
   }
 }

@@ -40,6 +40,7 @@ const Button = ({
   children,
   className = "",
   disabled,
+  loading,
   isFormSubmit = false,
   onClick,
   onMouseOut = () => {},
@@ -93,8 +94,11 @@ const Button = ({
           button-icon-wrapper
           ${!children ? "no-margin" : ""}
           ${iconType === "waiting" ? "waiting" : ""}
+          ${loading ? "loading" : ""}
       `}>
-        {buttonIcons[iconType]}
+        {
+          !loading ? buttonIcons[iconType] : buttonIcons["waiting"]
+        }
       </div>
     );
   };
