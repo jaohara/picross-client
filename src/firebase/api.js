@@ -341,82 +341,74 @@ export async function createUserEntity(newUser, id) {
 // TODO: Change this to a callable approach
 export async function getUserProfile(userId) {
   const fName = "getUserProfile";
-  // const USE_NEW_IMPLEMENTATION = false;
-  const USE_NEW_IMPLEMENTATION = true;
-
-  console.log(`${fName}: USE_NEW_IMPLEMENTATION?`, USE_NEW_IMPLEMENTATION);
 
   console.log(`${fName}: received userId: `, userId);
 
   // ==================
   // OLD IMPLEMENTATION
   // ==================
-  if (!USE_NEW_IMPLEMENTATION) {
-    try {
-      // get ref to user doc and snapshot of doc
-      const userProfileDocRef = doc(usersCollectionRef, userId);
-      const userProfileSnapshot = await getDoc(userProfileDocRef);
+  // if (!USE_NEW_IMPLEMENTATION) {
+  //   try {
+  //     // get ref to user doc and snapshot of doc
+  //     const userProfileDocRef = doc(usersCollectionRef, userId);
+  //     const userProfileSnapshot = await getDoc(userProfileDocRef);
   
-      if (!userProfileSnapshot.exists()) {
-        // bad scenario, no user profile exists
-        console.error("getUserProfile: user profile does not exist");
-        return null;
-      }
+  //     if (!userProfileSnapshot.exists()) {
+  //       // bad scenario, no user profile exists
+  //       console.error("getUserProfile: user profile does not exist");
+  //       return null;
+  //     }
       
-      // profile exists, get the data
-      const userProfileData = userProfileSnapshot.data();
+  //     // profile exists, get the data
+  //     const userProfileData = userProfileSnapshot.data();
   
-      console.log("getUserProfile: got userProfileData: ", userProfileData);
+  //     console.log("getUserProfile: got userProfileData: ", userProfileData);
   
-      // TODO: Move this operation out of here and into its own function
-      // get the gameRecords subcollection
-      const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
-      const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
+  //     // TODO: Move this operation out of here and into its own function
+  //     // get the gameRecords subcollection
+  //     const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
+  //     const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
   
-      // console.log("getUserProfile: got gameRecordsSnapshot:", gameRecordsSnapshot);
+  //     // console.log("getUserProfile: got gameRecordsSnapshot:", gameRecordsSnapshot);
   
-      // get the data from each doc in the gameRecords subcollection
-      const gameRecords = {};
-      gameRecordsSnapshot.forEach((doc) => gameRecords[doc.id] = doc.data());
+  //     // get the data from each doc in the gameRecords subcollection
+  //     const gameRecords = {};
+  //     gameRecordsSnapshot.forEach((doc) => gameRecords[doc.id] = doc.data());
   
-      console.log("getUserProfile: got gameRecords data:", gameRecords);
+  //     console.log("getUserProfile: got gameRecords data:", gameRecords);
   
-      // add the gameRecords subcollection data to the userProfileData
-      userProfileData.gameRecords = gameRecords;
+  //     // add the gameRecords subcollection data to the userProfileData
+  //     userProfileData.gameRecords = gameRecords;
   
-      // console.log("getUserProfile: fetched user profile with gameRecords:", userProfileData);
+  //     // console.log("getUserProfile: fetched user profile with gameRecords:", userProfileData);
   
-      return userProfileData;
-    }
-    catch (error) {
-      console.error("getUserProfile: error: ", error);
-      return null;
-    }
-  }
+  //     return userProfileData;
+  //   }
+  //   catch (error) {
+  //     console.error("getUserProfile: error: ", error);
+  //     return null;
+  //   }
+  // }
   // ==================
   // NEW IMPLEMENTATION
   // ==================
-  else {
-    console.log(`${fName}: Using new implementation`);
+  const callable = getCallable("getUserProfile");
 
-    const callable = getCallable("getUserProfile");
+  try {
+    const response = await callable({ userId });
 
-    try {
-      const response = await callable({ userId });
+    console.log(`${fName}: got response from callable:`, response);
 
-      console.log(`${fName}: got response from callable:`, response);
-
-      // TODO: Is there a better way to handle errors here?
-      if (checkIfResponseWasSuccessful(response, fName)) {
-        console.log(`${fName}: NEW IMPLEMENTATION: response received:`, response);
-        
-        const { data: userProfileData } = response.data;
-        return userProfileData;
-      }
+    // TODO: Is there a better way to handle errors here?
+    if (checkIfResponseWasSuccessful(response, fName)) {
+      console.log(`${fName}: NEW IMPLEMENTATION: response received:`, response);
+      
+      const { data: userProfileData } = response.data;
+      return userProfileData;
     }
-    catch (error) {
-      console.error(`${fName}: error getting user profile:`, error);
-    }
+  }
+  catch (error) {
+    console.error(`${fName}: error getting user profile:`, error);
   }
 }
 
@@ -450,30 +442,35 @@ export async function getAchievements() {
 // puzzle-related api functions
 
 // TODO: Adapt this to use the cached puzzle data whenever you implement that
-export async function getPuzzles() {
+export async function getPuzzles(useNewImplementation = false) {
   console.log("api: getPuzzles: fetching puzzles");
   
   // TODO: When do you sort and organize these into their puzzle sets?
 
-  try {
-    const puzzlesSnapshot = await getDocs(puzzlesCollectionRef);    
-    const puzzles = [];
-    
-    puzzlesSnapshot.forEach((puzzleDoc) => {
-      if (puzzleDoc.exists()) {
-        const puzzle = puzzleDoc.data();
-        // append id
-        puzzle.id = puzzleDoc.id;
-        
-        // add to puzzle array
-        !puzzle.hideMe && puzzles.push(puzzle);
-      }
-    });
+  if (useNewImplementation) {
 
-    return puzzles;
   }
-  catch (error) {
-    console.error("api: getPuzzles: error:", error);
+  else {
+    try {
+      const puzzlesSnapshot = await getDocs(puzzlesCollectionRef);    
+      const puzzles = [];
+      
+      puzzlesSnapshot.forEach((puzzleDoc) => {
+        if (puzzleDoc.exists()) {
+          const puzzle = puzzleDoc.data();
+          // append id
+          puzzle.id = puzzleDoc.id;
+          
+          // add to puzzle array
+          !puzzle.hideMe && puzzles.push(puzzle);
+        }
+      });
+  
+      return puzzles;
+    }
+    catch (error) {
+      console.error("api: getPuzzles: error:", error);
+    }
   }
 }
 

@@ -726,6 +726,25 @@ function processPuzzleData(puzzleData) {
   return puzzleData;
 }
 
+// Gets all puzzles for the game - called upon initial load from the client
+exports.getPuzzles = onCall(async (request) => {
+  // TODO: Improve this to use some sort of caching so that we don't incur Firestore reads for
+  //  largely static data on every load
+  const fName = "getPuzzles";
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+
+  try {
+    const puzzles = null;
+
+    return logAndReturnSuccess(puzzles, fName, "Successfully fetched puzzles");
+  }
+  catch (error) {
+    return logAndReturnError(error, fName, "Could not fetch puzzles");
+  }
+
+});
+
 // TODO: Test this in the picross parser
 // TODO: prune extra comments
 exports.createPuzzle = onCall(async (request) => {
