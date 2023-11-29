@@ -149,6 +149,13 @@ const PuzzleSelection = ({
     // TODO: Use "deleteInProgressGameRecord" 
     console.log("PS: Abandon button clicked");
     e.stopPropagation();
+
+    if (inProgressGameRecord) {
+      deleteInProgressGameRecord(inProgressGameRecord);
+      // important, as this is normally triggered by mouse events, but when the element leaves
+      //  the DOM there won't be any way to trigger handleQuitMouseEnter/Leave
+      setIsHoveringQuit(false);
+    }
   }
 
   const handleQuitMouseEnter = () => setIsHoveringQuit(true);

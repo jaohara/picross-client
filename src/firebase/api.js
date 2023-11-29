@@ -176,21 +176,27 @@ function checkIfResponseWasSuccessful(response, callerName) {
   return false;
 }
 
+const checkIfGameRecordDataExists = (gameRecordData) => {
+  if (!gameRecordData) {
+    console.error("validateGameRecordData: gameRecordData does not exist, aborting.");
+    return false;
+  }
+  
+  if (typeof gameRecordData !== 'object') {
+    console.error("validateGameRecordData: gameRecordData is not an object, aborting.");
+    return false;
+  }
+
+  return true;
+}
+
 // takes in a user object (UserContext.user) and the gameRecord data
 // as a js object, validates presence of required keys, and creates
 // a new document in firestore
 export async function createGameRecord(user, gameRecordData) {
   const userId = checkIfUserExistsAndGetUid(user);
-  
-  if (!gameRecordData) {
-    console.error("createGameRecord: gameRecordData does not exist, aborting.");
-    return;
-  }
-  
-  if (typeof gameRecordData !== 'object') {
-    console.error("createGameRecord: gameRecordData is not an object, aborting.");
-    return;
-  }
+
+  if (!checkIfGameRecordDataExists(gameRecordData)) return; 
 
   // use this as the alias for the callable cloud function
   const callable = getCallable('createGameRecord');
@@ -207,11 +213,32 @@ export async function createGameRecord(user, gameRecordData) {
   }
   
   console.log("createGameRecord: invoking callable cloud function, passing in:", gameRecordData);
-
   const response = await callable({ gameRecord: gameRecordData});
-  
   console.log(`createGameRecord: callable finished, data returned is:`, response);
-  
+  return response;
+}
+
+export async function updateGameRecord(user, gameRecordData) {
+  const userId = checkIfUserExistsAndGetUid(user);
+
+  if (!checkIfGameRecordDataExists(gameRecordData)) return;
+
+  console.log("api: updateGameRecord: coffee received gameRecordData:", gameRecordData);
+
+  const callable = getCallable('updateGameRecord');
+
+  gameRecordData['userId'] = userId;
+  gameRecordData['lastPlayed'] = Timestamp.now();
+
+  // TODO: resume implementing here
+  const requestData = {
+    gameRecord: gameRecordData,
+    gameRecordId: gameRecordData.id,
+  };
+
+  console.log("updateGameRecord: coffee invoking callable cloud function, passing in:", requestData);
+  const response = await callable(requestData);
+  console.log("updateGameRecord: coffee callable finished, data returned is:", response);
   return response;
 }
 

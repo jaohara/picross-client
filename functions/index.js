@@ -563,6 +563,7 @@ async function setGameRecordForUser(
 
     if (!gameRecordId) {
       // create scenario, no gameRecordId specified
+      // add() returns the docRef
       docRef = await gameRecordsRef.add(gameRecordData);
     }
     else {
@@ -570,9 +571,9 @@ async function setGameRecordForUser(
     
       // opting to use set() below rather than update() as set() will add with a specific
       //  id if the doc doesn't exist rather than throwing an error
-      // docRef = await gameRecordsRef.doc(gameRecordId).update(gameRecordData);
-      
-      docRef = await gameRecordsRef.doc(gameRecordId).set(gameRecordData);
+      docRef = gameRecordsRef.doc(gameRecordId);
+      // set() doesn't return a docRef, it returns a WriteResult
+      await docRef.set(gameRecordData);
     }
 
     logger.info(`setGameRecordForUser: finished creating record.`)

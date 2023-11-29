@@ -119,7 +119,7 @@ const PuzzleIcon = ({
     };
 
     generateImage();
-  }, [puzzleData]);
+  }, [puzzleData, inProgressPuzzleIds]);
 
   const showCanvas = revealed || (inProgress && inProgressGrid);
 

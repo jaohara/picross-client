@@ -100,17 +100,25 @@ const BoardScreen = () => {
   // used for shared code between handleCompleteClick (saving complete gameRecord at end of puzzle)
   //  and handleSaveClick (save incomplete gameRecord to resume later)
   // const handleGameRecordClick = (recordIsComplete = true) => {
-    const handleGameRecordClick = (recordIsComplete = true) => {
+  const handleGameRecordClick = (recordIsComplete = true) => {
     const { id, name } = currentPuzzle;
+
+    const sig = "handleGameRecordClick: coffee ";
+
+    console.log(`${sig} recordIsComplete?`, recordIsComplete);
+    console.log(`${sig} resumedGameRecordIdRef.current?`, resumedGameRecordIdRef.current);
     
     // console.log("BoardScreen: handleCompleteClick: puzzleRecord created:", puzzleRecord);
-    if (recordIsComplete) {
-      const gameRecord = 
-        buildGameRecordFromGameData(id, name, moveCountRef, moveListRef, pauseDuration);
+    // if (recordIsComplete || resumedGameRecordIdRef.current !== null) {
+    if (resumedGameRecordIdRef.current === null) {
+      const gameRecord = buildGameRecordFromGameData(
+        id, name, moveCountRef, moveListRef, pauseDuration, recordIsComplete
+      );
 
       addGameRecord(gameRecord);
     }
-    else if (resumedGameRecordIdRef.current !== null) {
+    // else if (resumedGameRecordIdRef.current !== null) {
+    else {
       const existingGameRecordId = resumedGameRecordIdRef.current;
 
       const gameRecord = buildGameRecordFromGameData(

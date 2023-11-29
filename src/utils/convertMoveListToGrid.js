@@ -30,14 +30,15 @@ export default function convertMoveListToGrid(moveList, height, width, onlyFills
     const pixelCount = parseInt(pixelCountString);
     const fillIndex = parseInt(fillIndexString);
 
-    if (fillIndex === 0) return;
-
     if (pixelCount >= gridSize || pixelCount < 0) {
       console.error(`convertMoveListToGrid: ${pixelCount} is outside of bounds of grid; size is ${gridSize}`);
       return;
     }
 
-    if ((onlyFills && fillIndex === 1) || !onlyFills) {
+    // fillIndex allows 0, which empties fills, to have an up to date version of the board
+    //  if a user removes a past fill. If it only allows 1 then it shows every fill, even 
+    //  erased ones. 
+    if ((onlyFills && fillIndex <= 1) || !onlyFills) {
       grid[pixelCount] = fillIndex;
     }
   });

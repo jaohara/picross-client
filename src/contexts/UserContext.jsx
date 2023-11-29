@@ -17,7 +17,9 @@ import {
 import { 
   createGameRecord,
   createUserEntity,
+  deleteGameRecord,
   getUserProfile,
+  updateGameRecord,
 } from "../firebase/api";
 
 import callbackIsValid from "../utils/callbackIsValid";
@@ -132,15 +134,18 @@ const UserContextProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  // TODO: reduce code reuse from [action]GameRecord functions, have a better error message
+  //  after bailing out in the first if block?
+
   // adds a puzzleRecord to the puzzleRecords state value
   const addGameRecord = (newGameRecord) => {
     if (!userProfile || !puzzleRecords) {
       return;
     }
 
-    console.log("UserContext: addGameRecord called with:", newGameRecord);
-    console.log("UserContext: current puzzleRecords is: ", puzzleRecords);
-    console.log("UserContext: current userProfile is:", userProfile);
+    // console.log("UserContext: addGameRecord called with:", newGameRecord);
+    // console.log("UserContext: current puzzleRecords is: ", puzzleRecords);
+    // console.log("UserContext: current userProfile is:", userProfile);
 
     const newGameRecordPuzzleId = newGameRecord.puzzleId;
 
@@ -159,15 +164,59 @@ const UserContextProvider = ({ children }) => {
       return;
     }
 
-    console.log("UserContext: updateInProgressGameRecord called with:", newGameRecord);
-    console.log("UserContext: current puzzleRecords is: ", puzzleRecords);
-    console.log("UserContext: current userProfile is:", userProfile);
+    console.log("UserContext: coffee updateInProgressGameRecord called with:", updatedGameRecord);
+    console.log("UserContext: coffee current puzzleRecords is: ", puzzleRecords);
+    console.log("UserContext: coffee current userProfile is:", userProfile);
 
+    const { id: existingId } = updatedGameRecord;
+
+    // how do we set the puzzle records, omitting the one that this replaces?
+    setPuzzleRecords((currentPuzzleRecords) => {
+      const newPuzzleRecords = {};
+
+      // find the existing record and update its value
+      Object.entries(currentPuzzleRecords).forEach(([recordId, record]) => {
+        if (recordId === existingId) {
+          newPuzzleRecords[existingId] = updatedGameRecord;
+          return;
+        }
+
+        newPuzzleRecords[recordId] = record;
+      });
+
+      return newPuzzleRecords;
+    });
+
+    // update the remote game records 
+    updateGameRecord(user, updatedGameRecord);
   };
 
-  const deleteInProgressGameRecord = (gameRecord) => {
+  const deleteInProgressGameRecord = (targetGameRecord) => {
+    console.log("UserContext: deleteInProgressGameRecord: received gameRecord:", targetGameRecord);
+    if (!userProfile || !puzzleRecords) {
+      return;
+    }
+
+    const { id: targetGameRecordId } = targetGameRecord;
+
+    setPuzzleRecords((currentPuzzleRecords) => {
+      const newPuzzleRecords = {};
+
+      // only allow records that aren't the existing record
+      Object.entries(currentPuzzleRecords).forEach(([recordId, record]) => {
+        if (recordId === targetGameRecordId) {
+          return;
+        }
+
+        newPuzzleRecords[recordId] = record;
+      });
+
+      return newPuzzleRecords;
+    });
+
     // TODO: Implement
-    console.log("UserContext: deleteInProgressGameRecord: received gameRecord:", gameRecord);
+    // delete the remote game record 
+    deleteGameRecord(user, targetGameRecordId);
   };
 
   // TODO: REMOVE DEBUG CODE
