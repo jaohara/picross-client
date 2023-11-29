@@ -25,38 +25,44 @@ const PuzzleGroupContainer = ({
   completedPuzzleIds,
   handlePuzzleGroupClick = () => console.log("handlePuzzleGroupClick fired"),
   highlightCompletedPuzzles = true,
+  inProgressPuzzleIds,
   puzzlesSortedByGroup,
 }) => {
   const puzzleGroups = Object.keys(puzzlesSortedByGroup);
 
-  const checkIfPuzzleIsComplete = (puzzle) => {
-    if (!highlightCompletedPuzzles) {
-      return false;
-    }
+  // TODO: Remove older function implementation
+  // const checkIfPuzzleIsComplete = (puzzle) => {
+  //   if (!highlightCompletedPuzzles) {
+  //     return false;
+  //   }
 
-    console.log(`PuzzleGroup: checkIfPuzzleIsComplete: checking for puzzle ${puzzle.id}: "${puzzle.name}" in completedPuzzleIds:`, completedPuzzleIds);
+  //   const result = completedPuzzleIds.includes(puzzle.id);
 
-    // Note: On puzzles, the id is just "puzzle.id", NOT "puzzle.puzzleId". gameRecords use "puzzleId".
 
-    const result = completedPuzzleIds.includes(puzzle.id);
+  //   // return completedPuzzleIds.includes(puzzle.id);
+  //   return result;
+  // };
 
-    console.log(`PuzzleGroup: checkIfPuzzleIsComplete: is "${puzzle.name}" complete?`, result)
+  const checkIfPuzzleIsComplete = (puzzle) => highlightCompletedPuzzles && completedPuzzleIds
+    && puzzle.id
+    && completedPuzzleIds.includes(puzzle.id);
 
-    // return completedPuzzleIds.includes(puzzle.id);
-    return result;
-  };
+  const checkIfPuzzleIsInProgress = (puzzle) => inProgressPuzzleIds
+    && puzzle.id
+    && inProgressPuzzleIds.includes(puzzle.id);
 
   const checkIfPuzzleGroupIsComplete = (puzzleGroup) => 
     puzzleGroup.every(checkIfPuzzleIsComplete);
 
   const puzzleGroupList = puzzleGroups.map((puzzleGroup, index) => (
     <PuzzleGroup
+      checkIfPuzzleIsComplete={checkIfPuzzleIsComplete}
+      checkIfPuzzleIsInProgress={checkIfPuzzleIsInProgress}
       groupData={puzzlesSortedByGroup[puzzleGroup]}
       groupName={puzzleGroup}
       handlePuzzleGroupClick={handlePuzzleGroupClick}
       isCompleted={checkIfPuzzleGroupIsComplete(puzzlesSortedByGroup[puzzleGroup])}
       key={`puzzle-group-${index}`}
-      checkIfPuzzleIsComplete={checkIfPuzzleIsComplete}
     />
   ));
 
@@ -73,6 +79,7 @@ const PuzzleGroupContainer = ({
 
 const PuzzleGroup = ({ 
   checkIfPuzzleIsComplete,
+  checkIfPuzzleIsInProgress,
   groupData, 
   groupName,
   handlePuzzleGroupClick, 
@@ -96,7 +103,9 @@ const PuzzleGroup = ({
         className="puzzle-group-icon"
         key={`puzzle-group-icon-${index}`}
         puzzleData={puzzle}
+        puzzleId={puzzle.id}
         revealed={checkIfPuzzleIsComplete(puzzle)}
+        revealedTakesPrecedence
       />
     );
   });

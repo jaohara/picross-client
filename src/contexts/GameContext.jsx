@@ -5,6 +5,7 @@ import React, {
   useState,
 } from "react";
 
+import convertMoveListToGrid from "../utils/convertMoveListToGrid";
 import hashPuzzleGrid from "../utils/hashPuzzleGrid";
 import rotate2dArray from "../utils/rotate2dArray";
 import sortHexColors from "../utils/sortHexColors";
@@ -62,6 +63,8 @@ const GameContextProvider = ({ children }) => {
   const moveCountRef = useRef(0);
   // list of moves as an array of strings describing actions
   const moveListRef = useRef([]);
+  // id of a gameRecord that was used to resume a game
+  const resumedGameRecordIdRef = useRef(null);
   // timeout ref for updating the rowAndColumnSums 
   const rowAndColumSumsTimeoutRef = useRef(null);
   
@@ -75,9 +78,15 @@ const GameContextProvider = ({ children }) => {
   const clearStartTime = () => setStartTime(0);
   const clearStopTime = () => setStopTime(0);
 
-  const startGameTimer = () => {
+
+  /**
+   * Called internally to reset and start a new game timer. Offset can be provided if resuming
+   * an in progress game to add the existing time to the game clock.
+   * @param {number} millisOffset optional offset to start the timer 
+   */
+  const startGameTimer = (millisOffset = 0) => {
     clearStopTime();
-    setStartTime(Date.now());
+    setStartTime(Date.now() - millisOffset);
   };
 
   const stopGameTimer = () => setStopTime(Date.now());
@@ -89,6 +98,9 @@ const GameContextProvider = ({ children }) => {
   
   const incrementMoveCount = () => moveCountRef.current = moveCountRef.current + 1;
   const resetMoveCount = () => moveCountRef.current = 0;
+  const setMoveCount = (newCount) => moveCountRef.current = newCount; 
+  const resetResumedGameRecordId = () => resumedGameRecordIdRef.current = null;
+  const setResumedGameRecordId = (newId) => resumedGameRecordIdRef.current = newId;
 
   // assumes pixelCount and newStatusIndex are valid
   const addMoveToList = (pixelCount, newStatusIndex) => {
@@ -98,6 +110,7 @@ const GameContextProvider = ({ children }) => {
     incrementMoveCount();
   }
 
+  const setMoveList = (newMoveList) => moveListRef.current = newMoveList;
   const resetMoveList = () => moveListRef.current = [];
 
   // TODO: Include some way to save current background colors, as well as 
@@ -115,6 +128,7 @@ const GameContextProvider = ({ children }) => {
     setPauseDuration(0);
     // reset pause timestamp
     setPauseTime(0); 
+    resetResumedGameRecordId();
     resetPuzzleGrid();
     resetRowAndColumnSums();
     resetMoveCount();
@@ -138,6 +152,7 @@ const GameContextProvider = ({ children }) => {
   // resets the puzzle grid to a cleared state
   const resetPuzzleGrid = () => {
     if (!currentPuzzle || !currentPuzzle.height || !currentPuzzle.width) {
+      console.error("GameContext: resetPuzzleGrid: error with currentPuzzle, couldn't reset grid.");
       return;
     }
 
@@ -264,8 +279,6 @@ const GameContextProvider = ({ children }) => {
     return 0;
   };
 
-
-
   const togglePauseGame = (currentTime) => {
     if (!gameIsActive) {
       return;
@@ -317,6 +330,7 @@ const GameContextProvider = ({ children }) => {
     setCurrentPuzzleGroup(puzzleGroup);
   };
 
+  // Used internally to select which puzzle is active
   const selectPuzzle = (puzzle) => {
     // TODO: Maybe include more logic here to determine when we can load? 
     // - probably not if a game is running, or something similar?
@@ -324,22 +338,77 @@ const GameContextProvider = ({ children }) => {
     setCurrentPuzzle(puzzle);
   };
 
-  const selectPuzzleAndStartFromMenu = (puzzle, navigate) => {
-    //TODO:
+  /**
+   * Given puzzle data and a navigation function, sets up the state values in the context 
+   * to create a game using the data, and navigates the user to the game board.
+   * @param {*} puzzle the puzzle data (from DataContext) for the new game
+   * @param {*} navigate navigation function returned from useNavigate (React Router)
+   * @returns boolean whether the game was successfully started
+   */
+  const selectPuzzleAndStart = (puzzle, navigate) => {
+    // TODO: make 'navigate' optional, and only call navigate()/toggleMenu() if provided?
+    //   - what purpose does this serve? Will this give me more flexibility in using this?
 
-    /*
-      I want to make a note that this looks to be where I'm defining the sequence
-      of events that need to take place to start a game.
-    */
+    if (!puzzle || !navigate) {
+      console.error("GameContext: selectPuzzleAndStart: invalid parameters");
+      return false;
+    }
 
-    
+    // This is the sequence of function calls needed to start a new game
+
     selectPuzzle(puzzle);
     // set the menu "behind the BoardScreen" to the pause menu
     navigate("/pause"); 
     startGameTimer();
     // hide the pause menu
-    toggleMenu(); 
-  }
+    toggleMenu();
+    return true;
+  };
+
+  /**
+   * Given puzzle data, a game record, and a navigation function, sets up the state values in 
+   * the context to resume the game using the data. After doing so, this navigates the user 
+   * to the game board.
+   * @param {*} puzzle the puzzle data (from DataContext) for the new game
+   * @param {*} gameRecord the gameRecord of the in progress game to resume
+   * @param {*} navigate navigation function returned from useNavigate (React Router) 
+   * @returns boolean whether the game was successfully started
+   */
+  const selectInProgressPuzzleAndStart = (puzzle, gameRecord, navigate) => {
+    if (!puzzle || !gameRecord || !navigate) {
+      console.error("GameContext: selectInProgressPuzzleAndStart: invalid parameters");
+      return false;
+    }
+
+    // presence of currentPuzzle.resumed will cause updating currentPuzzle to not reset grid
+    const resumedPuzzle = { ...puzzle, resumed: true };
+
+    console.log("selectInProgressPuzzleAndStart: coffee attemping to resume from this gameRecord:", gameRecord);
+
+    // pull out data to build grid and offset timer
+    const { gameTimer: gameTimerOffset, id: gameRecordId, moveCount, moveList } = gameRecord;
+    const { height, width } = puzzle;
+
+    // This is the sequence of function calls needed to resume a game
+
+    selectPuzzle(resumedPuzzle);
+    // set timer
+    // provide millisOffset of current duration to start timer with existing time
+    startGameTimer(gameTimerOffset);
+    // set grid
+    const puzzleGrid = convertMoveListToGrid(moveList, height, width);
+    setCurrentPuzzleGrid(puzzleGrid);
+    // store the ref to the gameRecord the game was loaded from
+    setResumedGameRecordId(gameRecordId);
+    // assign moveList and moveCount values from gameRecord data
+    setMoveCount(moveCount);
+    setMoveList(moveList);
+    // navigate to pause menu over the game board
+    navigate("/pause");
+    // hide the pause menu
+    toggleMenu();
+    return true;
+  };
 
   const navigateToPuzzleGroup = (navigate) => {
     setCurrentPuzzleGroup((previousPuzzleGroup) => ({ 
@@ -347,16 +416,50 @@ const GameContextProvider = ({ children }) => {
       hasNavigated: true,
     }));
 
-    navigate("/puzzle-group")
+    navigate("/puzzle-group");
   };
 
   useEffect(() => {
-    // callback to set up game grid when a puzzle is selected
-    resetPuzzleGrid();
+    // sets up game grid when a puzzle is selected
+    if (currentPuzzle && !currentPuzzle.resumed) {
+      resetPuzzleGrid();
+    }
   }, [currentPuzzle]);
 
+  // TODO: PRUNE DEAD CODE
   // for recalculating the rowAndColumnSums
-  useEffect(() => {
+  // useEffect(() => {
+  //   // clear previously scheduled update if it exists
+  //   if (rowAndColumSumsTimeoutRef.current) {
+  //     clearTimeout(rowAndColumSumsTimeoutRef.current);
+  //   }
+
+  //   // throttle the recalc by this many ms to prevent the array sum/reduce functions from 
+  //   //  being called too frequently
+  //   const rowAndColRecalculationDelay = 100;
+
+  //   rowAndColumSumsTimeoutRef.current = setTimeout(() => {
+  //     calculateAndSetRowAndColumnSums();
+  //     rowAndColumSumsTimeoutRef.current = null;
+  //   }, rowAndColRecalculationDelay);
+
+  //   // cleanup function to clear the timeout
+  //   return (() => {
+  //     if (rowAndColumSumsTimeoutRef.current) {
+  //       clearTimeout(rowAndColumSumsTimeoutRef.current);
+  //     }
+  //   });
+  // }, [currentPuzzleGrid]);
+
+
+  // called internally on currentPuzzleGrid change 
+  /**
+   * Schedules the update of rowAndColumnSums via a timeout as to not update too quickly
+   * with rapid moves. To be called internally on currentPuzzleGrid change. Returns a 
+   * cleanup function for the useEffect hook to destroy the timeout. 
+   * @returns {function} the cleanup function for the useEffect hook
+   */
+  function updateRowAndColumnSums() {
     // clear previously scheduled update if it exists
     if (rowAndColumSumsTimeoutRef.current) {
       clearTimeout(rowAndColumSumsTimeoutRef.current);
@@ -376,62 +479,68 @@ const GameContextProvider = ({ children }) => {
       if (rowAndColumSumsTimeoutRef.current) {
         clearTimeout(rowAndColumSumsTimeoutRef.current);
       }
-    })
+    });
+  }
 
-  }, [currentPuzzleGrid]);
-
-  const checkIfPuzzleIsSolved = () => {
-    const DEBUG_LOGS = false;
-
+  // called internally to check if the puzzle is solved. returns a boolean
+  function checkIfPuzzleIsSolved() {
     if (!currentPuzzle) return false;
 
-    DEBUG_LOGS && console.log("GameContext: currentPuzzleGrid:", currentPuzzleGrid);
+    const DEBUG_LOGGING = false;
 
     const { 
       name,
       gridHash: solutionHash, 
     } = currentPuzzle;
-    
+
+    DEBUG_LOGGING && console.log("GameContext: currentPuzzleGrid:", currentPuzzleGrid);
+
     // convert x's (2) on grid to empty (0)
     const convertedPuzzleGrid = currentPuzzleGrid.map((cell) => cell === 2 ? 0 : cell);
     const currentGridHash = hashPuzzleGrid(convertedPuzzleGrid, name);
 
-    if (DEBUG_LOGS) {
-      console.log(`GameContext: currentGridHash, solutionHash: ${currentGridHash}, ${solutionHash}`);
-    }
+    DEBUG_LOGGING &&console.log(`GameContext: currentGridHash, solutionHash: ${currentGridHash}, ${solutionHash}`);
 
     if (currentGridHash === solutionHash) {
       setPuzzleIsSolved(true);
-      // stop the timer?
-      stopGameTimer();
+      // TODO: Do I still need to consider this? Does this issue still exist?
+      // from other implementation - stop the timer?
+      // stopGameTimer();
+      return true;
     }
+
+    return false;
   }
 
 
-  // check if puzzle is solved
+  // effect to check if puzzle is solved
   useEffect(() => {
-    if (!currentPuzzle) {
-      return;
-    }
+    // TODO: PRUNE DEAD CODE
+    // if (!currentPuzzle) {
+    //   return;
+    // }
 
-    const { 
-      name,
-      gridHash: solutionHash, 
-    } = currentPuzzle;
+    // const { 
+    //   name,
+    //   gridHash: solutionHash, 
+    // } = currentPuzzle;
 
-    console.log("GameContext: currentPuzzleGrid:", currentPuzzleGrid);
+    // console.log("GameContext: currentPuzzleGrid:", currentPuzzleGrid);
 
-    // remove x from grid
-    const strippedPuzzleGrid = currentPuzzleGrid.map((cell) => cell === 2 ? 0 : cell);
+    // // remove x from grid
+    // const strippedPuzzleGrid = currentPuzzleGrid.map((cell) => cell === 2 ? 0 : cell);
 
-    // const currentGridHash = hashPuzzleGrid(currentPuzzleGrid, name);
-    const currentGridHash = hashPuzzleGrid(strippedPuzzleGrid, name);
+    // // const currentGridHash = hashPuzzleGrid(currentPuzzleGrid, name);
+    // const currentGridHash = hashPuzzleGrid(strippedPuzzleGrid, name);
 
-    console.log(`GameContext: currentGridHash, solutionHash: ${currentGridHash}, ${solutionHash}`);
+    // console.log(`GameContext: currentGridHash, solutionHash: ${currentGridHash}, ${solutionHash}`);
 
-    if (currentGridHash === solutionHash) {
-      setPuzzleIsSolved(true);
-    }
+    // if (currentGridHash === solutionHash) {
+    //   setPuzzleIsSolved(true);
+    // }
+    const cleanup = updateRowAndColumnSums();
+    checkIfPuzzleIsSolved();
+    return cleanup;
   }, [currentPuzzleGrid]);
 
   const boardIsReady = currentPuzzle && currentPuzzleGrid;
@@ -456,9 +565,10 @@ const GameContextProvider = ({ children }) => {
         pauseDuration,
         puzzleIsSolved,
         quitGame,
+        resumedGameRecordIdRef,
         rowAndColumnSums,
-        selectPuzzle,
-        selectPuzzleAndStartFromMenu,
+        selectPuzzleAndStart,
+        selectInProgressPuzzleAndStart,
         selectPuzzleGroup,
         setMenuIsActive,
         startTime,

@@ -32,6 +32,7 @@ $menu-toggle-top-offset: calc(1.6 * $common-margin);
 $message-icon-font-size: 10rem;
 $profile-menu-container-bottom-margin: 3rem;
 $section-header-font-size: 1.4rem;
+$ui-icon-size: 32px;
 
 // =====
 // fonts
@@ -343,5 +344,52 @@ $l-breakpoint: 1920px;
     @include glow-border-small($icon-completed-border-color);
     // border: 2px solid $icon-completed-border-color;
     // border: 2px solid red;
+  }
+}
+
+// for use with button unhovered states, which might need to be explicitly supplied
+@mixin button-normal-state {
+  align-items: center;
+  background-color: $button-background-color;
+  border-radius: $common-border-radius;
+  border: 2px solid;
+  border-color: $button-border-color;
+  box-shadow: 0px 0px 0px $button-border-color;
+  color: $text-light-color;
+  display: flex;
+  font-size: 1rem;
+  font-weight: bold;
+  opacity: 1;
+  padding: .6rem 1rem;
+  transition: 
+    background-color $ui-fast-transition, 
+    border-color $ui-fast-transition, 
+    box-shadow $ui-fast-transition, 
+    color $ui-fast-transition, 
+    opacity $ui-fast-transition;
+
+  .button-icon-wrapper svg path {
+    color: $text-light-color;
+  }
+}
+
+// for use with button hover states, which might not always be applied to just :hover
+@mixin button-hover-state {
+  @include glow-border($button-border-hover-color);
+  background-color: $button-hover-background-color;
+  color: $button-hover-text-color;
+  cursor: pointer;
+
+  .button-icon-wrapper svg path {
+    color: $button-hover-text-color;
+  }
+
+  &.delete-unlocked .button-icon-wrapper svg path {
+    color: $delete-unlocked-font-color;
+  }
+
+  &.delete-unlocked { 
+    background-color: $delete-unlocked-fill-color;
+    border-color: $delete-unlocked-fill-color;
   }
 }

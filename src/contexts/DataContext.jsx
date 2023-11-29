@@ -5,15 +5,17 @@ import React, {
   useState,
 } from "react";
 
-// TODO: import necessary api functions
+import { auth } from "../firebase/firebase";
+
 import {
-  getAchievements, getPuzzles
+  getPuzzles,
 } from "../firebase/api";
 
 const DataContext = createContext(undefined);
 
 const DataContextProvider = ({ children }) => {
   // the set of all possible achievements
+  // TODO: Finish pruning this code
   const [ achievements, setAchievements ] = useState([])
   // the set of all available puzzles
   const [ puzzles, setPuzzles ] = useState();
@@ -86,6 +88,14 @@ const DataContextProvider = ({ children }) => {
     };
 
     fetchData();
+
+
+    // TODO: What was I intending to do here? Is this leftover
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      // a callback that triggers when a user's auth state changes
+    });
+
+    return unsubscribe;
   }, []);
 
   return (

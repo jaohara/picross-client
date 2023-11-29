@@ -1,27 +1,77 @@
 import React, {
+  useCallback,
+  useContext,
   useEffect,
   useRef,
 } from 'react';
 
 import './PuzzleIcon.scss';
 
+import convertMoveListToGrid from '../../utils/convertMoveListToGrid';
+
+import { DataContext } from '../../contexts/DataContext';
+import { UserContext } from '../../contexts/UserContext';
+
 import { TbQuestionMark } from "react-icons/tb";
 
-import { LARGE_ICON_SIZE } from '../../constants';
+import { 
+  BOARD_SQUARE_EMPTY_COLOR,
+  BOARD_SQUARE_FILL_COLOR,
+  LARGE_ICON_SIZE,
+} from '../../constants';
 
 const PuzzleIcon = ({
   className,
   // maybe not necessary - used to scale canvas and draw operations
-  imageScale = 1.0, 
-  puzzleData,
-  revealed = true,
+  imageScale = 1.0,
+  // inProgress = false, // TODO: remove 
+  // inProgressMoveList = null,
+  // inProgressGrid = null,
+  // puzzleData, // TODO: remove
+
+  // new approach using contexts just the puzzle id - assumes id is valid
+  puzzleId,
+  
+  
+  // revealed = true, // TODO: remove
+  // whether the revealed 
+  revealedTakesPrecedence = false,
  }) => {
   // use canvas with ref to it
   const canvasRef = useRef(null);
 
+  const { puzzles } = useContext(DataContext);
+
+  // will be undefined if it doesn't exist
+  const puzzleData = puzzles.find((puzzle) => puzzle.id === puzzleId);
+
+  const { 
+    completedPuzzleIds,
+    getIncompletePuzzleGridFromPuzzleData,
+    inProgressPuzzleIds,
+  } = useContext(UserContext);
+
+  // TODO: I don't think I need this approach
+  // const completedPuzzlesAreReady = puzzles && completedPuzzleIds;
+  // const inProgressPuzzlesAreReady = puzzles && inProgressPuzzleIds;
+
+  const checkIfPuzzleIsCompleteById = (puzzleId) => completedPuzzleIds.includes(puzzleId);
+  const checkIfPuzzleIsInProgressById = (puzzleId) => inProgressPuzzleIds.includes(puzzleId);
+
+  const revealed = checkIfPuzzleIsCompleteById(puzzleId);
+  const inProgress = checkIfPuzzleIsInProgressById(puzzleId);
+
+  const inProgressGrid = inProgress ? getIncompletePuzzleGridFromPuzzleData(puzzleData) : null;
+
   useEffect(() => {
     const generateImage = () => {
       const canvas = canvasRef.current;
+
+      if (!puzzleData) {
+        console.error("PuzzleIcon: generateImage: puzzleData does not exist");
+        return;
+      }
+
       const { colors, height, width } = puzzleData;
 
       if (!canvas) {
@@ -48,24 +98,36 @@ const PuzzleIcon = ({
       ctx.msImageSmoothingEnabled = false;
       ctx.imageSmoothingQuality = 'high';
       
-      puzzleCellColors.forEach((cellColor, index) => {
-        // set color
-        ctx.fillStyle = colors[cellColor];
+      puzzleCellColors.forEach((cellColor, pixelCount) => {
         const squareSize = 1 * imageScale;
-        const xPos = (index % width) * imageScale;
-        const yPos = Math.floor(index / height) * imageScale;
+        const xPos = (pixelCount % height) * imageScale;
+        const yPos = Math.floor(pixelCount / width) * imageScale;
+
+        // if in progress, don't draw color, but draw either fill or empty state
+        if (inProgress && inProgressGrid && (!revealed || !revealedTakesPrecedence)) {
+          const isFill = inProgressGrid[pixelCount] === 1;
+          ctx.fillStyle = isFill ? BOARD_SQUARE_FILL_COLOR : BOARD_SQUARE_EMPTY_COLOR;
+        }
+        else {
+          // draw color square for complete puzzle
+          // set color
+          ctx.fillStyle = colors[cellColor];
+        }
+        
         ctx.fillRect(xPos, yPos, squareSize, squareSize);
       });
     };
 
     generateImage();
-  }, []);
+  }, [puzzleData, inProgressPuzzleIds]);
+
+  const showCanvas = revealed || (inProgress && inProgressGrid);
 
   return ( 
     <div className={`${className} puzzle-icon`}>
       <div className="icon-wrapper">
         {
-          revealed ? (
+          showCanvas ? (
             <canvas id="icon-canvas" ref={canvasRef}></canvas>
           ) : (
             <TbQuestionMark size={LARGE_ICON_SIZE} />

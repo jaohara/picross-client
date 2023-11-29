@@ -13,7 +13,6 @@ import { DataContext } from '../../../contexts/DataContext';
 import { UserContext } from '../../../contexts/UserContext';
 import { GameContext } from '../../../contexts/GameContext';
 
-import Button from '../../../components/Button/Button';
 import MenuHeader from '../../../components/MenuHeader/MenuHeader';
 import MenuLinks from '../../../components/MenuLinks/MenuLinks';
 import PuzzleSelectionContainer from '../../../components/PuzzleSelectionContainer/PuzzleSelectionContainer';
@@ -23,28 +22,29 @@ const PuzzleGroupMenu = () => {
 
   const {
     completedPuzzleIds,
+    inProgressGameRecords,
+    inProgressPuzzleIds,
     // getCompletedPuzzleTime,
   } = useContext(UserContext);
 
   const {
     currentPuzzleGroup,
-    gameIsActive,
-    setGameIsActive,
-    toggleMenu,
+    // gameIsActive,
+    // setGameIsActive,
+    // toggleMenu,
   } = useContext(GameContext);
 
   const {
     isPuzzleGroup,
     puzzlesSortedByGroup,
   } = useContext(DataContext);
-
   
   const puzzleGroupName = currentPuzzleGroup ? currentPuzzleGroup.name : "null";
   const puzzles = isPuzzleGroup(puzzleGroupName) ? puzzlesSortedByGroup[puzzleGroupName] : null; 
 
   useEffect(() => {
-    console.log("PuzzleGroupMenu: useEffect: completedPuzzleIds, puzzlesSortedByGroup:", completedPuzzleIds, puzzlesSortedByGroup);
-    console.log("PuzzleGroupMenu: useEffect: puzzles:", puzzles);
+    // console.log("PuzzleGroupMenu: useEffect: completedPuzzleIds, puzzlesSortedByGroup:", completedPuzzleIds, puzzlesSortedByGroup);
+    // console.log("PuzzleGroupMenu: useEffect: puzzles:", puzzles);
   }, []);
 
   return ( 
@@ -62,34 +62,14 @@ const PuzzleGroupMenu = () => {
 
         <div className="menu-body">
           <PuzzleSelectionContainer
-            completedPuzzleIds={completedPuzzleIds}
+            // completedPuzzleIds={completedPuzzleIds}
+            // inProgressGameRecords={inProgressGameRecords}
+            // inProgressPuzzleIds={inProgressPuzzleIds}
             navigate={navigate}
             puzzles={puzzles}
           />
-          {/* <h1>Todo:</h1>
-          <ul>
-            <li>Implement this after PuzzleListMenu and PuzzleMenu as an extra layer</li>
-            <li>Group puzzles from like sets together, pulling info from the set here</li>
-            <li>When user reaches here, <strong>change background color to set color</strong></li>
-          </ul> */}
-
-          {/* Temp button to start game */}
-
-          {/* <p>
-            <Button
-              iconType="play"
-              onClick={() => {
-                setGameIsActive(true)
-                toggleMenu()
-              }}
-            >
-              Start Puzzle
-            </Button>
-          </p> */}
         </div>
-
       </div>
-
     </div>
   );
 }

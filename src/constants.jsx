@@ -25,6 +25,7 @@ export const CREDITS_LINE_FORMATTED = (
     <a href="https://github.com/BBunish">Brett Bunish</a>
   </span>
 );
+export const EMPTY_PUZZLE_NAME_STRING = "???";
 export const LARGE_ICON_SIZE = 64;
 export const PUZZLE_FILL_CHAR = "*";
 export const PUZZLE_SQUARE_DELIMITER = ",";

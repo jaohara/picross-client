@@ -176,21 +176,27 @@ function checkIfResponseWasSuccessful(response, callerName) {
   return false;
 }
 
+const checkIfGameRecordDataExists = (gameRecordData) => {
+  if (!gameRecordData) {
+    console.error("validateGameRecordData: gameRecordData does not exist, aborting.");
+    return false;
+  }
+  
+  if (typeof gameRecordData !== 'object') {
+    console.error("validateGameRecordData: gameRecordData is not an object, aborting.");
+    return false;
+  }
+
+  return true;
+}
+
 // takes in a user object (UserContext.user) and the gameRecord data
 // as a js object, validates presence of required keys, and creates
 // a new document in firestore
 export async function createGameRecord(user, gameRecordData) {
   const userId = checkIfUserExistsAndGetUid(user);
-  
-  if (!gameRecordData) {
-    console.error("createGameRecord: gameRecordData does not exist, aborting.");
-    return;
-  }
-  
-  if (typeof gameRecordData !== 'object') {
-    console.error("createGameRecord: gameRecordData is not an object, aborting.");
-    return;
-  }
+
+  if (!checkIfGameRecordDataExists(gameRecordData)) return; 
 
   // use this as the alias for the callable cloud function
   const callable = getCallable('createGameRecord');
@@ -207,11 +213,32 @@ export async function createGameRecord(user, gameRecordData) {
   }
   
   console.log("createGameRecord: invoking callable cloud function, passing in:", gameRecordData);
-
   const response = await callable({ gameRecord: gameRecordData});
-  
   console.log(`createGameRecord: callable finished, data returned is:`, response);
-  
+  return response;
+}
+
+export async function updateGameRecord(user, gameRecordData) {
+  const userId = checkIfUserExistsAndGetUid(user);
+
+  if (!checkIfGameRecordDataExists(gameRecordData)) return;
+
+  console.log("api: updateGameRecord: coffee received gameRecordData:", gameRecordData);
+
+  const callable = getCallable('updateGameRecord');
+
+  gameRecordData['userId'] = userId;
+  gameRecordData['lastPlayed'] = Timestamp.now();
+
+  // TODO: resume implementing here
+  const requestData = {
+    gameRecord: gameRecordData,
+    gameRecordId: gameRecordData.id,
+  };
+
+  console.log("updateGameRecord: coffee invoking callable cloud function, passing in:", requestData);
+  const response = await callable(requestData);
+  console.log("updateGameRecord: coffee callable finished, data returned is:", response);
   return response;
 }
 
@@ -341,82 +368,74 @@ export async function createUserEntity(newUser, id) {
 // TODO: Change this to a callable approach
 export async function getUserProfile(userId) {
   const fName = "getUserProfile";
-  // const USE_NEW_IMPLEMENTATION = false;
-  const USE_NEW_IMPLEMENTATION = true;
-
-  console.log(`${fName}: USE_NEW_IMPLEMENTATION?`, USE_NEW_IMPLEMENTATION);
 
   console.log(`${fName}: received userId: `, userId);
 
   // ==================
   // OLD IMPLEMENTATION
   // ==================
-  if (!USE_NEW_IMPLEMENTATION) {
-    try {
-      // get ref to user doc and snapshot of doc
-      const userProfileDocRef = doc(usersCollectionRef, userId);
-      const userProfileSnapshot = await getDoc(userProfileDocRef);
+  // if (!USE_NEW_IMPLEMENTATION) {
+  //   try {
+  //     // get ref to user doc and snapshot of doc
+  //     const userProfileDocRef = doc(usersCollectionRef, userId);
+  //     const userProfileSnapshot = await getDoc(userProfileDocRef);
   
-      if (!userProfileSnapshot.exists()) {
-        // bad scenario, no user profile exists
-        console.error("getUserProfile: user profile does not exist");
-        return null;
-      }
+  //     if (!userProfileSnapshot.exists()) {
+  //       // bad scenario, no user profile exists
+  //       console.error("getUserProfile: user profile does not exist");
+  //       return null;
+  //     }
       
-      // profile exists, get the data
-      const userProfileData = userProfileSnapshot.data();
+  //     // profile exists, get the data
+  //     const userProfileData = userProfileSnapshot.data();
   
-      console.log("getUserProfile: got userProfileData: ", userProfileData);
+  //     console.log("getUserProfile: got userProfileData: ", userProfileData);
   
-      // TODO: Move this operation out of here and into its own function
-      // get the gameRecords subcollection
-      const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
-      const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
+  //     // TODO: Move this operation out of here and into its own function
+  //     // get the gameRecords subcollection
+  //     const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
+  //     const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
   
-      // console.log("getUserProfile: got gameRecordsSnapshot:", gameRecordsSnapshot);
+  //     // console.log("getUserProfile: got gameRecordsSnapshot:", gameRecordsSnapshot);
   
-      // get the data from each doc in the gameRecords subcollection
-      const gameRecords = {};
-      gameRecordsSnapshot.forEach((doc) => gameRecords[doc.id] = doc.data());
+  //     // get the data from each doc in the gameRecords subcollection
+  //     const gameRecords = {};
+  //     gameRecordsSnapshot.forEach((doc) => gameRecords[doc.id] = doc.data());
   
-      console.log("getUserProfile: got gameRecords data:", gameRecords);
+  //     console.log("getUserProfile: got gameRecords data:", gameRecords);
   
-      // add the gameRecords subcollection data to the userProfileData
-      userProfileData.gameRecords = gameRecords;
+  //     // add the gameRecords subcollection data to the userProfileData
+  //     userProfileData.gameRecords = gameRecords;
   
-      // console.log("getUserProfile: fetched user profile with gameRecords:", userProfileData);
+  //     // console.log("getUserProfile: fetched user profile with gameRecords:", userProfileData);
   
-      return userProfileData;
-    }
-    catch (error) {
-      console.error("getUserProfile: error: ", error);
-      return null;
-    }
-  }
+  //     return userProfileData;
+  //   }
+  //   catch (error) {
+  //     console.error("getUserProfile: error: ", error);
+  //     return null;
+  //   }
+  // }
   // ==================
   // NEW IMPLEMENTATION
   // ==================
-  else {
-    console.log(`${fName}: Using new implementation`);
+  const callable = getCallable("getUserProfile");
 
-    const callable = getCallable("getUserProfile");
+  try {
+    const response = await callable({ userId });
 
-    try {
-      const response = await callable({ userId });
+    console.log(`${fName}: got response from callable:`, response);
 
-      console.log(`${fName}: got response from callable:`, response);
-
-      // TODO: Is there a better way to handle errors here?
-      if (checkIfResponseWasSuccessful(response, fName)) {
-        console.log(`${fName}: NEW IMPLEMENTATION: response received:`, response);
-        
-        const { data: userProfileData } = response.data;
-        return userProfileData;
-      }
+    // TODO: Is there a better way to handle errors here?
+    if (checkIfResponseWasSuccessful(response, fName)) {
+      console.log(`${fName}: NEW IMPLEMENTATION: response received:`, response);
+      
+      const { data: userProfileData } = response.data;
+      return userProfileData;
     }
-    catch (error) {
-      console.error(`${fName}: error getting user profile:`, error);
-    }
+  }
+  catch (error) {
+    console.error(`${fName}: error getting user profile:`, error);
   }
 }
 
@@ -450,34 +469,55 @@ export async function getAchievements() {
 // puzzle-related api functions
 
 // TODO: Adapt this to use the cached puzzle data whenever you implement that
-export async function getPuzzles() {
-  console.log("api: getPuzzles: fetching puzzles");
+export async function getPuzzles(useNewImplementation = true) {
+  const signature = "api: getPuzzles:";
+
+  console.log(`${signature} fetching puzzles`);
   
   // TODO: When do you sort and organize these into their puzzle sets?
 
-  try {
-    const puzzlesSnapshot = await getDocs(puzzlesCollectionRef);    
-    const puzzles = [];
-    
-    puzzlesSnapshot.forEach((puzzleDoc) => {
-      if (puzzleDoc.exists()) {
-        const puzzle = puzzleDoc.data();
-        // append id
-        puzzle.id = puzzleDoc.id;
-        
-        // add to puzzle array
-        !puzzle.hideMe && puzzles.push(puzzle);
-      }
-    });
+  if (useNewImplementation) {
+    // console.log(`${signature} using new implementation`)
 
-    return puzzles;
+    const callable = getCallable("getPuzzles");
+
+    try {
+      const response = await callable();
+      // console.log(`${signature} got response from callable:`, response);
+      const { data: puzzleData } = response.data;
+      return puzzleData; 
+    }
+    catch (error) {
+      console.error(`${signature} error fetching puzzles:`, error);
+    }
   }
-  catch (error) {
-    console.error("api: getPuzzles: error:", error);
+  // TODO: REMOVE OLD CODE
+  else {
+    try {
+      const puzzlesSnapshot = await getDocs(puzzlesCollectionRef);    
+      const puzzles = [];
+      
+      puzzlesSnapshot.forEach((puzzleDoc) => {
+        if (puzzleDoc.exists()) {
+          const puzzle = puzzleDoc.data();
+          // append id
+          puzzle.id = puzzleDoc.id;
+          
+          // add to puzzle array
+          !puzzle.hideMe && puzzles.push(puzzle);
+        }
+      });
+  
+      return puzzles;
+    }
+    catch (error) {
+      console.error("api: getPuzzles: error:", error);
+    }
   }
 }
 
-// TODO: Probably adapt this into a "getAllOfficialPuzzles" function
+// Not used in codebase
+// TODO: Refactor to use "getUserPuzzles" callable CF
 export async function getUserPuzzles(
   authorId, 
   setUserPuzzles,
@@ -489,7 +529,6 @@ export async function getUserPuzzles(
   // build query to get all puzzles for the given authorId
   const userPuzzlesQuery = query(
     puzzlesCollectionRef, 
-    // TODO: Modify this for all official puzzles
     where("authorId", "==", authorId),
     orderBy(orderByField, "desc"),
   );

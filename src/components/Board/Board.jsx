@@ -446,8 +446,8 @@ function ColumnNumbers ({
   const [ numberElements, setNumberElements ] = useState([]);
 
   useEffect(() => {
-    console.log(`ColumnNumbers: colNumbers:`, colNumbers);
-    console.log(`ColumnNumbers: colSums:`, colSums);
+    // console.log(`ColumnNumbers: colNumbers:`, colNumbers);
+    // console.log(`ColumnNumbers: colSums:`, colSums);
     setNumberElements(buildNumberElements(colNumbers, colSums, "col"));
   }, [colNumbers, colSums]);
 
