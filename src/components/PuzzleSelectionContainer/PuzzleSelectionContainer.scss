@@ -40,3 +40,31 @@
   @include g.inline-mono-styling();
   font-weight: bold;
 }
+
+.puzzle-selection-metadata {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.puzzle-selection-controls {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.puzzle-selection-controls-wrapper {
+  display: flex;
+
+  & > * {
+    margin-left: g.$common-margin;
+  }
+}
+
+.puzzle-selection:hover .puzzle-selection-primary-button {
+  @include g.button-hover-state();
+
+  &.no-hover-style {
+    @include g.button-normal-state();
+  }
+}

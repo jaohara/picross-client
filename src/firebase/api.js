@@ -442,14 +442,29 @@ export async function getAchievements() {
 // puzzle-related api functions
 
 // TODO: Adapt this to use the cached puzzle data whenever you implement that
-export async function getPuzzles(useNewImplementation = false) {
-  console.log("api: getPuzzles: fetching puzzles");
+export async function getPuzzles(useNewImplementation = true) {
+  const signature = "api: getPuzzles:";
+
+  console.log(`${signature} fetching puzzles`);
   
   // TODO: When do you sort and organize these into their puzzle sets?
 
   if (useNewImplementation) {
+    // console.log(`${signature} using new implementation`)
 
+    const callable = getCallable("getPuzzles");
+
+    try {
+      const response = await callable();
+      // console.log(`${signature} got response from callable:`, response);
+      const { data: puzzleData } = response.data;
+      return puzzleData; 
+    }
+    catch (error) {
+      console.error(`${signature} error fetching puzzles:`, error);
+    }
   }
+  // TODO: REMOVE OLD CODE
   else {
     try {
       const puzzlesSnapshot = await getDocs(puzzlesCollectionRef);    
@@ -474,7 +489,8 @@ export async function getPuzzles(useNewImplementation = false) {
   }
 }
 
-// TODO: Probably adapt this into a "getAllOfficialPuzzles" function
+// Not used in codebase
+// TODO: Refactor to use "getUserPuzzles" callable CF
 export async function getUserPuzzles(
   authorId, 
   setUserPuzzles,
@@ -486,7 +502,6 @@ export async function getUserPuzzles(
   // build query to get all puzzles for the given authorId
   const userPuzzlesQuery = query(
     puzzlesCollectionRef, 
-    // TODO: Modify this for all official puzzles
     where("authorId", "==", authorId),
     orderBy(orderByField, "desc"),
   );

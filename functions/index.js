@@ -675,13 +675,6 @@ exports.getUserProfile = onCall(async (request) => {
 // puzzle CRUD operations
 // ======================
 
-// TODO: bring over ./firebase/api:getPuzzles
-
-// --- FROM /picross-parser/firesbase/api ---
-
-// note: some of these are only necessary for the parser, but required to unify
-// the backend stuff with cloud functions
-
 /**
  * Processes raw puzzle data from the parser client and stores it in a game-usable format.
  * Hashes the puzzle grid, computes the row/col numbers, and tallies the minimum moves needed
@@ -726,6 +719,39 @@ function processPuzzleData(puzzleData) {
   return puzzleData;
 }
 
+// helper function to fetch puzzles internally 
+async function getPuzzlesFromFirestore(userId = null, callerName) {
+  // TODO: Assumes userId is valid if supplied
+
+  try {
+    const puzzles = [];
+    const puzzlesSnapshot = await (async () => {
+      // get all puzzles
+      if (!userId) {
+        return await db.collection("/puzzles").get();
+      }
+
+      //get puzzles for a specified userId
+      return await db.collection("/puzzles").where("authorId", "==", userId).get();
+    })();
+
+    puzzlesSnapshot.forEach((puzzleDoc) => {
+      if (puzzleDoc.exists) {
+        const puzzle = puzzleDoc.data();
+        // append puzzle id
+        puzzle.id = puzzleDoc.id;
+
+        if (!puzzle.hideMe) puzzles.push(puzzle);
+      }
+    });
+
+    return logAndReturnSuccess(puzzles, callerName, "Successfully fetched puzzles");
+  }
+  catch (error) {
+    return logAndReturnError(error, callerName, "Could not fetch puzzles");
+  }
+}
+
 // Gets all puzzles for the game - called upon initial load from the client
 exports.getPuzzles = onCall(async (request) => {
   // TODO: Improve this to use some sort of caching so that we don't incur Firestore reads for
@@ -734,15 +760,38 @@ exports.getPuzzles = onCall(async (request) => {
 
   if (!requestAuthIsValid(request, fName)) return invalidAuthError;
 
-  try {
-    const puzzles = null;
+  return await getPuzzlesFromFirestore(null, fName);
 
-    return logAndReturnSuccess(puzzles, fName, "Successfully fetched puzzles");
-  }
-  catch (error) {
-    return logAndReturnError(error, fName, "Could not fetch puzzles");
-  }
+  // try {
+  //   const puzzles = [];
+  //   const puzzlesSnapshot = await db.collection("/puzzles").get();
 
+  //   puzzlesSnapshot.forEach((puzzleDoc) => {
+  //     if (puzzleDoc.exists) {
+  //       const puzzle = puzzleDoc.data();
+  //       // append puzzle id
+  //       puzzle.id = puzzleDoc.id;
+
+  //       if (!puzzle.hideMe) puzzles.push(puzzle);
+  //     }
+  //   });
+
+  //   return logAndReturnSuccess(puzzles, fName, "Successfully fetched puzzles");
+  // }
+  // catch (error) {
+  //   return logAndReturnError(error, fName, "Could not fetch puzzles");
+  // }
+});
+
+exports.getUserPuzzles = onCall(async (request) => {
+  const fName = "getUserPuzzles";
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+  if (!requestHasUserId(request, fName)) return createMissingDataError("userId");
+
+  const { userId } = request.data;
+
+  return await getPuzzlesFromFirestore(userId, fName);
 });
 
 // TODO: Test this in the picross parser

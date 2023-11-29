@@ -1,41 +1,17 @@
 @use "../../styles/globals.scss" as g;
 
+// a lot of these rules are moved to mixins in globals.scss so that they can be used
+//  in places (PuzzleSelectionContainer) for custom button behavior.
+
 .app-button {
-  align-items: center;
-  background-color: g.$button-background-color;
-  border-radius: g.$common-border-radius;
-  border: 2px solid;
-  border-color: g.$button-border-color;
-  box-shadow: 0px 0px 0px g.$button-border-color;
-  display: flex;
-  font-size: 1rem;
-  font-weight: bold;
-  opacity: 1;
-  padding: .6rem 1rem;
-  transition: 
-    background-color g.$ui-fast-transition, 
-    border-color g.$ui-fast-transition, 
-    box-shadow g.$ui-fast-transition, 
-    color g.$ui-fast-transition, 
-    opacity g.$ui-fast-transition;
+  @include g.button-normal-state();
 
   &:hover:not(:disabled), &:hover:not(.loading) {
-    @include g.glow-border(g.$button-border-hover-color);
-    background-color: g.$button-hover-background-color;
-    // border-color: g.$button-border-hover-color;
-    // box-shadow: 0px 0px 25px color.adjust(g.$button-border-color, $alpha: -.8);
-    // box-shadow: 0px 0px 25px color.adjust(g.$button-border-color, $alpha: -.8);
-    color: g.$button-hover-text-color;
-    cursor: pointer;
-    
-    // a little hacky, but this works to override the react-icon component prop
-    .button-icon-wrapper svg path {
-      color: g.$button-hover-text-color;
-    }
+    @include g.button-hover-state();
 
-    &.delete-unlocked { 
-      background-color: g.$delete-unlocked-fill-color;
-      border-color: g.$delete-unlocked-fill-color;
+    &.delete-unlocked {
+      // background-color: ;
+      color: g.$delete-unlocked-font-color;
     }
   }
 

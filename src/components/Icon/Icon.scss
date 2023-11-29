@@ -1,0 +1,37 @@
+@use "../../styles/globals.scss" as g;
+
+$ui-icon-margin: 1rem;
+
+.ui-icon-wrapper {
+  @include g.glow-border-small(g.$icon-completed-border-color);
+  align-items: center;
+  background-color: g.$button-hover-background-color;
+  border-radius: calc(g.$common-border-radius * 2);
+  display: inline-flex;
+  max-height: g.$ui-icon-size;
+  // max-width: g.$ui-icon-size;
+  min-height: g.$ui-icon-size;
+  min-width: g.$ui-icon-size;
+  padding: 0rem .5rem;
+  justify-content: center;
+  
+  svg path {
+    color: g.$button-hover-text-color;
+  }
+}
+
+.ui-icon-left-margin {
+  margin-left: $ui-icon-margin;
+}
+
+.ui-icon-right-margin {
+  margin-right: $ui-icon-margin;
+}
+
+.ui-icon-label {
+  color: g.$button-hover-text-color;
+  font-size: .8em;
+  font-weight: bold;
+  margin-left: .25rem;
+  margin-right: .25rem;
+}

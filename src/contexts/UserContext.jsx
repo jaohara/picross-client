@@ -21,11 +21,11 @@ import {
 } from "../firebase/api";
 
 import callbackIsValid from "../utils/callbackIsValid";
+import convertMoveListToGrid from "../utils/convertMoveListToGrid";
 
 const UserContext = createContext(undefined);
 
 const UserContextProvider = ({ children }) => {
-
   // TODO: make "completedGameRecords" and "completedPuzzleIds" state mutations use sets
   //   to ensure no dupes -> watch for shallow comparison with completedGameRecords
   const [ completedPuzzleIds, setCompletedPuzzleIds ] = useState([]);
@@ -33,6 +33,11 @@ const UserContextProvider = ({ children }) => {
   // the users's gameRecords
   // TODO: rename all client references to "puzzleRecords" etc. to "gameRecords"
   const [ puzzleRecords, setPuzzleRecords ] = useState();
+  // TODO: Same set considerations as "completedGameRecords" etc. above
+  // stores incomplete gameRecordIds
+  const [ inProgressPuzzleIds, setInProgressPuzzleIds ] = useState([]);
+  // stores incomplete gameRecords
+  const [ inProgressGameRecords, setInProgressGameRecords ] = useState([]);
   // user's auth object 
   const [ user, setUser ] = useState();
   // the useProfile created by createUserEntity. contains user profile data
@@ -40,7 +45,7 @@ const UserContextProvider = ({ children }) => {
   const [ userProfile, setUserProfile ] = useState();
   const [ userProfileIsLoading, setUserProfileIsLoading ] = useState(false);
 
-  // hook for updating completedGameRecords on userProfile change
+  // hook for updating puzzleRecords on userProfile change
   useEffect(() => {
     if (!userProfile) return;
 
@@ -68,46 +73,112 @@ const UserContextProvider = ({ children }) => {
     setPuzzleRecords({...filteredGameRecords});
   }, [userProfile]);
 
+  // hook for updating completedGameRecords/inProgressGameRecords when puzzleRecords changes
+  useEffect(() => {
+    if (!puzzleRecords) {
+      return;
+    }
 
+    console.log("UserContext: puzzleRecords callback: puzzleRecords are:", puzzleRecords);
+    
+    const newPuzzleRecordIds = Object.keys(puzzleRecords);
+    const newCompletedPuzzles = [];
+    const newIncompletePuzzles = [];
+    const newCompletedPuzzleIds = [];
+    const newinProgressPuzzleIds = [];
+    
+    newPuzzleRecordIds.forEach((newPuzzleRecordId) => {
+      const newPuzzleRecord = puzzleRecords[newPuzzleRecordId];
+        newPuzzleRecord.id = newPuzzleRecordId;
+        const { puzzleId } = newPuzzleRecord;
+      
+      if (newPuzzleRecord.completed) {
+        // console.log(`UserContext: puzzleRecords callback: ${newPuzzleRecord.id} is complete`);
+        newCompletedPuzzleIds.push(puzzleId);
+        newCompletedPuzzles.push(newPuzzleRecord);
+      }
+      else {
+        newinProgressPuzzleIds.push(puzzleId);
+        newIncompletePuzzles.push(newPuzzleRecord);
+      }
+    });
+
+    setCompletedPuzzleIds([...new Set(newCompletedPuzzleIds)]);
+    setCompletedGameRecords(newCompletedPuzzles);
+    setInProgressPuzzleIds([...new Set(newinProgressPuzzleIds)]);
+    setInProgressGameRecords(newIncompletePuzzles);
+  }, [puzzleRecords]);
+
+  // hook for adding an auth listener on initial page load to fetch the userProfile and assign it
+  //  to a state value when a user logs in
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user ? user : null);
+
+      if (user) {
+        setUserProfileIsLoading(true);
+
+        const fetchData = async () => {
+          const userProfileData = await getUserProfile(user.uid);
+          console.log(`UserContext: data getUserProfile result is:`, userProfileData);
+          userProfileData.id = user.uid;
+          setUserProfile(userProfileData);
+        };
+
+        fetchData();
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   // adds a puzzleRecord to the puzzleRecords state value
-  const addPuzzleRecord = (newGameRecord) => {
+  const addGameRecord = (newGameRecord) => {
     if (!userProfile || !puzzleRecords) {
       return;
     }
 
-    console.log("UserContext: addPuzzleRecord called with:", newGameRecord);
+    console.log("UserContext: addGameRecord called with:", newGameRecord);
     console.log("UserContext: current puzzleRecords is: ", puzzleRecords);
     console.log("UserContext: current userProfile is:", userProfile);
 
     const newGameRecordPuzzleId = newGameRecord.puzzleId;
 
     setPuzzleRecords((currentPuzzleRecords) => {
-      // TODO: Remove after you confirm this works
-      // const newPuzzleRecords = { ...currentPuzzleRecords, puzzleRecord: newGameRecord };
       const newPuzzleRecords = { ...currentPuzzleRecords };
       newPuzzleRecords[newGameRecordPuzzleId] = newGameRecord;
-      // console.log("UserContext: addPuzzleRecord: updating puzzleRecords to:", newPuzzleRecords);
       return newPuzzleRecords;
     });
 
     // save the puzzle record remotely
-    // TODO: implement some approach to batch submit these after a certain interval? Will I ever
-    //  need to throttle writing these?
-    // TODO: How should I handle this promise chain? Should this function be async?
-    // TODO: What if I have an app-level logging overlay that communicates these messages?
     createGameRecord(user, newGameRecord);
-    
-    // TODO: How do I handle dupes here? Should I use a set?
-    // Add to the completed puzzle/completed puzzle Id set 
-    // if (puzzleRecord.completed) {
-    //   setCompletedPuzzles([...completedGameRecords, puzzleRecord]);
-    //   setCompletedPuzzleIds([...new Set([...completedPuzzleIds, puzzleRecord.puzzleId])]);
-    // }
   };
 
+  const updateInProgressGameRecord = (updatedGameRecord) => {
+    if (!userProfile || !puzzleRecords) {
+      return;
+    }
+
+    console.log("UserContext: updateInProgressGameRecord called with:", newGameRecord);
+    console.log("UserContext: current puzzleRecords is: ", puzzleRecords);
+    console.log("UserContext: current userProfile is:", userProfile);
+
+  };
+
+  const deleteInProgressGameRecord = (gameRecord) => {
+    // TODO: Implement
+    console.log("UserContext: deleteInProgressGameRecord: received gameRecord:", gameRecord);
+  };
+
+  // TODO: REMOVE DEBUG CODE
   useEffect(() => console.log("UserContext: New completedGameRecords:", completedGameRecords), [completedGameRecords]);
   useEffect(() => console.log("UserContext: New completedPuzzleIds:", completedPuzzleIds), [completedPuzzleIds]);
+  useEffect(() => console.log("UserContext: New inProgressPuzzleIds:", inProgressPuzzleIds), [completedPuzzleIds]);
+  
+  // TODO: REMOVE DEBUG CODE
+  useEffect(() => {
+    console.log("UserContext: New inProgressGameRecords:", inProgressGameRecords);
+  } , [completedGameRecords]);
 
   // gets the best recorded time in millis for a completed puzzle, or null if it hasn't
   //  been completed.
@@ -127,6 +198,54 @@ const UserContextProvider = ({ children }) => {
     console.log("UserContext: getCompletedPuzzleTime: found puzzles:", filteredPuzzles);
     
     return filteredPuzzles[0].gameTimer;
+  };
+
+  const getInProgressGameRecordsFromPuzzleData = (puzzleData) => {
+    if (!inProgressGameRecords) return null;
+
+    const { id } = puzzleData;
+
+    const filteredRecords = inProgressGameRecords.filter((gameRecord) => gameRecord.puzzleId === id);
+
+    if (filteredRecords.length === 0) {
+      console.log(`getInProgressGameRecordsFromPuzzleData: puzzle not found`);
+      return null;
+    }
+
+    return filteredRecords;
+  }
+
+  const getFirstInProgressGameRecordFromPuzzleData = (puzzleData) => {
+    const filteredRecords = getInProgressGameRecordsFromPuzzleData(puzzleData);
+
+    if (!filteredRecords || !Array.isArray(filteredRecords)) return null;
+
+    return filteredRecords[0];
+  }
+
+  // returns the puzzle grid for an incomplete puzzle, or null if a puzzle with the given id
+  //  isn't in progress.
+  const getIncompletePuzzleGridFromPuzzleData = (puzzleData, onlyFills = false) => {
+    // const signature = "UserContext: getIncompletePuzzleGridFromPuzzleId:"
+    const { height, width } = puzzleData;
+
+    // const filteredPuzzles = inProgressGameRecords.filter((gameRecord) => gameRecord.puzzleId === id);
+
+    // if (filteredPuzzles.length === 0) {
+    //   console.log(`${signature} puzzle not found`);
+    //   return null;
+    // }
+
+    const inProgressRecord = getFirstInProgressGameRecordFromPuzzleData(puzzleData);
+
+    // always gets first puzzle - should probably only be one in progress at a given time
+    // const { moveList } = filteredPuzzles[0];
+    const { moveList } = inProgressRecord;
+
+    const grid = convertMoveListToGrid(moveList, height, width, onlyFills);
+
+    // console.log(`${signature} grid result:`, grid);
+    return grid;
   };
 
   // TODO: the signup function here should call api.createUserEntity,
@@ -194,69 +313,24 @@ const UserContextProvider = ({ children }) => {
       })
   }
 
-  // hook for updating completedGameRecords when puzzleRecords changes
-  useEffect(() => {
-    if (!puzzleRecords) {
-      return;
-    }
-
-    console.log("UserContext: puzzleRecords callback: puzzleRecords are:", puzzleRecords);
-    
-    const newPuzzleRecordIds = Object.keys(puzzleRecords);
-    const newCompletedPuzzles = [];
-    const newCompletedPuzzleIds = [];
-    
-    newPuzzleRecordIds.forEach((newPuzzleRecordId) => {
-      const newPuzzleRecord = puzzleRecords[newPuzzleRecordId];
-      
-      if (newPuzzleRecord.completed) {
-        // console.log(`UserContext: puzzleRecords callback: ${newPuzzleRecord.id} is complete`);
-        newPuzzleRecord.id = newPuzzleRecordId;
-        const { puzzleId } = newPuzzleRecord;
-        newCompletedPuzzleIds.push(puzzleId);
-        newCompletedPuzzles.push(newPuzzleRecord);
-      }
-    });
-
-    setCompletedPuzzleIds([...new Set(newCompletedPuzzleIds)]);
-    setCompletedGameRecords(newCompletedPuzzles);
-  }, [puzzleRecords]);
-
-  // hook for adding an auth listener on initial page load to fetch the userProfile and assign it
-  //  to a state value when a user logs in
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user ? user : null);
-
-      // TODO: get user profile
-      if (user) {
-        setUserProfileIsLoading(true);
-
-        const fetchData = async () => {
-          const userProfileData = await getUserProfile(user.uid);
-          console.log(`UserContext: data getUserProfile result is:`, userProfileData);
-          userProfileData.id = user.uid;
-          setUserProfile(userProfileData);
-        };
-
-        fetchData();
-      }
-    });
-
-    return unsubscribe;
-  }, []);
-
   return (
     <UserContext.Provider
       value={{
-        addPuzzleRecord,
+        addGameRecord,
         completedPuzzleIds,
         completedGameRecords,
+        deleteInProgressGameRecord,
+        getFirstInProgressGameRecordFromPuzzleData,
+        getIncompletePuzzleGridFromPuzzleData,
+        getInProgressGameRecordsFromPuzzleData,
         getCompletedPuzzleTime,
+        inProgressPuzzleIds,
+        inProgressGameRecords,
         login,
         logout,
         puzzleRecords,
         register,
+        updateInProgressGameRecord,
         user,
         userProfile,
         userProfileIsLoading,

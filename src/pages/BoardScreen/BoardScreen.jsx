@@ -43,13 +43,16 @@ const BoardScreen = () => {
     pauseDuration,
     puzzleIsSolved,
     quitGame,
+    resumedGameRecordIdRef,
     rowAndColumnSums,
     startTime,
     togglePuzzleGridSquare,
   } = useContext(GameContext);
 
   const {
-    addPuzzleRecord,
+    addGameRecord,
+    deleteInProgressGameRecord,
+    updateInProgressGameRecord,
   } = useContext(UserContext);
 
   const boardScreenClassNames = `
@@ -61,24 +64,29 @@ const BoardScreen = () => {
 
   // creates a gameRecord object for storage in Firestore from the supplied game data
   function buildGameRecordFromGameData (
-    id,
+    puzzleId,
+    puzzleName,
     moveCountRef,
     moveListRef,
     pauseDuration,
     completed = true,
+    existingGameRecordId = null,
   ) {
     const MARK_DEV_RECORDS = true;
 
     const puzzleRecord = {
-      // [id]: {
       completed,
       gameTimer: getCurrentGameTimeInMillis(Date.now(), pauseDuration),
-      puzzleId: id,
+      puzzleId,
+      puzzleName,
       // lastPlayed is added in api.createGameRecord
       moveCount: moveCountRef.current,
       moveList: moveListRef.current,
-      // }
     };
+
+    if (existingGameRecordId) {
+      puzzleRecord["id"] = existingGameRecordId;
+    }
 
     // TODO: remove after testing
     // marks logs made during development for easy access/removal
@@ -91,14 +99,30 @@ const BoardScreen = () => {
 
   // used for shared code between handleCompleteClick (saving complete gameRecord at end of puzzle)
   //  and handleSaveClick (save incomplete gameRecord to resume later)
-  const handleGameRecordClick = (recordIsComplete = true) => {
-    const { id } = currentPuzzle;
-
-    const puzzleRecord = 
-      buildGameRecordFromGameData(id, moveCountRef, moveListRef, pauseDuration, recordIsComplete);
-
+  // const handleGameRecordClick = (recordIsComplete = true) => {
+    const handleGameRecordClick = (recordIsComplete = true) => {
+    const { id, name } = currentPuzzle;
+    
     // console.log("BoardScreen: handleCompleteClick: puzzleRecord created:", puzzleRecord);
-    addPuzzleRecord(puzzleRecord);
+    if (recordIsComplete) {
+      const gameRecord = 
+        buildGameRecordFromGameData(id, name, moveCountRef, moveListRef, pauseDuration);
+
+      addGameRecord(gameRecord);
+    }
+    else if (resumedGameRecordIdRef.current !== null) {
+      const existingGameRecordId = resumedGameRecordIdRef.current;
+
+      const gameRecord = buildGameRecordFromGameData(
+        id, name, moveCountRef, moveListRef, pauseDuration, false, existingGameRecordId
+      );
+
+      console.log("handleGameRecordClick: coffee testing resumed game save, existingGameRecordId is:", existingGameRecordId);
+      console.log("handleGameRecordClick: coffee testing resumed game save, gameRecord built is:", gameRecord);
+
+      updateInProgressGameRecord(gameRecord)
+    }
+
     quitGame();
   };
 
@@ -110,7 +134,7 @@ const BoardScreen = () => {
   //     buildGameRecordFromGameData(id, moveCountRef, moveListRef, pauseDuration);
 
   //   // console.log("BoardScreen: handleCompleteClick: puzzleRecord created:", puzzleRecord);
-  //   addPuzzleRecord(puzzleRecord);
+  //   addGameRecord(puzzleRecord);
   //   quitGame();
   // };
   const handleCompleteClick = () => handleGameRecordClick(true);

@@ -89,8 +89,10 @@ const DataContextProvider = ({ children }) => {
 
     fetchData();
 
+
+    // TODO: What was I intending to do here? Is this leftover
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      
+      // a callback that triggers when a user's auth state changes
     });
 
     return unsubscribe;

@@ -17,6 +17,7 @@ import {
   // TbMedal, // alternate for complete?
   TbMenu2,
   TbNews,
+  TbPencil,
   TbPlayerPauseFilled,
   TbPlayerPlayFilled,
   TbPuzzle,
@@ -35,23 +36,18 @@ import {
   TbUserPlus,
   TbX,
 } from "react-icons/tb";
+import "./Icon.scss";
 
-import './Button.scss';
-
-// forwardRef allows refs to be passed in to custom components. note that it is passed to the
-//  component outside of the prop object
-const Button = React.forwardRef(({
-  children,
-  className = "",
-  disabled,
-  loading,
-  isFormSubmit = false,
-  onClick,
-  onMouseEnter = () => {},
-  onMouseLeave = () => {},
+const Icon = ({
+  className,
+  leftMargin = false,
+  label,
   iconType = "none",
-}, ref) => {
-  const buttonIcons = {
+  rightMargin = true,
+}) => {
+  // TODO: a lot of code repeated with this and the icon portion of Button.
+  // I should make Button use this Icon internally.
+  const iconSet = {
     "back": (<TbArrowBack />),
     "clear": (<TbReload />),
     "complete": (<TbAward />),
@@ -59,7 +55,8 @@ const Button = React.forwardRef(({
     "diagnostic": (<TbStethoscope />), 
     "diagnostic-on": (<TbStethoscope />), 
     "diagnostic-off": (<TbStethoscopeOff />), 
-    "help": (<TbNews />),       
+    "help": (<TbNews />),    
+    "in-progress": (<TbPencil />),   
     "log-auth": (<TbUserCircle />),
     "load": (<TbCloudDownload />),
     "login": (<TbLogin />),
@@ -76,6 +73,7 @@ const Button = React.forwardRef(({
     "puzzle-off": (<TbPuzzleOff />),
     "puzzle-on": (<TbPuzzle />),
     "quit": (<TbX />),
+    "question": (<TbQuestionMark />),
     "restart": (<TbReload />),
     // "save": (<TbFileCode />),
     // "save": (<TbFileDownload />),
@@ -86,42 +84,43 @@ const Button = React.forwardRef(({
     "waiting": (<TbLoader />)
   };
 
-  const availableIcons = Object.keys(buttonIcons);
+  const FALLBACK_ICON_TYPE = "question";
 
-  const getButtonIcon = () => {
-    if (!availableIcons.includes(iconType)) {
-      return;
-    }
+  const availableIcons = Object.keys(iconSet);
+
+  const getIconLabel = () => {
+    if (!label) return;
 
     return (
-      <div 
-        className={`
-          button-icon-wrapper
-          ${!children ? "no-margin" : ""}
-          ${iconType === "waiting" ? "waiting" : ""}
-          ${loading ? "loading" : ""}
-      `}>
-        {
-          !loading ? buttonIcons[iconType] : buttonIcons["waiting"]
-        }
+      <div className="ui-icon-label">
+        {label}
+      </div>
+    )
+  }
+
+  const classNames = `
+    ui-icon-wrapper
+    ${leftMargin ? "ui-icon-left-margin" : ""}
+    ${rightMargin ? "ui-icon-right-margin" : ""}
+    ${className}
+  `;
+
+  const getIcon = () => {
+    const iconElement = availableIcons.includes(iconType) 
+      ? iconSet[iconType]
+      : iconSet[FALLBACK_ICON_TYPE];
+
+    const iconLabel = getIconLabel();
+
+    return (
+      <div className={classNames}>
+        {iconElement}
+        {iconLabel}
       </div>
     );
   };
 
-  return (
-    <button 
-      disabled={disabled}
-      className={`${className} app-button`}
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      ref={ref}
-      type={isFormSubmit ? "submit" : "button"}
-    >
-      {children}
-      {getButtonIcon()}
-    </button>
-  );
-});
- 
-export default Button;
+  return getIcon();
+};
+
+export default Icon;
