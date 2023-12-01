@@ -27,6 +27,7 @@ export const CREDITS_LINE_FORMATTED = (
 );
 export const EMPTY_PUZZLE_NAME_STRING = "???";
 export const LARGE_ICON_SIZE = 64;
+export const MINIMUM_MOVE_TIME = 5;
 export const PUZZLE_FILL_CHAR = "*";
 export const PUZZLE_SQUARE_DELIMITER = ",";
 export const MENU_HEADER_ICON_SIZE = LARGE_ICON_SIZE;

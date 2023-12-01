@@ -278,17 +278,11 @@ const UserContextProvider = ({ children }) => {
     // const signature = "UserContext: getIncompletePuzzleGridFromPuzzleId:"
     const { height, width } = puzzleData;
 
-    // const filteredPuzzles = inProgressGameRecords.filter((gameRecord) => gameRecord.puzzleId === id);
-
-    // if (filteredPuzzles.length === 0) {
-    //   console.log(`${signature} puzzle not found`);
-    //   return null;
-    // }
+    // this approach always looks for the first gameRecord - there should probably only 
+    //  be one in progress at a given time
 
     const inProgressRecord = getFirstInProgressGameRecordFromPuzzleData(puzzleData);
 
-    // always gets first puzzle - should probably only be one in progress at a given time
-    // const { moveList } = filteredPuzzles[0];
     const { moveList } = inProgressRecord;
 
     const grid = convertMoveListToGrid(moveList, height, width, onlyFills);

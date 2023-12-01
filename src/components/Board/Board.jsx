@@ -34,6 +34,7 @@ const Board = ({
   // const [ mouseButtonDown, setMouseButtonDown ] = useState(false);
   const mouseButtonDown = useRef(false);
   const clickAction = useRef(null);
+  // Used to prevent moves from being logged multiple times in a given "run" (click and drag)
   const toggledSquareBatch = useRef([]);
 
   // I don't think I want to pull these directly to avoid the rerenders when the timer updates
@@ -93,22 +94,48 @@ const Board = ({
   const puzzleIsValid = puzzle && Array.isArray(puzzle) && puzzle.length > 0;
 
   /**
+   * Checks whether a square at a given pixelCount is in the current move batch.
+   * @param {number|string} pixelCount the pixel id of the grid to check the index of
+   * @returns {number} the index of the square in the batch ref array, -1 if it doesn't exist
+   */
+  const getIndexOfSquareInBatch = (pixelCount) => toggledSquareBatch.current.indexOf(pixelCount);
+
+  /**
+   * Checks whether a square at a given pixelCount is in the current move batch.
+   * @param {number|string} pixelCount the pixel id of the square to check
+   * @returns {boolean} whether the square is in the current batch
+   */
+  const isSquareInBatch = (pixelCount) => getIndexOfSquareInBatch(pixelCount) !== -1;
+
+  /**
    * A function to toggle whether a square is in the batch via its pixelCount index 
    * @param {any} pixelCount the number of the square in the grid to toggle (string or number?) 
    * @returns true when a square is toggled on, false when a square is toggled off
    */
   const toggleSquareInBatch = (pixelCount) => {
-    const index = toggledSquareBatch.current.indexOf(pixelCount);
+    // TODO: not sure if I actually need this
 
+
+    const index = getIndexOfSquareInBatch(pixelCount);
+
+    // doesn't exist, add to batch
     if (index === -1) {
       // mutating a ref array like this rather than reassigning is fine, even if it seems strange
-      toggledSquareBatch.current.push(pixelCount);
+      addSquareToBatch(pixelCount);
       return true;
     }
 
-    toggledSquareBatch.current.splice(index, 1);
+    // it exists, so remove from batch
+    removeSquareFromBatchAtIndex(index, 1);
     return false;
-  }
+  };
+
+  // adds a square's pixelCount to the batch
+  const addSquareToBatch = (pixelCount) => toggledSquareBatch.current.push(pixelCount);
+
+  // removes a square's pixelCount from the batch at a given index
+  const removeSquareFromBatchAtIndex = (batchIndex) => 
+    toggledSquareBatch.current.splice(batchIndex, 1); 
 
   const parseSquareData = (squareData) => {
     // squareData comes in as "pixelCount:colorIndex";
@@ -174,8 +201,20 @@ const Board = ({
       return false;
     }
 
+    // check to see if it exists in batch
+    if (isSquareInBatch(pixelCount)) {
+      // we've already done a move on this square, so bail out early
+      return false;
+    }
+
+    // toggle behavior (via "toggleSquareInBatch") would allow a user to go backwards over
+    //  drawn squares in a click-and-drag move to undo the move. I don't think I want or need
+    //  this functionality, so I will just add the squares manually, but I'll keep the functions
+    //  around.
+    // toggleSquareInBatch(pixelCount);
+
+    addSquareToBatch(pixelCount);
     togglePuzzleGridSquare(pixelCount, clickAction);
-    toggleSquareInBatch(pixelCount);
     return true;
   }
 
@@ -189,6 +228,7 @@ const Board = ({
   // This handles the logic for clicking on a square
   const handleMouseDown = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     resetMouseRefs();
 
     if (e.target.matches(".board-square")) {
@@ -334,16 +374,12 @@ const Board = ({
 
         <div 
           className="board"
-          // onMouseDown={() => setMouseButtonDown(true)}
           onMouseDown={handleMouseDown}
           onMouseEnter={handleMouseEnter}
-          // TODO: cleanup after board event delegation is finished
-          // onMouseDown={handleSettingMouseButtonDown}
-          onContextMenuDown={handleMouseDown} // only fire on down, not up
+          // TODO: this doesn't do anything, but only remove after you're certain.
+          // onContextMenuDown={handleMouseDown} 
           onContextMenu={(e) => e.preventDefault()} // smother right click menu
           onMouseUp={handleMouseUp}
-          // TODO: Do I want this behavior? Does this avoid mouseUp never triggering?
-          // onMouseLeave={() => setMouseButtonDown(false)}
         >
           {
             puzzleIsValid && puzzle.map((rowData, index) => (
@@ -353,14 +389,12 @@ const Board = ({
                 handleMouseDown={handleMouseDown}
                 handleSquareMouseEnter={handleSquareMouseEnter}
                 key={`row-${index}`}
-                // mouseButtonDown={mouseButtonDown}
                 mouseRefs={mouseRefs}
                 parseSquareData={parseSquareData}
                 puzzleGrid={puzzleGrid}
                 puzzleOpacity={puzzleOpacity}
                 puzzleSize={puzzleSize}
                 rowData={rowData}
-                // toggleSquare={togglePuzzleGridSquare}
               />
             ))
           }
@@ -370,6 +404,7 @@ const Board = ({
   );
 }
 
+// TODO: What was my intent with this? I think I wrote it while working on `buildNumberElements`
 const getClassIfRowOrColSumMatches = (number, sums, groupIndex, numberIndex, id = undefined) => {
   if (!number || !sums || !groupIndex || !numberIndex) return "";
 

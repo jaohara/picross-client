@@ -19,6 +19,8 @@ import {
   getSquareStatusIndexFromStatusCode,
 } from "../utils/squareUtils";
 
+import { MINIMUM_MOVE_TIME } from "../constants";
+
 
 // TODO: import necessary api functions
 
@@ -59,7 +61,9 @@ const GameContextProvider = ({ children }) => {
   const [ stopTime, setStopTime ] = useState(0);
 
   // gameplay refs
-  // number of toggleSquare actions that have been performed
+  const lastMoveTimeStampRef = useRef(null);
+  // number of toggleSquare "fill" and "empty-fill" actions that have been performed
+  //  - Remember - "x-fill" and "x-empty" actions don't count as moves
   const moveCountRef = useRef(0);
   // list of moves as an array of strings describing actions
   const moveListRef = useRef([]);
@@ -96,18 +100,45 @@ const GameContextProvider = ({ children }) => {
     clearStopTime();
   }
   
-  const incrementMoveCount = () => moveCountRef.current = moveCountRef.current + 1;
   const resetMoveCount = () => moveCountRef.current = 0;
   const setMoveCount = (newCount) => moveCountRef.current = newCount; 
   const resetResumedGameRecordId = () => resumedGameRecordIdRef.current = null;
   const setResumedGameRecordId = (newId) => resumedGameRecordIdRef.current = newId;
+  
+  const incrementMoveCount = (newStatusIndex) => {
+    // "newStatusIndex"  is the 
+    if (newStatusIndex <= 1) {
+      moveCountRef.current = moveCountRef.current + 1;
+    }
+  };
+
+  const getLastMove = () => {
+    if (!moveListRef.current || !Array.isArray(moveListRef.current) || moveListRef.current.length <= 0) {
+      return null;
+    }
+
+    return moveListRef.current[moveListRef.current.length - 1];
+  };
 
   // assumes pixelCount and newStatusIndex are valid
-  const addMoveToList = (pixelCount, newStatusIndex) => {
-    // I could save a char by making this ${newStatusIndex}${pixelCount} without a delimiter,
-    //  assuming status indices will only be one digit
-    moveListRef.current.push(`${pixelCount}-${newStatusIndex}`);
-    incrementMoveCount();
+  const addMoveToList = (pixelCount, newStatusIndex, oldStatusIndex, timeSinceLastMove) => {
+    moveListRef.current.push(`${pixelCount}-${newStatusIndex}-${timeSinceLastMove}`);
+
+    // ignore any x-fills (newStatusIndex of 2)
+    if (newStatusIndex === 2) {
+      return;
+    }
+
+    // ignore any x-empties (2 to 0)
+    if (oldStatusIndex === 2 && newStatusIndex === 2) {
+      return;
+    }
+
+    // The logic above is because we don't want marking or removing "x"s to count towards
+    //  the overall move count. 
+
+    // we only have fills and fill-empties now, so increment the move count
+    incrementMoveCount(newStatusIndex);
   }
 
   const setMoveList = (newMoveList) => moveListRef.current = newMoveList;
@@ -218,26 +249,60 @@ const GameContextProvider = ({ children }) => {
   };
 
   // assigns a new value to a square based on the its current state and the action it is 
-  //  receiving - dependant on codes in squareConstants
+  //  receiving - dependant on codes in squareUtils
   const togglePuzzleGridSquare = (pixelCount, clickAction) => {
     if (!currentPuzzleGrid || pixelCount > currentPuzzleGrid.length || puzzleIsSolved){
       return;
     }
 
-    console.log(`togglePuzzleGridSquare firing on ${pixelCount} with clickAction = ${clickAction}`);
     
     setCurrentPuzzleGrid(currentGrid => {
       const newGrid = [...currentGrid];
-      const currentSquareStatus = getSquareStatusCodeFromStatusIndex(newGrid[pixelCount]);
-      // TODO: prune this code
-      // const newSquareStatus = getNewSquareStatus(clickAction, currentSquareStatus);
-      // const newSquareValue = getSquareStatusIndexFromStatusCode(newSquareStatus);
-      const newSquareValue = getNewSquareStatusAsIndex(clickAction, currentSquareStatus);
-      newGrid[pixelCount] = newSquareValue;
-      addMoveToList(pixelCount, newSquareValue);
+      const oldStatusIndex = getSquareStatusCodeFromStatusIndex(newGrid[pixelCount]);
+      const newStatusIndex = getNewSquareStatusAsIndex(clickAction, oldStatusIndex);
+      newGrid[pixelCount] = newStatusIndex;
+      const timeSinceLastMove = getTimeSinceLastMoveInMillis();
+      
+      console.log(`togglePuzzleGridSquare firing on ${pixelCount} with clickAction = ${clickAction}, time since last move is ${timeSinceLastMove}ms`);
+
+      // check if last move is the same
+      const lastMove = getLastMove();
+
+      if (lastMove) {
+        const [ lastMovePixelCount, lastMoveStatusIndex ] = lastMove.split("-");
+        const isSameSquare = lastMovePixelCount === pixelCount;
+        const isSameMove = isSameSquare && lastMoveStatusIndex === newStatusIndex;
+        
+        // if (lastMovePixelCount === pixelCount && lastMoveStatusIndex === newStatusIndex) {
+        if (!isSameMove) {
+          // return currentGrid;
+          addMoveToList(pixelCount, newStatusIndex, oldStatusIndex, timeSinceLastMove);
+        }
+        //TODO: remove this logging
+        else {
+          console.log(`togglePuzzleGridSquare: dupe action, ignoring`);
+        }
+      }
+
       return newGrid;
     });
   };
+
+  const getTimeSinceLastMoveInMillis = () => {
+    // if (!lastMoveTimeStampRef.current) {
+    //   return Date.now() - startTime;
+    // }
+
+    const newLastMoveTime = Date.now();
+    const oldLastMoveTime = !lastMoveTimeStampRef.current 
+      ? startTime 
+      : lastMoveTimeStampRef.current;
+
+    const timeSinceLastMove = newLastMoveTime - oldLastMoveTime;
+    lastMoveTimeStampRef.current = newLastMoveTime;
+    
+    return timeSinceLastMove;
+  }
 
   // gets current game time, 0 if no game is active
   //  needs to be passed Date.now() as first arg from component, as well as pauseDuration
@@ -426,32 +491,6 @@ const GameContextProvider = ({ children }) => {
     }
   }, [currentPuzzle]);
 
-  // TODO: PRUNE DEAD CODE
-  // for recalculating the rowAndColumnSums
-  // useEffect(() => {
-  //   // clear previously scheduled update if it exists
-  //   if (rowAndColumSumsTimeoutRef.current) {
-  //     clearTimeout(rowAndColumSumsTimeoutRef.current);
-  //   }
-
-  //   // throttle the recalc by this many ms to prevent the array sum/reduce functions from 
-  //   //  being called too frequently
-  //   const rowAndColRecalculationDelay = 100;
-
-  //   rowAndColumSumsTimeoutRef.current = setTimeout(() => {
-  //     calculateAndSetRowAndColumnSums();
-  //     rowAndColumSumsTimeoutRef.current = null;
-  //   }, rowAndColRecalculationDelay);
-
-  //   // cleanup function to clear the timeout
-  //   return (() => {
-  //     if (rowAndColumSumsTimeoutRef.current) {
-  //       clearTimeout(rowAndColumSumsTimeoutRef.current);
-  //     }
-  //   });
-  // }, [currentPuzzleGrid]);
-
-
   // called internally on currentPuzzleGrid change 
   /**
    * Schedules the update of rowAndColumnSums via a timeout as to not update too quickly
@@ -512,32 +551,9 @@ const GameContextProvider = ({ children }) => {
     return false;
   }
 
-
   // effect to check if puzzle is solved
   useEffect(() => {
-    // TODO: PRUNE DEAD CODE
-    // if (!currentPuzzle) {
-    //   return;
-    // }
-
-    // const { 
-    //   name,
-    //   gridHash: solutionHash, 
-    // } = currentPuzzle;
-
-    // console.log("GameContext: currentPuzzleGrid:", currentPuzzleGrid);
-
-    // // remove x from grid
-    // const strippedPuzzleGrid = currentPuzzleGrid.map((cell) => cell === 2 ? 0 : cell);
-
-    // // const currentGridHash = hashPuzzleGrid(currentPuzzleGrid, name);
-    // const currentGridHash = hashPuzzleGrid(strippedPuzzleGrid, name);
-
-    // console.log(`GameContext: currentGridHash, solutionHash: ${currentGridHash}, ${solutionHash}`);
-
-    // if (currentGridHash === solutionHash) {
-    //   setPuzzleIsSolved(true);
-    // }
+    console.log("GameContext: updated currentPuzzleGrid:", currentPuzzleGrid);
     const cleanup = updateRowAndColumnSums();
     checkIfPuzzleIsSolved();
     return cleanup;
