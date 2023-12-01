@@ -12,17 +12,24 @@ admin.initializeApp();
 
 const logger = require("firebase-functions/logger");
 
+// for funcs that are callable from the client or via https
 const { 
   onCall,
   onRequest,
 } = require("firebase-functions/v2/https");
 
-// import and init firestore
+// for funcs that are scheduled (data analysis)
+const {
+  onMessagePublished,
+} = require("firebase-functions/v2/pubsub");
+
+// for funcs that trigger as a response to doc events
 const { 
   onDocumentCreated,
   onDocumentUpdated,
 } = require("firebase-functions/v2/firestore");
 
+// import and init firestore
 const { 
   Firestore,
   Timestamp,
@@ -933,6 +940,61 @@ exports.deletePuzzle = onCall(async (request) => {
 
 // These are functions that work on the data at /gameRecords to perform analysis for
 // difficulty grading/overall statistics.
+
+const DATA_ANALYSIS_PUBSUB_TOPIC = "trigger-report-generation"
+
+// pub/sub trigger that a scheduled task will message to initiate at midnight
+exports.startPuzzleReportGeneration = onMessagePublished(DATA_ANALYSIS_PUBSUB_TOPIC, (e) => {
+  // This won't have a purpose until we implement the Firestore caching in generatePuzzleReports
+  logger.info(
+    `startPuzzleReportGeneration successfully invoked via the '${DATA_ANALYSIS_PUBSUB_TOPIC}' topic`
+  );
+});
+
+// actual helper function that builds the puzzle reports
+async function generatePuzzleReports(callerName = "generatePuzzleReports") {
+
+  // to be called internally by the startPuzzleReportGeneration trigger.
+
+  // In this early form, it will simply generate the reports on the fly each time it is 
+  //  invoked. This will be called directly from getPuzzleReports.
+
+  // eventually this will be refactored to store the puzzleReports in firestore and 
+  //  use the planned caching behavior.
+  
+
+  try {
+    // start retrieving data and building reports here
+
+    // const reports = {};
+
+    // uncomment and use actual above one after testing
+    const reports = {
+      testProperty: `Successfully returned data from the ${callerName} invocation.`, 
+    };
+
+    return logAndReturnSuccess(reports, callerName, "Successfully generated puzzle reports.");
+  }
+  catch (error) {
+    return logAndReturnError(error, callerName, "Error generating puzzle reports");
+  }
+}
+
+exports.getPuzzleReports = onCall(async (request) => {
+  const fName = "getPuzzleReports";
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+
+  // to be called by the client code to fetch the puzzleReports
+
+  // for where we're at right now, just call generatePuzzleReports directly and return the data
+
+  // eventually we will refactor to have it check the cached reports at /puzzleReports and return
+  //  proper report based on the time and date.
+
+  // initial implementation
+  return await generatePuzzleReports(fName);
+});
 
 
 // TODO: Should there just be one large function that returns all of the dataAnalysis stuff?
