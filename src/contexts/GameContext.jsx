@@ -250,12 +250,15 @@ const GameContextProvider = ({ children }) => {
 
   // assigns a new value to a square based on the its current state and the action it is 
   //  receiving - dependant on codes in squareUtils
-  const togglePuzzleGridSquare = (pixelCount, clickAction) => {
+  // const togglePuzzleGridSquare = (pixelCount, clickAction) => {
+  const togglePuzzleGridSquare = (pixelCountStr, clickAction) => {
+    const pixelCount = parseInt(pixelCountStr);
+
     if (!currentPuzzleGrid || pixelCount > currentPuzzleGrid.length || puzzleIsSolved){
       return;
     }
-
     
+    // TODO: Remove logs
     setCurrentPuzzleGrid(currentGrid => {
       const newGrid = [...currentGrid];
       const oldStatusIndex = getSquareStatusCodeFromStatusIndex(newGrid[pixelCount]);
@@ -263,25 +266,43 @@ const GameContextProvider = ({ children }) => {
       newGrid[pixelCount] = newStatusIndex;
       const timeSinceLastMove = getTimeSinceLastMoveInMillis();
       
-      console.log(`togglePuzzleGridSquare firing on ${pixelCount} with clickAction = ${clickAction}, time since last move is ${timeSinceLastMove}ms`);
+      // console.log(`togglePuzzleGridSquare firing on ${pixelCount} with clickAction = ${clickAction}, time since last move is ${timeSinceLastMove}ms`);
 
       // check if last move is the same
       const lastMove = getLastMove();
 
+      // console.log("togglePuzzleGridSquare: lastMove is:", lastMove);
+
+      // ensure dupe moves aren't logged in moveList
       if (lastMove) {
-        const [ lastMovePixelCount, lastMoveStatusIndex ] = lastMove.split("-");
+        const [ lastMovePixelCountString, lastMoveStatusIndexString ] = lastMove.split("-");
+        const lastMovePixelCount = parseInt(lastMovePixelCountString);
+        const lastMoveStatusIndex = parseInt(lastMoveStatusIndexString);
         const isSameSquare = lastMovePixelCount === pixelCount;
         const isSameMove = isSameSquare && lastMoveStatusIndex === newStatusIndex;
+
+        // TODO: remove debug object
+        // const debugObj = {
+        //   lastMovePixelCount,
+        //   lastMoveStatusIndex,
+        //   isSameSquare,
+        //   isSameMove,
+        //   pixelCount,
+        //   newStatusIndex,
+        // };
         
         // if (lastMovePixelCount === pixelCount && lastMoveStatusIndex === newStatusIndex) {
         if (!isSameMove) {
           // return currentGrid;
+          // console.log(`togglePuzzleGridSquare: not a dupe, recording`);
+          // console.log(`togglePuzzleGridSquare: debugObj:`, debugObj);
           addMoveToList(pixelCount, newStatusIndex, oldStatusIndex, timeSinceLastMove);
+          // console.log(`togglePuzzleGridSquare: new moveList:`, moveListRef.current);
         }
-        //TODO: remove this logging
-        else {
-          console.log(`togglePuzzleGridSquare: dupe action, ignoring`);
-        }
+      }
+      else {
+        // for the case of it being the first move
+        addMoveToList(pixelCount, newStatusIndex, oldStatusIndex, timeSinceLastMove);
       }
 
       return newGrid;
