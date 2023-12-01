@@ -3,7 +3,8 @@ const GameRecordExample = {
   "devRecord": true,
   "completed": false,
   "puzzleId": "0eT8EiWI1iLVBNfq6coB",
-  "moveCount": 30,
+  "puzzleGridHash": "a94f1837dc7e3d3c0f880fc353419cea5be0d781f4a1f53c1cb203ec0c969713",
+  "moveCount": 22,
   "moveList": [
     "12-1",
     "13-1",

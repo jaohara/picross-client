@@ -64,8 +64,9 @@ const BoardScreen = () => {
 
   // creates a gameRecord object for storage in Firestore from the supplied game data
   function buildGameRecordFromGameData (
-    puzzleId,
-    puzzleName,
+    // puzzleId,
+    // puzzleName,
+    puzzleData,
     moveCountRef,
     moveListRef,
     pauseDuration,
@@ -74,9 +75,16 @@ const BoardScreen = () => {
   ) {
     const MARK_DEV_RECORDS = true;
 
+    if (!puzzleData) {
+      console.error("BoardScreen: buildGameRecordFromGameData: no puzzleData supplied.");
+    }
+
+    const { gridHash: puzzleGridHash, id: puzzleId, name: puzzleName } = puzzleData;
+
     const puzzleRecord = {
       completed,
       gameTimer: getCurrentGameTimeInMillis(Date.now(), pauseDuration),
+      puzzleGridHash,
       puzzleId,
       puzzleName,
       // lastPlayed is added in api.createGameRecord
@@ -101,7 +109,7 @@ const BoardScreen = () => {
   //  and handleSaveClick (save incomplete gameRecord to resume later)
   // const handleGameRecordClick = (recordIsComplete = true) => {
   const handleGameRecordClick = (recordIsComplete = true) => {
-    const { id, name } = currentPuzzle;
+    const { gridHash, id, name } = currentPuzzle;
 
     const sig = "handleGameRecordClick: coffee ";
 
