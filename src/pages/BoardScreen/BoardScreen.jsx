@@ -79,7 +79,12 @@ const BoardScreen = () => {
       console.error("BoardScreen: buildGameRecordFromGameData: no puzzleData supplied.");
     }
 
-    const { gridHash: puzzleGridHash, id: puzzleId, name: puzzleName } = puzzleData;
+    const { 
+      gridHash: puzzleGridHash, 
+      id: puzzleId, 
+      name: puzzleName,
+      minimumMoves: puzzleMinimumMoves,
+    } = puzzleData;
 
     const puzzleRecord = {
       completed,
@@ -87,6 +92,7 @@ const BoardScreen = () => {
       puzzleGridHash,
       puzzleId,
       puzzleName,
+      puzzleMinimumMoves,
       // lastPlayed is added in api.createGameRecord
       moveCount: moveCountRef.current,
       moveList: moveListRef.current,

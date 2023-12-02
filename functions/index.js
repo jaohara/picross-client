@@ -339,12 +339,12 @@ exports.createGameRecord = onCall(async (request) => {
 async function getGameRecordsFromFirestore(userId, callerName) {
   try {
     const collectionRef = db.collection(`users/${userId}/gameRecords`);
-    const snapshot = await collectionRef.get();
+    const querySnapshot = await collectionRef.get();
     const gameRecords = {};
 
-    snapshot.forEach((doc) => {
-      const gameRecord = doc.data();
-      const gameRecordId = doc.id;
+    querySnapshot.forEach((docSnapshot) => {
+      const gameRecord = docSnapshot.data();
+      const gameRecordId = docSnapshot.id;
 
       // TODO: eventually remove these subcollections, but just filter them out for now
       if (gameRecordId !== "achievements" && gameRecordId !== "puzzles") {
@@ -358,9 +358,12 @@ async function getGameRecordsFromFirestore(userId, callerName) {
       }
     });
 
+    // TODO: I need to refactor this to use logAndReturnSuccess - how will this impact
+    //  my client code?
     return gameRecords;
   }
   catch (error) {
+    // TODO: same as above but with logAndReturnError
     logger.error(`${callerName}: error getting records:`, error);
     return { error: error.message, success: false };
   }
@@ -962,16 +965,42 @@ async function generatePuzzleReports(callerName = "generatePuzzleReports") {
   // eventually this will be refactored to store the puzzleReports in firestore and 
   //  use the planned caching behavior.
   
+  // called when encountering first record that references a puzzle without a report
+  const buildPuzzleReport = async (puzzleId) => {
+    try {
+      const puzzleReport = {};
+  
+      // we need to retrieve the puzzle data, so this will incur a read
+  
+      return puzzleReport;
+    }
+    catch (error) {
+      //
+    }
+  };
 
   try {
     // start retrieving data and building reports here
 
-    // const reports = {};
+    // get all top-level gameRecords (the ones living in /gameRecords)
+    const collectionRef = db.collection(`/gameRecords`);
+    const querySnapshot = await collectionRef.get();
+    const reports = {};
 
-    // uncomment and use actual above one after testing
-    const reports = {
-      testProperty: `Successfully returned data from the ${callerName} invocation.`, 
-    };
+    querySnapshot.forEach((docSnapshot) => {
+      const gameRecord = docSnapshot.data();
+      const { puzzleId } = gameRecord;
+      // check if puzzleId exists as a key in reports
+      // if not, call buildPuzzleReport();
+
+      // TODO: Add "minimumMoves" for each puzzle to the gameRecords to avoid having 
+      //  to do an additional read for the puzzle data. This function is in BoardScreen.
+    });
+
+    // REMEMBER: When working with Firestore timestamps, call the "toDate()"
+    //  method to convert it into a format that packages up well to be shipped
+    //  to the client. This was important for getGameRecordsFromFirestore.
+
 
     return logAndReturnSuccess(reports, callerName, "Successfully generated puzzle reports.");
   }
