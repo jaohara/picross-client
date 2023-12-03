@@ -126,7 +126,8 @@ const BoardScreen = () => {
     // if (recordIsComplete || resumedGameRecordIdRef.current !== null) {
     if (resumedGameRecordIdRef.current === null) {
       const gameRecord = buildGameRecordFromGameData(
-        id, name, moveCountRef, moveListRef, pauseDuration, recordIsComplete
+        // id, name, moveCountRef, moveListRef, pauseDuration, recordIsComplete
+        currentPuzzle, moveCountRef, moveListRef, pauseDuration, recordIsComplete
       );
 
       addGameRecord(gameRecord);
@@ -136,7 +137,8 @@ const BoardScreen = () => {
       const existingGameRecordId = resumedGameRecordIdRef.current;
 
       const gameRecord = buildGameRecordFromGameData(
-        id, name, moveCountRef, moveListRef, pauseDuration, false, existingGameRecordId
+        // id, name, moveCountRef, moveListRef, pauseDuration, false, existingGameRecordId
+        currentPuzzle, moveCountRef, moveListRef, pauseDuration, false, existingGameRecordId
       );
 
       console.log("handleGameRecordClick: coffee testing resumed game save, existingGameRecordId is:", existingGameRecordId);

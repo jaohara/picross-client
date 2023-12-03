@@ -444,11 +444,13 @@ exports.deleteAllTestGameRecords = onCall(async (request) => {
     const batch = db.batch();
 
     const testGameRecordsTopLevelSnapshot = await db.collection('gameRecords')
-      .where("testGameRecord", "==", true)
+      // .where("testGameRecord", "==", true)
+      .where("devRecord", "==", true)
       .get();
       
     const testGameRecordsSnapshot = await db.collection(`users/${userId}/gameRecords`)
-      .where("testGameRecord", "==", true)
+      // .where("testGameRecord", "==", true)
+      .where("devRecord", "==", true)
       .get();
   
     if (testGameRecordsTopLevelSnapshot.empty && testGameRecordsSnapshot.empty) {
@@ -966,42 +968,77 @@ async function generatePuzzleReports(callerName = "generatePuzzleReports") {
   //  use the planned caching behavior.
   
   // called when encountering first record that references a puzzle without a report
-  const buildPuzzleReport = async (puzzleId) => {
-    try {
-      const puzzleReport = {};
-  
-      // we need to retrieve the puzzle data, so this will incur a read
-  
-      return puzzleReport;
-    }
-    catch (error) {
-      //
-    }
-  };
+  const buildPuzzleReport = (gameRecord) => {
+    const {
+      puzzleGridHash,
+      puzzleId,
+      puzzleMinimumMoves,
+      puzzleName,
+    } = gameRecord;
 
+    const defaultPuzzleReportStats = {
+      averageMoves: 0,
+      averageMoveTime: 0,
+      averageSolveTime: 0,
+      fastestSolveTime: 0,
+      timesSolved: 0,
+      totalMoves: 0,
+      totalTime: 0,
+    };
+
+    const puzzleReport = {
+      ...defaultPuzzleReportStats,
+      puzzleGridHash,
+      puzzleId,
+      puzzleName,
+      puzzleMinimumMoves,
+    };
+
+    return puzzleReport;
+  };
+  
+  const reportExists = (puzzleId, reports) => reports[puzzleId] !== undefined;
+  
   try {
     // start retrieving data and building reports here
-
+    
     // get all top-level gameRecords (the ones living in /gameRecords)
     const collectionRef = db.collection(`/gameRecords`);
     const querySnapshot = await collectionRef.get();
-    const reports = {};
+    const reportsTimestamp = Timestamp.now();
+    const reports = { "timestamp": reportsTimestamp, };
+    const reportStartTime = Date.now();
 
     querySnapshot.forEach((docSnapshot) => {
       const gameRecord = docSnapshot.data();
-      const { puzzleId } = gameRecord;
-      // check if puzzleId exists as a key in reports
-      // if not, call buildPuzzleReport();
+      const { 
+        puzzleId,
+        moveCount,
+        moveList,
+        gameTimer, 
+      } = gameRecord;
 
-      // TODO: Add "minimumMoves" for each puzzle to the gameRecords to avoid having 
-      //  to do an additional read for the puzzle data. This function is in BoardScreen.
+      // check if puzzleId exists as a key in reports
+      if (!reportExists(puzzleId, reports)) {
+        // if not, call buildPuzzleReport();
+        const newReport = buildPuzzleReport(gameRecord);
+        reports[puzzleId] = newReport;
+      }
+
+      // we now have reports[puzzleId], so update it with this current gameRecord data
+
+      // TODO: continue here...
     });
+
+    // TODO: Store the record at this step
 
     // REMEMBER: When working with Firestore timestamps, call the "toDate()"
     //  method to convert it into a format that packages up well to be shipped
     //  to the client. This was important for getGameRecordsFromFirestore.
 
-
+    // convert to be shipped to client - don't do this before store
+    reports["timestamp"] = reports["timestamp"].toDate();
+    reports["totalReportGenerationTime"] = Date.now() - reportStartTime;
     return logAndReturnSuccess(reports, callerName, "Successfully generated puzzle reports.");
   }
   catch (error) {

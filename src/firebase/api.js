@@ -10,9 +10,7 @@ import {
   getDocs,
   orderBy,
   query,
-  setDoc,
   Timestamp,
-  updateDoc,
   where,
   writeBatch,
 } from "firebase/firestore";
@@ -32,7 +30,6 @@ import convertFirestoreResponseToDataArray from "../utils/convertFirestoreRespon
 
 
 // related to old API approach
-const achievementsCollectionRef = collection(db, "achievements");
 const usersCollectionRef = collection(db, "users");
 const puzzlesCollectionRef = collection(db, "puzzles");
 
@@ -52,65 +49,6 @@ const gameRecordNecessaryKeys = [
 
 // TODO: set this to true
 const CHECK_GAME_RECORD_DATA_MODEL = false;
-
-
-
-
-
-
-
-
-
-
-
-
-
-// TODO: RESUME HERE!
-
-/* 
-  Alright, I think that most of this stuff works? I've proofread the 
-  functions at both endpoints and have ran them through chatGPT to check
-  for glaring mistakes. The approach seems sound, so I think next up is 
-  testing.
-
-  Use `TitleMenu.jsx` to make more simple test components for each of
-  these functions. 
-
-  Once these work, maybe create these same functions for 
-  different types of firestore data? I think that I want to use 
-  this same approach for making users (although "createUserEntity" might
-  be better as a cloud trigger response).
-
-  After this, hook up the gameRecord creation and retrieval to the client 
-  via the game events. 
-
-    - Do I already have existing game event functions that should submit
-      records on completion?
-
-  After that, play the game to create records and check to see where the 
-  system needs more polish.
-
-  After that, make some basic data analysis functions
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ========================================================================
 // NEW API FUNCTIONS (>7/18, callable cloud functions for firestore access)
@@ -322,103 +260,28 @@ export async function deleteGameRecord(user, gameRecordId) {
   return false;
 }
 
+export async function getPuzzleReports() {
+  const fName = "getPuzzleReports";
 
-// ===========================================================
-// OLD API FUNCTIONS (Pre 7/18, client-level firestore access)
-// ===========================================================
+  const callable = getCallable("getPuzzleReports");
 
-// user-related api functions
-export async function createUserEntity(newUser, id) {
-  console.log("createUserEntity: received newUser: ", newUser);
-  // assuming the user is valid, as the registration process would have caught an error
-
-  // create a batched write
-  const batch = writeBatch(db);
-
-  // create user entity document
   try {
-    const docRef = doc(usersCollectionRef, id);
-    const userCreatedTimestamp = Timestamp.now();
-    newUser["createdTimestamp"] = userCreatedTimestamp;
-    newUser["updatedTimestamp"] = userCreatedTimestamp;
-
-    // add user entity doc to the batch 
-    batch.set(docRef, newUser);
-
-    // create gameRecords subcolleciton with empty "achievements" and "puzzles" docs
-    const gameRecordsCollectionRef = collection(docRef, "gameRecords");
-    const achievementsDocRef = doc(gameRecordsCollectionRef, "achievements");
-    const puzzlesDocRef = doc(gameRecordsCollectionRef, "puzzles");
-
-    // add the empty docs to the batch
-    batch.set(achievementsDocRef, {});
-    batch.set(puzzlesDocRef, {});
-
-    // commit the batched write
-    await batch.commit();
-    // return response;
-    return true;
+    const response = await callable();
+    console.log(`api: ${fName}: got response from callable:`, response);
+    //TODO: Come back here to return the response data to the caller
   }
   catch (error) {
-    return error;
+    console.error(`${fName}: error getting puzzleReports:`, error);
   }
 }
 
+
 // TODO: Revisit this to optimize
-// TODO: Change this to a callable approach
 export async function getUserProfile(userId) {
   const fName = "getUserProfile";
 
   console.log(`${fName}: received userId: `, userId);
 
-  // ==================
-  // OLD IMPLEMENTATION
-  // ==================
-  // if (!USE_NEW_IMPLEMENTATION) {
-  //   try {
-  //     // get ref to user doc and snapshot of doc
-  //     const userProfileDocRef = doc(usersCollectionRef, userId);
-  //     const userProfileSnapshot = await getDoc(userProfileDocRef);
-  
-  //     if (!userProfileSnapshot.exists()) {
-  //       // bad scenario, no user profile exists
-  //       console.error("getUserProfile: user profile does not exist");
-  //       return null;
-  //     }
-      
-  //     // profile exists, get the data
-  //     const userProfileData = userProfileSnapshot.data();
-  
-  //     console.log("getUserProfile: got userProfileData: ", userProfileData);
-  
-  //     // TODO: Move this operation out of here and into its own function
-  //     // get the gameRecords subcollection
-  //     const gameRecordsCollectionRef = collection(userProfileDocRef, "gameRecords");
-  //     const gameRecordsSnapshot = await getDocs(gameRecordsCollectionRef);
-  
-  //     // console.log("getUserProfile: got gameRecordsSnapshot:", gameRecordsSnapshot);
-  
-  //     // get the data from each doc in the gameRecords subcollection
-  //     const gameRecords = {};
-  //     gameRecordsSnapshot.forEach((doc) => gameRecords[doc.id] = doc.data());
-  
-  //     console.log("getUserProfile: got gameRecords data:", gameRecords);
-  
-  //     // add the gameRecords subcollection data to the userProfileData
-  //     userProfileData.gameRecords = gameRecords;
-  
-  //     // console.log("getUserProfile: fetched user profile with gameRecords:", userProfileData);
-  
-  //     return userProfileData;
-  //   }
-  //   catch (error) {
-  //     console.error("getUserProfile: error: ", error);
-  //     return null;
-  //   }
-  // }
-  // ==================
-  // NEW IMPLEMENTATION
-  // ==================
   const callable = getCallable("getUserProfile");
 
   try {
@@ -439,35 +302,9 @@ export async function getUserProfile(userId) {
   }
 }
 
-// TODO: REMOVE
-// achievement-related api functions
-export async function getAchievements() {
-  console.log("api: getAchievements: fetching achievements");
-
-  try {
-    const achievementsSnapshot = await getDocs(achievementsCollectionRef);
-    const achievements = [];
-
-    achievementsSnapshot.forEach((achievementDoc) => {
-      if (achievementDoc.exists()) {
-        const achievement = achievementDoc.data();
-        // append id
-        achievement.id = achievementDoc.id;
-
-        // add to achievement array
-        achievements.push(achievement);
-      }
-    });
-
-    return achievements;
-  }
-  catch (error) {
-    console.error("api: getAchievements: error:", error);
-  }
-};
-
+// ============================
 // puzzle-related api functions
-
+// ============================
 // TODO: Adapt this to use the cached puzzle data whenever you implement that
 export async function getPuzzles(useNewImplementation = true) {
   const signature = "api: getPuzzles:";
@@ -513,6 +350,48 @@ export async function getPuzzles(useNewImplementation = true) {
     catch (error) {
       console.error("api: getPuzzles: error:", error);
     }
+  }
+}
+
+
+// ===========================================================
+// OLD API FUNCTIONS (Pre 7/18, client-level firestore access)
+// ===========================================================
+
+// user-related api functions
+export async function createUserEntity(newUser, id) {
+  console.log("createUserEntity: received newUser: ", newUser);
+  // assuming the user is valid, as the registration process would have caught an error
+
+  // create a batched write
+  const batch = writeBatch(db);
+
+  // create user entity document
+  try {
+    const docRef = doc(usersCollectionRef, id);
+    const userCreatedTimestamp = Timestamp.now();
+    newUser["createdTimestamp"] = userCreatedTimestamp;
+    newUser["updatedTimestamp"] = userCreatedTimestamp;
+
+    // add user entity doc to the batch 
+    batch.set(docRef, newUser);
+
+    // create gameRecords subcolleciton with empty "achievements" and "puzzles" docs
+    const gameRecordsCollectionRef = collection(docRef, "gameRecords");
+    const achievementsDocRef = doc(gameRecordsCollectionRef, "achievements");
+    const puzzlesDocRef = doc(gameRecordsCollectionRef, "puzzles");
+
+    // add the empty docs to the batch
+    batch.set(achievementsDocRef, {});
+    batch.set(puzzlesDocRef, {});
+
+    // commit the batched write
+    await batch.commit();
+    // return response;
+    return true;
+  }
+  catch (error) {
+    return error;
   }
 }
 

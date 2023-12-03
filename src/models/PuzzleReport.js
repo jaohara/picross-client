@@ -47,6 +47,8 @@ const PuzzleReportExample = {
     "puzzleId": "0eT8EiWI1iLVBNfq6coB",
     "puzzleMinimumMoves": 37,
     "puzzleName": "Pill",
+    // how long it took to make this record, in ms
+    "reportGenerationTime": 12345,
     // this kind of counts as "gameRecordTotal" - maybe use this name instead? 
     "timesSolved": 123, // sum
     "totalMoves": 6150, // sum
@@ -57,6 +59,8 @@ const PuzzleReportExample = {
   "timestamp": {
     // I will be a timestamp
   }, // result of Firestore's Timestamp.now() on start
+  // total time it took to generate the report, in ms
+  "totalReportGenerationTime": 1234567,
 };
 
 export default PuzzleReportExample;

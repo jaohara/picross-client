@@ -6,6 +6,7 @@ const GameRecordExample = {
   "puzzleGridHash": "a94f1837dc7e3d3c0f880fc353419cea5be0d781f4a1f53c1cb203ec0c969713",
   "moveCount": 22,
   "moveList": [
+    // now has format of "12-1-1234", where third is move time in ms
     "12-1",
     "13-1",
     "23-1",

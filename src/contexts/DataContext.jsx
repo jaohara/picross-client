@@ -65,16 +65,6 @@ const DataContextProvider = ({ children }) => {
     console.log("DataContext: in initial load useEffect");
 
     const fetchData = async () => {
-      // fetch achievements
-      // try {
-      //   const achievementsResult = await getAchievements();
-      //   console.log("DataContext: useEffect: fetchData: got achievements:", achievementsResult);
-      //   setAchievements(achievementsResult);
-      // }
-      // catch (error) {
-      //   console.error("DataContext: useEffect: fetchData: error getting achievements:", error);
-      // }
-
       // fetch puzzles
       try {
         setPuzzlesAreLoading(true);
