@@ -54,6 +54,7 @@ const PuzzleReportExample = {
     "totalMoves": 6150, // sum
     "totalTime": 6985047, // sum
   },
+  //...
   // after all puzzle reports, we have this key assigned to the result of Timestamp.now() called
   //  at the start of the CF. Used to know the start time of the records to search for tomorrow
   "timestamp": {
@@ -61,6 +62,7 @@ const PuzzleReportExample = {
   }, // result of Firestore's Timestamp.now() on start
   // total time it took to generate the report, in ms
   "totalReportGenerationTime": 1234567,
+  "totalReports": 12,
 };
 
 export default PuzzleReportExample;

@@ -978,7 +978,7 @@ async function generatePuzzleReports(callerName = "generatePuzzleReports") {
 
     const defaultPuzzleReportStats = {
       averageMoves: 0,
-      averageMoveTime: 0,
+      // averageMoveTime: 0,
       averageSolveTime: 0,
       fastestSolveTime: 0,
       timesSolved: 0,
@@ -1006,39 +1006,69 @@ async function generatePuzzleReports(callerName = "generatePuzzleReports") {
     const collectionRef = db.collection(`/gameRecords`);
     const querySnapshot = await collectionRef.get();
     const reportsTimestamp = Timestamp.now();
-    const reports = { "timestamp": reportsTimestamp, };
     const reportStartTime = Date.now();
+
+    const reports = { 
+      "timestamp": reportsTimestamp,
+      reportStartTime, 
+      "totalReports": 0,
+    };
 
     querySnapshot.forEach((docSnapshot) => {
       const gameRecord = docSnapshot.data();
       const { 
         puzzleId,
+        puzzleName,
         moveCount,
         moveList,
         gameTimer, 
       } = gameRecord;
 
+      logger.info(`reading gameRecord for "${puzzleName}"-"${puzzleId}"`);
+
+      // TODO: bail out if puzzleId doesn't exist? 
+
       // check if puzzleId exists as a key in reports
       if (!reportExists(puzzleId, reports)) {
         // if not, call buildPuzzleReport();
         const newReport = buildPuzzleReport(gameRecord);
+        newReport.fastestSolveTime = gameTimer;
         reports[puzzleId] = newReport;
+        reports.totalReports++;
       }
 
-      // we now have reports[puzzleId], so update it with this current gameRecord data
+      const report = { ...reports[puzzleId]};
+
+      report.timesSolved++;
+      report.totalMoves += moveCount;
+      report.totalTime += gameTimer;
+      
+      // recalculate averages - this does a lot of redundant work, right? How bad is this?
+      // TODO: Move outside of this forEach and calculate averages after
+      report.averageMoves = report.totalMoves / report.timesSolved;
+      report.averageSolveTime = report.totalTime / report.timesSolved;
+
+      // Upon second thought, avergeMoveTime seems useless?
+
+      if (gameTimer < report.fastestSolveTime) {
+        report.fastestSolveTime = gameTimer;
+      }
 
       // TODO: continue here...
-    });
 
-    // TODO: Store the record at this step
+      // finally, assign updated report in reports object
+      reports[puzzleId] = report;
+    });
 
     // REMEMBER: When working with Firestore timestamps, call the "toDate()"
     //  method to convert it into a format that packages up well to be shipped
     //  to the client. This was important for getGameRecordsFromFirestore.
 
     // convert to be shipped to client - don't do this before store
-    reports["timestamp"] = reports["timestamp"].toDate();
-    reports["totalReportGenerationTime"] = Date.now() - reportStartTime;
+    reports.timestamp = reports.timestamp.toDate();
+    const reportCompletionTime = Date.now();
+    reports.reportCompletionTime = reportCompletionTime;
+    reports.totalReportGenerationTime = reportCompletionTime - reportStartTime;
     return logAndReturnSuccess(reports, callerName, "Successfully generated puzzle reports.");
   }
   catch (error) {
