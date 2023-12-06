@@ -71,6 +71,16 @@ const TitleMenu = () => {
       });
   };
 
+
+  const cloudFunctionTesterFlags = {
+    // createGameRecord: false,
+    // getUserGameRecords: false,
+    // completeGameRecord: false,
+    // deleteGameRecord: false,
+    getPuzzleReports: true,
+    deleteAllTestGameRecords: true,
+  };
+
   return ( 
     <div className="title-menu menu">
       <MenuHeader 
@@ -86,7 +96,9 @@ const TitleMenu = () => {
         />
 
         <div className="menu-body">
-          <CloudFunctionTester disabled />
+          <CloudFunctionTester 
+            testerFlags={cloudFunctionTesterFlags} 
+          />
 
           <p>
             You need to put some more thought into what should be displayed on this main screen.

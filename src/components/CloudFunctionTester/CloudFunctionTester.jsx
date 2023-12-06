@@ -30,12 +30,28 @@ import {
   completeGameRecord,
   createGameRecord,
   deleteGameRecord,
+  getPuzzleReports,
   getUserGameRecords,
 } from "../../firebase/api";
 
 import convertDataFromObjectWithIdKeysToArray from '../../utils/convertDataFromObjectWithIdKeysToArray';
 
-const CloudFunctionTester = ({ disabled = false }) => {
+const CloudFunctionTester = ({ 
+  disabled = false,
+  testerFlags = {},
+}) => {
+
+  // Merge passed in flags with the default values
+  const activeTesterFlags = {
+    createGameRecord: false,
+    getUserGameRecords: false,
+    completeGameRecord: false,
+    deleteGameRecord: false,
+    deleteAllTestGameRecords: false,
+    getPuzzleReports: false,
+    ...testerFlags,
+  };
+
   const [ completeGameRecordId, setCompleteGameRecordId ] = useState("");
   const [ createRecordIsComplete, setCreateRecordIsComplete ] = useState(false);
   const [ createRecordTestString, setCreateRecordTestString ] = useState("");
@@ -57,6 +73,21 @@ const CloudFunctionTester = ({ disabled = false }) => {
     console.log(`deleteGameRecordId: ${deleteGameRecordId}`);
   };
 
+  const handleGetPuzzleReports = () => {
+    if (!user) {
+      console.error("handleGetPuzzleReports: no user authenticated");
+      return;
+    }
+
+    const result = getPuzzleReports();
+
+    if (result) {
+      console.log("getPuzzleReports: received response:", result);
+    }
+    else {
+      console.error("getPuzzleReports: error getting reports");
+    }
+  }
 
   //TODO: Debug, don't have this function in production code
   const handleDeleteAllTestGameRecords = () => {
@@ -148,7 +179,7 @@ const CloudFunctionTester = ({ disabled = false }) => {
     // load the test records for the purpose of using these api calls in this component
 
     // load once here and manually reload on change, just to test
-    !disabled && handleGetUserGameRecords();
+    !disabled && activeTesterFlags.getUserGameRecords && handleGetUserGameRecords();
   }, [user]);
 
   const testGameRecordsArray = 
@@ -158,137 +189,178 @@ const CloudFunctionTester = ({ disabled = false }) => {
     <code>Disabled.</code>
   ) : (
     <>
-      <p>
-        <code>
-          testGameRecords { testGameRecordsLoading ? "loading..." : "loaded"}
-          { 
-            testGameRecordsArray !== null && ` - ${testGameRecordsArray.length} records`
-          }
-        </code>
-      </p>
-
-
-      <div className="cloud-function-test-container">
-        <h1>createGameRecord</h1>
-        {/* 
-          required state:
-            - random string in text input
-            - boolean of whether the submission is complete
-        */}
-        <HorizontalDivider />
-
-        <p>
-          <TextInput
-            placeholder='Test string for record'
-            setValue={setCreateRecordTestString}
-            value={createRecordTestString}
-          />
+      { 
+        activeTesterFlags.getUserGameRecords ? (
           <p>
-            <input 
-              id='is-completed-checkbox'
-              onChange={handleCreateGameRecordCheckboxChange}
-              type='checkbox'
-              value={createRecordIsComplete}
-            /> 
-            <label htmlFor="is-completed-checkbox">Completed?</label>
-          </p>
-
-          <Button
-            iconType='save'
-            onClick={handleCreateGameRecord}  
-          >
-            Create Game Record
-          </Button>
-        </p>
-      </div>
-
-
-      <div className="cloud-function-test-container">
-        <h1>getUserGameRecords</h1>
-        <HorizontalDivider/>
-
-        <p>
-          <Button 
-            iconType='load'
-            onClick={handleGetUserGameRecords}
-          >
-            Fetch and Log User's gameRecords
-          </Button>
-        </p>
-      </div>
-
-      <div className="cloud-function-test-container">
-        <h1>completeGameRecord</h1>
-        {/* 
-          required state:
-            - gameRecordId text input
-        */}
-        <HorizontalDivider />
-
-        <p>
-          <Select
-            disabled={testGameRecordsLoading}
-            label={"gameRecord id"}
-            options={testGameRecordsArray}
-            optionField={"id"}
-            setValue={setCompleteGameRecordId}
-            value={completeGameRecordId}
-          />
-
-          { completeGameRecordId && testGameRecords && (
             <code>
-              <strong>{completeGameRecordId}</strong>: 
-              {!testGameRecords[completeGameRecordId].completed && "in"}complete
+              testGameRecords { testGameRecordsLoading ? "loading..." : "loaded"}
+              { 
+                testGameRecordsArray !== null && ` - ${testGameRecordsArray.length} records`
+              }
             </code>
-          )}
+          </p>
+        ) : (<></>)
+      }
+      
+      {
+        activeTesterFlags.createGameRecord ? (
+          <div className="cloud-function-test-container">
+            <h1>createGameRecord</h1>
+            {/* 
+              required state:
+                - random string in text input
+                - boolean of whether the submission is complete
+            */}
+            <HorizontalDivider />
 
-          <Button
-            iconType='complete'
-            onClick={handleCompleteGameRecord}
-          >
-            Toggle gameRecord Completion
-          </Button>
-        </p>
-      </div>
+            <p>
+              <TextInput
+                placeholder='Test string for record'
+                setValue={setCreateRecordTestString}
+                value={createRecordTestString}
+              />
+              <p>
+                <input 
+                  id='is-completed-checkbox'
+                  onChange={handleCreateGameRecordCheckboxChange}
+                  type='checkbox'
+                  value={createRecordIsComplete}
+                /> 
+                <label htmlFor="is-completed-checkbox">Completed?</label>
+              </p>
 
-      <div className="cloud-function-test-container">
-        <h1>deleteGameRecord</h1>
-        {/* 
-          required state:
-            - gameRecordId text input
-        */}
-        <HorizontalDivider />
+              <Button
+                iconType='save'
+                onClick={handleCreateGameRecord}  
+              >
+                Create Game Record
+              </Button>
+            </p>
+          </div>
+        ) : (<></>)
+      }
 
-        <p>
-          <Select
-            disabled={testGameRecordsLoading}
-            // label={"gameRecord id"}
-            options={testGameRecordsArray}
-            optionField={"id"}
-            setValue={setDeleteGameRecordId}
-            value={deleteGameRecordId}
-          />
-          <Button
-            iconType='delete'
-            onClick={handleDeleteGameRecord}
-          >
-            Delete Game Record
-          </Button>
-        </p>
-      </div>
+      {
+        activeTesterFlags.getUserGameRecords ? (
+          <div className="cloud-function-test-container">
+            <h1>getUserGameRecords</h1>
+            <HorizontalDivider/>
 
-      <div className="cloud-function-test-container">
-        <h1>deleteAllTestGameRecords</h1>
+            <p>
+              <Button 
+                iconType='load'
+                onClick={handleGetUserGameRecords}
+              >
+                Fetch and Log User's gameRecords
+              </Button>
+            </p>
+          </div>
+        ) : (<></>)
+      }    
 
-        <p>
-          <Button
-            iconType='nuke'
-            onClick={handleDeleteAllTestGameRecords}
-          >
-            Delete All Test Records
-          </Button>
-        </p>
-      </div>
+      {
+        activeTesterFlags.completeGameRecord ? (
+          <div className="cloud-function-test-container">
+            <h1>completeGameRecord</h1>
+            {/* 
+              required state:
+                - gameRecordId text input
+            */}
+            <HorizontalDivider />
+
+            <p>
+              <Select
+                disabled={testGameRecordsLoading}
+                label={"gameRecord id"}
+                options={testGameRecordsArray}
+                optionField={"id"}
+                setValue={setCompleteGameRecordId}
+                value={completeGameRecordId}
+              />
+
+              { completeGameRecordId && testGameRecords && (
+                <code>
+                  <strong>{completeGameRecordId}</strong>: 
+                  {!testGameRecords[completeGameRecordId].completed && "in"}complete
+                </code>
+              )}
+
+              <Button
+                iconType='complete'
+                onClick={handleCompleteGameRecord}
+              >
+                Toggle gameRecord Completion
+              </Button>
+            </p>
+          </div>
+        ) : (<></>)
+      } 
+
+      {
+        activeTesterFlags.deleteGameRecord ? (
+          <div className="cloud-function-test-container">
+            <h1>deleteGameRecord</h1>
+            {/* 
+              required state:
+                - gameRecordId text input
+            */}
+            <HorizontalDivider />
+
+            <p>
+              <Select
+                disabled={testGameRecordsLoading}
+                // label={"gameRecord id"}
+                options={testGameRecordsArray}
+                optionField={"id"}
+                setValue={setDeleteGameRecordId}
+                value={deleteGameRecordId}
+              />
+              <Button
+                iconType='delete'
+                onClick={handleDeleteGameRecord}
+              >
+                Delete Game Record
+              </Button>
+            </p>
+          </div>
+        ) : (<></>)
+      } 
+
+      {
+        activeTesterFlags.deleteAllTestGameRecords ? (
+          <div className="cloud-function-test-container">
+            <h1>deleteAllTestGameRecords</h1>
+
+            <p>
+              <Button
+                iconType='nuke'
+                onClick={handleDeleteAllTestGameRecords}
+              >
+                Delete All Test Records
+              </Button>
+            </p>
+          </div>
+        ) : (<></>)
+      } 
+
+      {
+        activeTesterFlags.getPuzzleReports ? (
+          <div className="cloud-function-test-container">
+            <h1>getPuzzleReports</h1>
+
+            <p>This will fetch and log the results of the getPuzzleReports callable.</p>
+
+            <p>
+              <Button
+                iconType='load'
+                onClick={handleGetPuzzleReports}
+              >
+                getPuzzleReports
+              </Button>
+            </p>
+          </div>
+        ) : (<></>)
+      } 
     </>
   );
 

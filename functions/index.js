@@ -12,17 +12,24 @@ admin.initializeApp();
 
 const logger = require("firebase-functions/logger");
 
+// for funcs that are callable from the client or via https
 const { 
   onCall,
   onRequest,
 } = require("firebase-functions/v2/https");
 
-// import and init firestore
+// for funcs that are scheduled (data analysis)
+const {
+  onMessagePublished,
+} = require("firebase-functions/v2/pubsub");
+
+// for funcs that trigger as a response to doc events
 const { 
   onDocumentCreated,
   onDocumentUpdated,
 } = require("firebase-functions/v2/firestore");
 
+// import and init firestore
 const { 
   Firestore,
   Timestamp,
@@ -332,12 +339,12 @@ exports.createGameRecord = onCall(async (request) => {
 async function getGameRecordsFromFirestore(userId, callerName) {
   try {
     const collectionRef = db.collection(`users/${userId}/gameRecords`);
-    const snapshot = await collectionRef.get();
+    const querySnapshot = await collectionRef.get();
     const gameRecords = {};
 
-    snapshot.forEach((doc) => {
-      const gameRecord = doc.data();
-      const gameRecordId = doc.id;
+    querySnapshot.forEach((docSnapshot) => {
+      const gameRecord = docSnapshot.data();
+      const gameRecordId = docSnapshot.id;
 
       // TODO: eventually remove these subcollections, but just filter them out for now
       if (gameRecordId !== "achievements" && gameRecordId !== "puzzles") {
@@ -351,9 +358,12 @@ async function getGameRecordsFromFirestore(userId, callerName) {
       }
     });
 
+    // TODO: I need to refactor this to use logAndReturnSuccess - how will this impact
+    //  my client code?
     return gameRecords;
   }
   catch (error) {
+    // TODO: same as above but with logAndReturnError
     logger.error(`${callerName}: error getting records:`, error);
     return { error: error.message, success: false };
   }
@@ -434,11 +444,13 @@ exports.deleteAllTestGameRecords = onCall(async (request) => {
     const batch = db.batch();
 
     const testGameRecordsTopLevelSnapshot = await db.collection('gameRecords')
-      .where("testGameRecord", "==", true)
+      // .where("testGameRecord", "==", true)
+      .where("devRecord", "==", true)
       .get();
       
     const testGameRecordsSnapshot = await db.collection(`users/${userId}/gameRecords`)
-      .where("testGameRecord", "==", true)
+      // .where("testGameRecord", "==", true)
+      .where("devRecord", "==", true)
       .get();
   
     if (testGameRecordsTopLevelSnapshot.empty && testGameRecordsSnapshot.empty) {
@@ -933,6 +945,152 @@ exports.deletePuzzle = onCall(async (request) => {
 
 // These are functions that work on the data at /gameRecords to perform analysis for
 // difficulty grading/overall statistics.
+
+const DATA_ANALYSIS_PUBSUB_TOPIC = "trigger-report-generation"
+
+// pub/sub trigger that a scheduled task will message to initiate at midnight
+exports.startPuzzleReportGeneration = onMessagePublished(DATA_ANALYSIS_PUBSUB_TOPIC, (e) => {
+  // This won't have a purpose until we implement the Firestore caching in generatePuzzleReports
+  logger.info(
+    `startPuzzleReportGeneration successfully invoked via the '${DATA_ANALYSIS_PUBSUB_TOPIC}' topic`
+  );
+});
+
+// actual helper function that builds the puzzle reports
+async function generatePuzzleReports(callerName = "generatePuzzleReports") {
+
+  // to be called internally by the startPuzzleReportGeneration trigger.
+
+  // In this early form, it will simply generate the reports on the fly each time it is 
+  //  invoked. This will be called directly from getPuzzleReports.
+
+  // eventually this will be refactored to store the puzzleReports in firestore and 
+  //  use the planned caching behavior.
+  
+  // called when encountering first record that references a puzzle without a report
+  const buildPuzzleReport = (gameRecord) => {
+    const {
+      puzzleGridHash,
+      puzzleId,
+      puzzleMinimumMoves,
+      puzzleName,
+    } = gameRecord;
+
+    const defaultPuzzleReportStats = {
+      averageMoves: 0,
+      // averageMoveTime: 0,
+      averageSolveTime: 0,
+      fastestSolveTime: 0,
+      timesSolved: 0,
+      totalMoves: 0,
+      totalTime: 0,
+    };
+
+    const puzzleReport = {
+      ...defaultPuzzleReportStats,
+      puzzleGridHash,
+      puzzleId,
+      puzzleName,
+      puzzleMinimumMoves,
+    };
+
+    return puzzleReport;
+  };
+  
+  const reportExists = (puzzleId, reports) => reports[puzzleId] !== undefined;
+  
+  try {
+    // start retrieving data and building reports here
+    
+    // get all top-level gameRecords (the ones living in /gameRecords)
+    const collectionRef = db.collection(`/gameRecords`);
+    const querySnapshot = await collectionRef.get();
+    const reportsTimestamp = Timestamp.now();
+    const reportStartTime = Date.now();
+
+    const reports = { 
+      "timestamp": reportsTimestamp,
+      reportStartTime, 
+      "totalReports": 0,
+    };
+
+    querySnapshot.forEach((docSnapshot) => {
+      const gameRecord = docSnapshot.data();
+      const { 
+        puzzleId,
+        puzzleName,
+        moveCount,
+        moveList,
+        gameTimer, 
+      } = gameRecord;
+
+      logger.info(`reading gameRecord for "${puzzleName}"-"${puzzleId}"`);
+
+      // TODO: bail out if puzzleId doesn't exist? 
+
+      // check if puzzleId exists as a key in reports
+      if (!reportExists(puzzleId, reports)) {
+        // if not, call buildPuzzleReport();
+        const newReport = buildPuzzleReport(gameRecord);
+        newReport.fastestSolveTime = gameTimer;
+        reports[puzzleId] = newReport;
+        reports.totalReports++;
+      }
+
+      const report = { ...reports[puzzleId]};
+
+      report.timesSolved++;
+      report.totalMoves += moveCount;
+      report.totalTime += gameTimer;
+      
+      // recalculate averages - this does a lot of redundant work, right? How bad is this?
+      // TODO: Move outside of this forEach and calculate averages after
+      report.averageMoves = report.totalMoves / report.timesSolved;
+      report.averageSolveTime = report.totalTime / report.timesSolved;
+
+      // Upon second thought, avergeMoveTime seems useless?
+
+      if (gameTimer < report.fastestSolveTime) {
+        report.fastestSolveTime = gameTimer;
+      }
+
+      // TODO: continue here...
+
+      // finally, assign updated report in reports object
+      reports[puzzleId] = report;
+    });
+
+    // REMEMBER: When working with Firestore timestamps, call the "toDate()"
+    //  method to convert it into a format that packages up well to be shipped
+    //  to the client. This was important for getGameRecordsFromFirestore.
+
+    // convert to be shipped to client - don't do this before store
+    reports.timestamp = reports.timestamp.toDate();
+    const reportCompletionTime = Date.now();
+    reports.reportCompletionTime = reportCompletionTime;
+    reports.totalReportGenerationTime = reportCompletionTime - reportStartTime;
+    return logAndReturnSuccess(reports, callerName, "Successfully generated puzzle reports.");
+  }
+  catch (error) {
+    return logAndReturnError(error, callerName, "Error generating puzzle reports");
+  }
+}
+
+exports.getPuzzleReports = onCall(async (request) => {
+  const fName = "getPuzzleReports";
+
+  if (!requestAuthIsValid(request, fName)) return invalidAuthError;
+
+  // to be called by the client code to fetch the puzzleReports
+
+  // for where we're at right now, just call generatePuzzleReports directly and return the data
+
+  // eventually we will refactor to have it check the cached reports at /puzzleReports and return
+  //  proper report based on the time and date.
+
+  // initial implementation
+  return await generatePuzzleReports(fName);
+});
 
 
 // TODO: Should there just be one large function that returns all of the dataAnalysis stuff?

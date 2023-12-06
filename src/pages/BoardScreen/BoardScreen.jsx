@@ -64,8 +64,9 @@ const BoardScreen = () => {
 
   // creates a gameRecord object for storage in Firestore from the supplied game data
   function buildGameRecordFromGameData (
-    puzzleId,
-    puzzleName,
+    // puzzleId,
+    // puzzleName,
+    puzzleData,
     moveCountRef,
     moveListRef,
     pauseDuration,
@@ -74,11 +75,24 @@ const BoardScreen = () => {
   ) {
     const MARK_DEV_RECORDS = true;
 
+    if (!puzzleData) {
+      console.error("BoardScreen: buildGameRecordFromGameData: no puzzleData supplied.");
+    }
+
+    const { 
+      gridHash: puzzleGridHash, 
+      id: puzzleId, 
+      name: puzzleName,
+      minimumMoves: puzzleMinimumMoves,
+    } = puzzleData;
+
     const puzzleRecord = {
       completed,
       gameTimer: getCurrentGameTimeInMillis(Date.now(), pauseDuration),
+      puzzleGridHash,
       puzzleId,
       puzzleName,
+      puzzleMinimumMoves,
       // lastPlayed is added in api.createGameRecord
       moveCount: moveCountRef.current,
       moveList: moveListRef.current,
@@ -101,7 +115,7 @@ const BoardScreen = () => {
   //  and handleSaveClick (save incomplete gameRecord to resume later)
   // const handleGameRecordClick = (recordIsComplete = true) => {
   const handleGameRecordClick = (recordIsComplete = true) => {
-    const { id, name } = currentPuzzle;
+    const { gridHash, id, name } = currentPuzzle;
 
     const sig = "handleGameRecordClick: coffee ";
 
@@ -112,7 +126,8 @@ const BoardScreen = () => {
     // if (recordIsComplete || resumedGameRecordIdRef.current !== null) {
     if (resumedGameRecordIdRef.current === null) {
       const gameRecord = buildGameRecordFromGameData(
-        id, name, moveCountRef, moveListRef, pauseDuration, recordIsComplete
+        // id, name, moveCountRef, moveListRef, pauseDuration, recordIsComplete
+        currentPuzzle, moveCountRef, moveListRef, pauseDuration, recordIsComplete
       );
 
       addGameRecord(gameRecord);
@@ -122,7 +137,8 @@ const BoardScreen = () => {
       const existingGameRecordId = resumedGameRecordIdRef.current;
 
       const gameRecord = buildGameRecordFromGameData(
-        id, name, moveCountRef, moveListRef, pauseDuration, false, existingGameRecordId
+        // id, name, moveCountRef, moveListRef, pauseDuration, false, existingGameRecordId
+        currentPuzzle, moveCountRef, moveListRef, pauseDuration, false, existingGameRecordId
       );
 
       console.log("handleGameRecordClick: coffee testing resumed game save, existingGameRecordId is:", existingGameRecordId);

@@ -8,6 +8,7 @@ import React, {
 import { auth } from "../firebase/firebase";
 
 import {
+  getPuzzleReports,
   getPuzzles,
 } from "../firebase/api";
 
@@ -19,8 +20,12 @@ const DataContextProvider = ({ children }) => {
   const [ achievements, setAchievements ] = useState([])
   // the set of all available puzzles
   const [ puzzles, setPuzzles ] = useState();
+  // the puzzleReports built from complete puzzle data
+  const [ puzzleReports, setPuzzleReports ] = useState()
   // whether puzzles are loading
   const [ puzzlesAreLoading, setPuzzlesAreLoading ] = useState(false);
+  // whether the puzzleReports are loading
+  const [ puzzleReportsAreLoading, setPuzzleReportsAreLoading ] = useState(false);
 
   // cached puzzle Group data
   const [ puzzlesSortedByGroup, puzzleGroups ] = useMemo(() => {
@@ -53,42 +58,51 @@ const DataContextProvider = ({ children }) => {
     return [ puzzlesSortedByGroup, puzzleGroups ];
   }, [puzzles]);
 
+  // useEffect to flip puzzleReports loading value
+  useEffect(() => {
+    console.log("DataContext: useEffect: puzzleReports have loaded:", puzzleReports);
+    setPuzzleReportsAreLoading(false);
+  }, [puzzleReports])
+
   const isPuzzleGroup = (groupName) => {
     if (!puzzlesSortedByGroup) {
       return false;
     }
 
     return Object.keys(puzzlesSortedByGroup).includes(groupName);
-  }
+  };
 
   useEffect(() => {
     console.log("DataContext: in initial load useEffect");
 
-    const fetchData = async () => {
-      // fetch achievements
-      // try {
-      //   const achievementsResult = await getAchievements();
-      //   console.log("DataContext: useEffect: fetchData: got achievements:", achievementsResult);
-      //   setAchievements(achievementsResult);
-      // }
-      // catch (error) {
-      //   console.error("DataContext: useEffect: fetchData: error getting achievements:", error);
-      // }
-
+    const fetchPuzzleData = async () => {
       // fetch puzzles
       try {
         setPuzzlesAreLoading(true);
         const puzzlesResult = await getPuzzles();
-        console.log("DataContext: useEffect: fetchData: got puzzles:", puzzlesResult);
+        console.log("DataContext: useEffect: fetchPuzzleData: got puzzles:", puzzlesResult);
         setPuzzles(puzzlesResult);
       }
       catch (error) {
-        console.error("DataContext: useEffect: fetchData: error getting puzzles:", error);
+        console.error("DataContext: useEffect: fetchPuzzleData: error getting puzzles:", error);
       }
     };
 
-    fetchData();
+    const fetchPuzzleReportData = async () => {
+      try {
+        setPuzzleReportsAreLoading(true);
+        const puzzleReportsResult = await getPuzzleReports();
+        console.log("DataContext: useEffect: fetchPuzzleReportData: got puzzleReports:", 
+          puzzleReportsResult);
+        setPuzzleReports(puzzleReportsResult);
+      }
+      catch (error) {
+        console.error("DataContext: useEffect: fetchPuzzleReportData: error getting reports:", error);
+      }
+    };
 
+    fetchPuzzleData();
+    fetchPuzzleReportData();
 
     // TODO: What was I intending to do here? Is this leftover
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -103,7 +117,9 @@ const DataContextProvider = ({ children }) => {
       value={{
         achievements,
         isPuzzleGroup,
+        puzzleReports,
         puzzles,
+        puzzleReportsAreLoading,
         puzzlesAreLoading,
         puzzleGroups,
         puzzlesSortedByGroup,
