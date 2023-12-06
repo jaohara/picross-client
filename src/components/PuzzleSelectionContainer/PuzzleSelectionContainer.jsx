@@ -12,6 +12,7 @@ import { GameContext } from '../../contexts/GameContext';
 
 import PuzzleIcon from '../PuzzleIcon/PuzzleIcon';
 import Icon from '../Icon/Icon';
+import PuzzleSizeIcon from '../PuzzleSizeIcon/PuzzleSizeIcon';
 
 import { EMPTY_PUZZLE_NAME_STRING } from '../../constants';
 
@@ -200,8 +201,14 @@ const PuzzleSelection = ({
               label={"In Progress"}
               {...commonProps}
             />
-            ) : ("")
-          }
+          ) : ("")
+        }
+
+        <PuzzleSizeIcon
+          puzzleHeight={puzzle.height}
+          puzzleWidth={puzzle.width}
+          {...commonProps}
+        />
       </div>
     );
   };

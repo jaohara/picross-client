@@ -1,0 +1,27 @@
+@use "../../styles//globals.scss" as g;
+
+.puzzle-size-icon {
+  .ui-icon-label {
+    // color: g.$text-light-color;
+  }
+
+  svg path {
+    // color: g.$text-light-color;
+  }
+}
+
+.puzzle-size-5-icon {
+  background-color: g.$puzzle-5-color;
+}
+
+.puzzle-size-10-icon {
+  background-color: g.$puzzle-10-color;
+}
+
+.puzzle-size-15-icon {
+  background-color: g.$puzzle-15-color;
+}
+
+.puzzle-size-20-icon {
+  background-color: g.$puzzle-20-color;
+}

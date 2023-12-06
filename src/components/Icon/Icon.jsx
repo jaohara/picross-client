@@ -27,6 +27,7 @@ import {
   TbQuestionMark,
   // TbQuestionCircle,
   TbReload,
+  TbRuler,
   TbSettings,
   TbStethoscope,
   TbStethoscopeOff,
@@ -79,6 +80,7 @@ const Icon = ({
     // "save": (<TbFileDownload />),
     "save": (<TbCloudUpload />),
     "signup": (<TbUserPlus />),
+    "size": (<TbRuler />),
     "time": (<TbClock />),
     "title": (<TbHome />),
     "waiting": (<TbLoader />)

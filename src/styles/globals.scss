@@ -62,6 +62,11 @@ $red-100: #ff6666;
 $red-200: #da4c4c;
 $red-300: #de3333;
 
+$rose: #f40076;
+$pumpkin: #ff8c42;
+$picton-blue: #00a7e1;
+$aquamarine: #42e2b8;
+
 // ====================
 // colors (temp shades)
 // ====================
@@ -133,11 +138,16 @@ $horizontal-divider-color: $light-gray-200;
 $icon-completed-border-color: $light-gray-100;
 $login-container-border-color: $light-gray-100;
 $puzzle-group-border-color: $light-gray-400;
+$puzzle-5-color: $aquamarine;
+$puzzle-10-color: $picton-blue;
+$puzzle-15-color: $pumpkin;
+$puzzle-20-color: $rose;
 $puzzle-group-border-hover-color: $light-gray-200;
 $text-light-color: $light-gray-100;
 $text-dark-color: $dark-gray-300;
 $text-input-active-border-color: $light-gray-100;
 $text-input-error-border-color: $red-100;
+
 
 // ============================
 // game board related variables

@@ -269,6 +269,9 @@ export async function getPuzzleReports() {
     const response = await callable();
     console.log(`api: ${fName}: got response from callable:`, response);
     //TODO: Come back here to return the response data to the caller
+
+    const { data: puzzleReportData } = response.data;
+    return puzzleReportData;
   }
   catch (error) {
     console.error(`${fName}: error getting puzzleReports:`, error);
