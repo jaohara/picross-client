@@ -1,0 +1,37 @@
+@use "../../styles/globals.scss" as g;
+
+// Kind of messy - this is the default, but it will be colored via logic in the component
+//  JSX if a bgTint is supplied as a prop.
+$lighter-opacity: .1;
+$light-opacity: .3;
+$normal-opacity: .5;
+$dark-opacity: .65;
+$darker-opacity: .8;
+
+.menu-section {
+  align-items: center;
+  background-color: rgba(g.$full-screen-panel-background-color, $normal-opacity);
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  justify-content: center;
+  
+  // =================
+  // background shades
+  // =================
+  &.lighter-shade {
+    background-color: rgba(g.$full-screen-panel-background-color, $lighter-opacity);
+  }
+  
+  &.light-shade {
+    background-color: rgba(g.$full-screen-panel-background-color, $light-opacity);
+  }
+
+  &.dark-shade {
+    background-color: rgba(g.$full-screen-panel-background-color, $dark-opacity);
+  }
+  
+  &.darker-shade {
+    background-color: rgba(g.$full-screen-panel-background-color, $darker-opacity);
+  } 
+}

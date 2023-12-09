@@ -1,0 +1,10 @@
+@use "../../styles/globals.scss" as g;
+
+.menu-nav-container {
+  display: flex;
+  left: 0px;
+  position: fixed;
+  padding: g.$common-padding;
+  top: 0px;
+  width: 100vw;
+}

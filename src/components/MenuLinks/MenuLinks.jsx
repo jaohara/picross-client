@@ -24,6 +24,10 @@ const MenuLinks = ({
   excludeAll = false,
   // used to exclude links from being displayed on a menu page
   excluded = [],
+  // whether the current route is hidden
+  hideCurrentRoute = true,
+  // whether to display the menu link list horizontally or vertically
+  horizontal = false,
   // can be passed an array of Button elements to appear before the route buttons
   prependedButtons = [],
   // can be used to override 
@@ -39,6 +43,11 @@ const MenuLinks = ({
 
   const renamedMappingKeys = Object.keys(renamedMappings);
 
+  const menuLinksClassNames = `
+    menu-links-wrapper
+    ${ horizontal ? "horizontal-menu" : "" }
+  `;
+
   const { 
     userProfileIsLoading, 
   } = useContext(UserContext);
@@ -49,10 +58,10 @@ const MenuLinks = ({
 
   const resourcesAreLoading = userProfileIsLoading || puzzlesAreLoading;
   
-  // hides excluded routes as well as current route
-  const filteredRoutes = menuRoutes.filter(
-    (route) => !excluded.includes(route) && route !== currentRouteName
-  );
+  // TODO: Reintroduce logic for filtering currentRoute?
+  // hides excluded routes
+  const filteredRoutes = menuRoutes.filter((route) => !excluded.includes(route));
+
 
   // helper function to format route names, which replaces hyphens with
   //  spaces and capitalizes each word
@@ -68,21 +77,29 @@ const MenuLinks = ({
     return formattedRouteName.join(" ");
   };
   
-  const routeLinks = filteredRoutes.map((route, index) => (
-    <li
-      className='menu-link-list-item'
-      key={`menu-link-list-item-${index}`}
-    >
-      <Button
-        // disabled={resourcesAreLoading}
-        loading={resourcesAreLoading}
-        iconType={route}
-        onClick={() => navigate(`/${route}`) }
+  const routeLinks = filteredRoutes.map((route, index) => {
+    const routeLinkClassNames = `
+      menu-link-list-item
+      ${currentRouteName === route ? "active-route" : ""}
+    `;
+
+    return (
+      <li
+        // className='menu-link-list-item'
+        className={routeLinkClassNames}
+        key={`menu-link-list-item-${index}`}
       >
-        {formatRouteName(route)}
-      </Button>
-    </li>
-  ));
+        <Button
+          // disabled={resourcesAreLoading}
+          loading={resourcesAreLoading}
+          iconType={route}
+          onClick={() => navigate(`/${route}`) }
+        >
+          {formatRouteName(route)}
+        </Button>
+      </li>
+    );
+  });
 
   const checkIfIsArrayAndHasElements = (input) => Array.isArray(input) && input.length > 0;
 
@@ -142,7 +159,7 @@ const MenuLinks = ({
   }, []);
 
   return ( 
-    <div className="menu-links-wrapper">
+    <div className={menuLinksClassNames}>
       <ul className="menu-links-list">
         {hasPrependedButtons && prependedButtonElements}
         {!excludeAll && routeLinks}

@@ -30,6 +30,7 @@ import TitleMenu from './Menus/TitleMenu';
 import AppCredits from '../../components/AppCredits/AppCredits';
 import MenuHeader from '../../components/MenuHeader/MenuHeader';
 import MenuLinks from '../../components/MenuLinks/MenuLinks';
+import MenuNav from '../../components/MenuNav/MenuNav';
 
 const MenuScreen = () => {
   const {
@@ -41,6 +42,7 @@ const MenuScreen = () => {
   const menuScreenClassNames = `
     menu-screen
     screen
+    no-side-padding
     ${menuIsActive ? "active" : ""}
   `;
 
@@ -65,7 +67,10 @@ const MenuScreen = () => {
         </Button>
       </div> */}
 
+      
       <Router>
+        <MenuNav />
+        
         <Routes>
           <Route path='/' element={<TitleMenu />} />
           <Route path='/diag' element={<DiagnosticMenu />} />
@@ -79,6 +84,7 @@ const MenuScreen = () => {
           <Route path='/signup' element={<SignupMenu />} />
           <Route path='/title' element={<TitleMenu />} />
         </Routes>
+
 
         <div className="menu-screen-submenu-container">
           <Outlet />

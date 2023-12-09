@@ -137,6 +137,7 @@ $full-screen-panel-background-color: rgb(16, 16, 16);
 $horizontal-divider-color: $light-gray-200;
 $icon-completed-border-color: $light-gray-100;
 $login-container-border-color: $light-gray-100;
+$menu-section-background-color: $full-screen-panel-background-color;
 $puzzle-group-border-color: $light-gray-400;
 $puzzle-5-color: $aquamarine;
 $puzzle-10-color: $picton-blue;
@@ -283,6 +284,26 @@ $l-breakpoint: 1920px;
   }
 }
 
+@mixin menu-body-panel-styling {
+  backdrop-filter: blur(20px);
+  background-color: rgba($full-screen-panel-background-color, $full-screen-background-opacity);
+  height: 100vh;
+  // left: 0;
+  opacity: 0%;
+  // position: fixed;
+  transition: opacity $ui-fast-transition;
+  top: 0;
+  // width: 100vw;
+  z-index: -100;
+  // visibility: hidden;
+
+  &.active {
+    // visibility: visible;
+    opacity: 100%;
+    z-index: 10;
+  }
+}
+
 @mixin inline-mono-styling {
   // use with <code> and certain spans on the user profile
   background-color: rgba(0,0,0,0.3);
@@ -403,3 +424,13 @@ $l-breakpoint: 1920px;
     border-color: $delete-unlocked-fill-color;
   }
 }
+
+// ===================
+// animation keyframes
+// ===================
+
+/*
+  When you import this global stylesheet, the keyframes exist in the global namespace and
+  don't need to be referred to with "g.[keyframe-name]", like the other mixins and variables.
+  It can be used just as "spin"
+*/

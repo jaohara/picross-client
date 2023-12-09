@@ -256,11 +256,11 @@ const ProfileMenu = () => {
         title="User Profile"
       />
       <div className="menu-body-container">
-        <MenuLinks
+        {/* <MenuLinks
           prependedButtons={prependedButtons} 
           excludeAll={true}
           showBackButton={true}
-        />
+        /> */}
 
         <div className="menu-body">
           <h1 className="profile-name">{userProfile.name}</h1>

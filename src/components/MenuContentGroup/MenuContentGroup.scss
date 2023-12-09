@@ -1,0 +1,12 @@
+@use "../../styles/globals.scss" as g;
+
+.menu-content-group {
+  // TODO: more work is probably needed, but let's start as simple as possible here
+  display: flex;
+  gap: g.$common-gap;
+
+  & > * {
+    // make all children have the same size - grow and shrink at the same rate
+    flex: 1;
+  }
+}

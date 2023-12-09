@@ -4,7 +4,7 @@
 //  the file naming is a little confusing here
 
 .menu-screen {
-  @include g.full-screen-panel-styling();
+  @include g.menu-body-panel-styling();
   display: flex;
   flex-direction: column;
 }

@@ -6,7 +6,7 @@
 .app-button {
   @include g.button-normal-state();
 
-  &:hover:not(:disabled), &:hover:not(.loading) {
+  &:hover:not(:disabled), &:hover:not(.loading), .active-route & {
     @include g.button-hover-state();
 
     &.delete-unlocked {
@@ -41,8 +41,8 @@
   }
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+// @keyframes spin {
+//   to {
+//     transform: rotate(360deg);
+//   }
+// }

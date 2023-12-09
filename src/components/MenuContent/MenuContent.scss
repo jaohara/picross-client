@@ -1,0 +1,27 @@
+@use "../../styles/globals.scss" as g;
+
+// TODO: REPLACE ME WITH A DYNAMIC, RESPONSIVE SOLUTION
+$HARDCODED_BG_WIDTH: 1080px;
+
+.menu-content {
+  border-radius: g.$common-border-radius;
+  width: $HARDCODED_BG_WIDTH;
+  padding: calc(g.$common-padding * 2);
+  margin-bottom: g.$common-margin;
+
+  &.full-width {
+    width: 100%;
+  }
+
+  // ==========================
+  // background opacity classes
+  // ==========================
+  &.opaque-bg {
+    background-color: red;
+    background-color: rgba(g.$dark-gray-200, .6);
+  }
+
+  &.transparent-bg {
+    background-color: #FFFFFF00;
+  }
+}

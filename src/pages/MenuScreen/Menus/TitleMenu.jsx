@@ -17,6 +17,14 @@ import { menuRoutes } from '../../../routes';
 // TODO: for testing cloud functions
 import CloudFunctionTester from '../../../components/CloudFunctionTester/CloudFunctionTester';
 
+// Components to test layout
+import Button from '../../../components/Button/Button';
+
+// new layout components
+import MenuContent from '../../../components/MenuContent/MenuContent';
+import MenuContentGroup from '../../../components/MenuContentGroup/MenuContentGroup';
+import MenuSection from '../../../components/MenuSection/MenuSection';
+
 import { 
   APP_TITLE,
 } from "../../../constants";
@@ -36,7 +44,16 @@ import { functions } from '../../../firebase/firebase';
 import { httpsCallable } from 'firebase/functions';
 const createGameRecord = httpsCallable(functions, 'createGameRecord');
 
+
+// const OLD_IMPLEMENTATION = true;
+const OLD_IMPLEMENTATION = false;
+
 const TitleMenu = () => {
+  // TODO: Remove this after testing loading animation
+  const [ testContentLoading, setTestContentLoading ] = useState(false);
+
+  const handleToggleLoadingClick = (e) => setTestContentLoading((oldState) => !oldState);
+
   const {
     user,
   } = useContext(UserContext);
@@ -81,7 +98,7 @@ const TitleMenu = () => {
     deleteAllTestGameRecords: true,
   };
 
-  return ( 
+  const oldJsx = ( 
     <div className="title-menu menu">
       <MenuHeader 
         iconType="title"
@@ -89,11 +106,13 @@ const TitleMenu = () => {
       />
 
       <div className="menu-body-container">
+        {/*         
         <MenuLinks 
           excluded={excludedRoutes}
           renamedMappings={renamedRoutes}
           // showDiagnosticRoute={true}
-        />
+        /> 
+        */}
 
         <div className="menu-body">
           <CloudFunctionTester 
@@ -116,6 +135,94 @@ const TitleMenu = () => {
       </div>
     </div>
   );
+
+  const middleSectionBackgroundTint = "#ff8c42";
+
+  return OLD_IMPLEMENTATION ? oldJsx : ( 
+    <div className="title-menu menu">
+      <MenuSection  bgShade="lighter">
+        {/* Default will be fixed width */}
+        <MenuContent
+          opaque={false}
+        >
+          <MenuHeader 
+            iconType="title"
+            title={APP_TITLE}
+          />
+        </MenuContent>
+        <MenuContent>
+          <MenuContentGroup>
+            <div>
+              <h1>Loading Controls</h1>
+              <p>
+                These Controls will toggle whether or not the other <code>MenuContent</code> 
+                components are rendering their body or the loading component.
+              </p>
+            </div>
+            <div>
+              <h2>Toggle Loaders</h2>
+              <p>
+                <Button 
+                  iconType="options"
+                  onClick={handleToggleLoadingClick}
+                >
+                  Toggle Loaders
+                </Button>
+              </p>
+              <p style={{marginTop: "1rem"}}>
+                <code>
+                  testContentLoading: {`${testContentLoading}`}
+                </code>
+              </p>
+            </div>
+          </MenuContentGroup>
+        </MenuContent>
+      </MenuSection>
+
+      <MenuSection
+        bgShade={"dark"}
+        bgTint={middleSectionBackgroundTint}
+      >
+        <MenuContent 
+          fullWidth
+          loading={testContentLoading}
+          opaque={false}
+        >
+          <MenuContentGroup>
+            <TestContent />
+            <TestContent />
+            <TestContent />
+          </MenuContentGroup>
+        </MenuContent>
+      </MenuSection>
+
+      <MenuSection
+        bgShade="dark"
+        >
+        <MenuContent
+          loading={testContentLoading}
+          >
+          <TestContent />
+        </MenuContent>
+        <MenuContent
+          loading={testContentLoading}
+        >
+          <TestContent />
+        </MenuContent>
+      </MenuSection>
+    </div>
+  );
+}
+
+const TestContent = () => {
+  return (
+    <div className="test-content">
+      <h1>Test Content</h1>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae nisi natus maiores id doloremque eveniet? Alias, reiciendis nulla! Hic obcaecati laudantium sequi laboriosam enim repellat laborum temporibus ipsa sed delectus!
+      </p>
+    </div>
+  )
 }
  
 export default TitleMenu;

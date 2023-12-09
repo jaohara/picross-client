@@ -6,4 +6,8 @@
   padding: g.$common-padding;
   position: fixed;
   width: 100vw;
+
+  &.no-side-padding {
+    padding: g.$common-padding 0em;
+  }
 }
