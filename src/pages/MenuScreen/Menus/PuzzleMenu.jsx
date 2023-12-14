@@ -22,10 +22,10 @@ const PuzzleMenu = () => {
       />
 
       <div className="menu-body-container">
-        <MenuLinks
+        {/* <MenuLinks
           excludeAll={true}
           showBackButton={true}
-        />
+        /> */}
 
         <div className="menu-body">
           <h1>Todo:</h1>

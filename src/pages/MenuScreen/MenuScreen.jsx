@@ -43,31 +43,12 @@ const MenuScreen = () => {
     menu-screen
     screen
     no-side-padding
+    no-bottom-padding
     ${menuIsActive ? "active" : ""}
   `;
 
-  // TODO: Am I going to use react-router-dom here, or sort of write my own
-  // mini routing solution? I don't know if I want to have the submenu screens 
-  // accessible via a route in case users do stuff out of sequence.
-  // 
-  // - I am going with react-router-dom, as I can use the `Outlet` components
-  //   to render sub-routes that won't update the url bar.
-
   return ( 
-    <div className={menuScreenClassNames}>
-      {/* TODO: Move this to its own component so that it can exist in App? */}
-      {/* <div className="menu-controls">
-        <Button
-          onClick={toggleMenu}
-          iconType='menu'
-        >
-          {
-            menuIsActive ? "Close" : "Menu"
-          }
-        </Button>
-      </div> */}
-
-      
+    <div className={menuScreenClassNames}>    
       <Router>
         <MenuNav />
         

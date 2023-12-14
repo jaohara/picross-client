@@ -1,15 +1,29 @@
 @use "../../styles/globals.scss" as g;
 
-// TODO: REPLACE ME WITH A DYNAMIC, RESPONSIVE SOLUTION
-$HARDCODED_BG_WIDTH: 1080px;
-
 .menu-content {
   border-radius: g.$common-border-radius;
-  width: $HARDCODED_BG_WIDTH;
+  border: g.$common-border-size solid transparent;
   padding: calc(g.$common-padding * 2);
   margin-bottom: g.$common-margin;
+  
+  // remove top margin from first MenuContent in a MenuSection
+  .menu-section > &:first-child {
+    margin-top: g.$common-margin;
+  }
 
   &.full-width {
+    border-radius: 0rem;
+    width: 100%;
+  }
+
+  // give fixed-width MenuContents the standard responsive widths
+  &.fixed-width {
+    @include g.standard-responsive-widths();
+  }
+
+  // ensure sub-MenuContent elements fill their parent container, be it another
+  //  MenuContent or MenuContentGroup
+  &.fixed-width > &, .menu-content-group > & {
     width: 100%;
   }
 
@@ -17,11 +31,16 @@ $HARDCODED_BG_WIDTH: 1080px;
   // background opacity classes
   // ==========================
   &.opaque-bg {
-    background-color: red;
     background-color: rgba(g.$dark-gray-200, .6);
   }
 
   &.transparent-bg {
     background-color: #FFFFFF00;
+  }
+
+  &.centered {
+    align-items: center;
+    display: flex;
+    justify-content: center;
   }
 }

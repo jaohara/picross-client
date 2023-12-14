@@ -18,6 +18,13 @@ const bgShadeOpacities = {
   "darker": "cc",
 };
 
+// maps int indexes to css class names for different vertical padding values
+const verticalPaddingClassNames = [
+  "no-padding",
+  "default-padding",
+  "more-padding",
+];
+
 const buildHexColorString = (hexColorString, opacityString = "normal") => {
   const color = hexColorString.includes("#") ? hexColorString : `#${hexColorString}`;
   const alpha = Object.keys(bgShadeOpacities).includes(opacityString) 
@@ -34,13 +41,21 @@ const MenuSection = ({
   bgTint,
   children,
   className = "",
+  // one of these int values: 0 (none), 1 (default), 2 (double)
+  verticalPadding = 1,
 }) => {
   // safe string for the type of shade on this bg
   let parsedBgShade = bgShadeTypes.includes(bgShade) ? bgShade : "normal";
+  let verticalPaddingClassName = 
+    verticalPadding < verticalPaddingClassNames.length && verticalPadding > 0 
+      ? verticalPaddingClassNames[verticalPadding] 
+      : verticalPaddingClassNames[1];
+
 
   const menuSectionClassNames = `
     menu-section
     ${parsedBgShade}-shade
+    ${verticalPaddingClassName}
     ${className}
   `;
 

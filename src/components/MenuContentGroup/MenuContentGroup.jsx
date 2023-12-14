@@ -2,14 +2,22 @@ import React from 'react';
 
 import "./MenuContentGroup.scss";
 
-// TODO: Have this dynamically receive JSX children as an array in props (does children)
+const MAX_COLUMNS = 8;
 
-// MIGHT BE A LOT LESS WORK THAN I'M THINKING?
-// this is basically just a flexbox div to make things go horizontally rather than vertically
+const MenuContentGroup = ({
+  children,
+  columns = 3,
+}) => {
+  const childCount = React.Children.count(children);
+  const parsedColumns = childCount < columns ? childCount : columns;
 
-const MenuContentGroup = ({children}) => {
+  const menuContentGroupClassNames = `
+    menu-content-group
+    columns-${parsedColumns <= MAX_COLUMNS ? parsedColumns : MAX_COLUMNS}
+  `;
+
   return ( 
-    <div className="menu-content-group">
+    <div className={menuContentGroupClassNames}>
       {children}
     </div>
   );

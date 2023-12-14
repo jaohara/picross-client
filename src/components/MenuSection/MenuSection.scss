@@ -9,12 +9,23 @@ $dark-opacity: .65;
 $darker-opacity: .8;
 
 .menu-section {
+  $vertical-padding: calc(2 * g.$common-padding);
+
   align-items: center;
   background-color: rgba(g.$full-screen-panel-background-color, $normal-opacity);
   display: flex;
   flex-grow: 1;
   flex-direction: column;
   justify-content: center;
+  padding: $vertical-padding 0rem;
+
+  &.no-padding {
+    padding: 0rem;
+  }
+
+  &.more-padding {
+    padding: calc($vertical-padding * 2) 0rem;
+  }
   
   // =================
   // background shades

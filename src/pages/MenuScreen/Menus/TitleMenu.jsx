@@ -180,19 +180,29 @@ const TitleMenu = () => {
       </MenuSection>
 
       <MenuSection
-        bgShade={"dark"}
-        bgTint={middleSectionBackgroundTint}
+        bgShade={"lighter"}
+        // bgTint={middleSectionBackgroundTint}
+        verticalPadding={2}
       >
         <MenuContent 
+          columns={3}
           fullWidth
-          loading={testContentLoading}
           opaque={false}
         >
-          <MenuContentGroup>
-            <TestContent />
-            <TestContent />
-            <TestContent />
-          </MenuContentGroup>
+          <TestContent loading={testContentLoading} />
+          <TestContent />
+          <TestContent loading={testContentLoading} />
+        </MenuContent>
+
+        <MenuContent
+          columns={3}
+          // fullWidth
+        >
+          <TestContent />
+          <TestContent />
+          <TestContent />
+          <TestContent />
+          <TestContent />
         </MenuContent>
       </MenuSection>
 
@@ -214,14 +224,18 @@ const TitleMenu = () => {
   );
 }
 
-const TestContent = () => {
+const TestContent = ({ loading }) => {
   return (
-    <div className="test-content">
+    <MenuContent
+      className="test-content"
+      loading={loading}
+    >
+    {/* <div className="test-content"> */}
       <h1>Test Content</h1>
       <p>
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae nisi natus maiores id doloremque eveniet? Alias, reiciendis nulla! Hic obcaecati laudantium sequi laboriosam enim repellat laborum temporibus ipsa sed delectus!
       </p>
-    </div>
+    </MenuContent>
   )
 }
  

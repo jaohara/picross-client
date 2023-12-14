@@ -8,6 +8,11 @@
   width: 100vw;
 
   &.no-side-padding {
-    padding: g.$common-padding 0em;
+    padding-left: 0rem;
+    padding-right: 0rem;
+  }
+
+  &.no-bottom-padding {
+    padding-bottom: 0rem;
   }
 }

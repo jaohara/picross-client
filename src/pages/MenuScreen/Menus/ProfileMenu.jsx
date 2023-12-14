@@ -14,165 +14,18 @@ import { UserContext } from '../../../contexts/UserContext';
 import { DataContext } from '../../../contexts/DataContext';
 // import { GameContext } from '../../../contexts/GameContext';
 
-import AchievementContainer from '../../../components/AchievementContainer/AchievementContainer';
 import Button from '../../../components/Button/Button';
 import DailyStreakVisualization from '../../../components/DailyStreakVisualization/DailyStreakVisualization';
+import MenuContent from '../../../components/MenuContent/MenuContent';
 import MenuHeader from '../../../components/MenuHeader/MenuHeader';
-import MenuLinks from '../../../components/MenuLinks/MenuLinks';
+import MenuSection from '../../../components/MenuSection/MenuSection';
 
 import convertMillisToMinutesAndSeconds from '../../../utils/convertMillisToMinutesAndSeconds';
 import convertFromFirestoreTimestampToDate from '../../../utils/convertFromFirestoreTimeStampToDate';
 
-// TODO: REMOVE, TEMP DATA
-const TEMP_GAME_RECORDS = [
-  {
-    completed: true,
-    lastPlayed: { seconds: 1688462821, nanoseconds: 0 },
-    gameTimer: 214500,
-    testGameRecord: true,
-    moves: 55,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1688384400, nanoseconds: 0 },
-    gameTimer: 289000,
-    testGameRecord: true,
-    moves: 76,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1688380800, nanoseconds: 0 },
-    gameTimer: 191000,
-    testGameRecord: true,
-    moves: 42,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1688377200, nanoseconds: 0 },
-    gameTimer: 339000,
-    testGameRecord: true,
-    moves: 68,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1688313600, nanoseconds: 0 },
-    gameTimer: 150000,
-    testGameRecord: true,
-    moves: 33,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1688197200, nanoseconds: 0 },
-    gameTimer: 346000,
-    testGameRecord: true,
-    moves: 80,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1688190000, nanoseconds: 0 },
-    gameTimer: 173000,
-    testGameRecord: true,
-    moves: 58,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1687981200, nanoseconds: 0 },
-    gameTimer: 212000,
-    testGameRecord: true,
-    moves: 49,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1687472400, nanoseconds: 0 },
-    gameTimer: 243000,
-    testGameRecord: true,
-    moves: 63,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1687081200, nanoseconds: 0 },
-    gameTimer: 116000,
-    testGameRecord: true,
-    moves: 39,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686882000, nanoseconds: 0 },
-    gameTimer: 304000,
-    testGameRecord: true,
-    moves: 72,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686878400, nanoseconds: 0 },
-    gameTimer: 233000,
-    testGameRecord: true,
-    moves: 61,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686874800, nanoseconds: 0 },
-    gameTimer: 398000,
-    testGameRecord: true,
-    moves: 82,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686871200, nanoseconds: 0 },
-    gameTimer: 221000,
-    testGameRecord: true,
-    moves: 59,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686788400, nanoseconds: 0 },
-    gameTimer: 278000,
-    testGameRecord: true,
-    moves: 77,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686692400, nanoseconds: 0 },
-    gameTimer: 186000,
-    testGameRecord: true,
-    moves: 40,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686596400, nanoseconds: 0 },
-    gameTimer: 317000,
-    testGameRecord: true,
-    moves: 70,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686500400, nanoseconds: 0 },
-    gameTimer: 222000,
-    testGameRecord: true,
-    moves: 56,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1686010800, nanoseconds: 0 },
-    gameTimer: 130000,
-    testGameRecord: true,
-    moves: 31,
-  },
-  {
-    completed: true,
-    lastPlayed: { seconds: 1684234800, nanoseconds: 0 },
-    gameTimer: 139800,
-    testGameRecord: true,
-    moves: 38,
-  },
-];
-
-// TODO: Also temp, but I might reuse this name later on
-//  this should also be a prop
-// const gameRecords = TEMP_GAME_RECORDS.map((record) => {
-//   record.lastPlayed = convertFromFirestoreTimestampToDate(record.lastPlayed);
-//   return record;
-// });
+// TODO: Remove flag after new menu is implemented
+// const OLD_IMPLEMENTATION = true;
+const OLD_IMPLEMENTATION = false;
 
 const processGameRecords = (records) => records.map((record) => ({
   ...record,
@@ -195,17 +48,6 @@ const ProfileMenu = () => {
   if (!user || !userProfile) {
     return (<Navigate to="/login" />);
   }
-
-  const prependedButtons = [
-    (
-      <Button
-        iconType='logout'
-        onClick={logout}
-      >
-        Logout
-      </Button>
-    ),
-  ];
 
   const puzzleRecordKeys = Object.keys(puzzleRecords); 
 
@@ -249,19 +91,13 @@ const ProfileMenu = () => {
     />
   ));
 
-  return ( 
+  const oldJsx = (
     <div className="profile-menu menu">
       <MenuHeader
         iconType="profile"
         title="User Profile"
       />
       <div className="menu-body-container">
-        {/* <MenuLinks
-          prependedButtons={prependedButtons} 
-          excludeAll={true}
-          showBackButton={true}
-        /> */}
-
         <div className="menu-body">
           <h1 className="profile-name">{userProfile.name}</h1>
 
@@ -280,24 +116,75 @@ const ProfileMenu = () => {
             <DailyStreakVisualization
               gameRecords={gameRecords}
             />
-
-            <p><strong>TODO:</strong> Add "Longest Unbroken Streak"</p>
-          </div>
-
-          {/* TODO: Remove this garbage */}
-          <div className="profile-todo">
-            <h1>Todo:</h1>
-            <ul>
-              <li>Make a better view (see sticky note on desk) for "stats"</li>
-              <li>Use these icons: TbClockBolt for fastest, TbLink for longest chain (or not, has semantic meaning as link - maybe TbLine?), what else?</li>
-              <li>Maybe allow a user to pick a puzzle as their avatar?</li>
-              <li>This needs some sort of dynamic avatar/profile rank icon, as well as cool visualization for stats,</li>
-            </ul>
           </div>
         </div>
       </div>
     </div>
   );
+
+  return OLD_IMPLEMENTATION ? oldJsx : ( 
+    <div className="profile-menu menu">
+      <MenuSection>
+        <ProfileOverview 
+          userName={userProfile.name}
+        />
+      </MenuSection>
+
+      <MenuSection>
+        <MenuContent>
+          <DailyStreakVisualization  
+            gameRecords={gameRecords}
+          />
+        </MenuContent>
+      </MenuSection>
+
+      <MenuSection>
+        {/* TODO: map game records into ProfileGameRecord */}
+        <ProfileGameRecord></ProfileGameRecord>
+      </MenuSection>
+    </div>
+  );
+};
+
+// TODO: Use the user data to populate this
+const ProfileOverview = ({
+  userName = "user name",
+  stats,
+}) => {
+  return (
+    <MenuContent 
+      columns={2}
+      opaque={false}
+    >
+      <MenuContent opaque={false}>
+        <h1>{userName}</h1>
+      </MenuContent>
+      <MenuContent>
+        <h1>Stats display</h1>
+      </MenuContent>
+    </MenuContent>
+  )
+}
+
+// TODO: Have this pull info from completed gameRecords
+const ProfileGameRecord = ({
+
+}) => {
+  return (
+    <MenuContent columns={2}>
+      <MenuContent>
+        <h1>Puzzle Icon</h1>
+      </MenuContent>
+      <MenuContent>
+        <h1>Puzzle Stats</h1>
+        <ul>
+          <li>Some Stat</li>
+          <li>Another Stat</li>
+          <li>More Stats</li>
+        </ul>
+      </MenuContent>
+    </MenuContent>
+  )
 }
 
 const ProfileRecordLineItem = ({

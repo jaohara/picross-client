@@ -1,5 +1,29 @@
 @use "../../styles/globals.scss" as g;
 
 .loading-spinner {
-  
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  height: 100%;
+}
+
+.loading-spinner-wrapper {
+  animation: loading-animation 1.6s linear infinite;
+  align-items: center;
+  display: flex;
+}
+
+@keyframes loading-animation {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: rotate(180deg);
+    opacity: .5;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 1;
+  }
 }

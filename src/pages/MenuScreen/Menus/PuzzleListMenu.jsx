@@ -78,11 +78,11 @@ const PuzzleListMenu = () => {
       />
 
       <div className="menu-body-container">
-        <MenuLinks 
+        {/* <MenuLinks 
           excluded={excludedRoutes}
           // excludeAll={true}
           showBackButton={true}
-        />
+        /> */}
 
         <div className="menu-body">
           <PuzzleGroupContainer

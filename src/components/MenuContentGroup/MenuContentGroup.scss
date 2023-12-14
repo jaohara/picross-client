@@ -3,10 +3,49 @@
 .menu-content-group {
   // TODO: more work is probably needed, but let's start as simple as possible here
   display: flex;
+  flex-wrap: wrap;
   gap: g.$common-gap;
+  justify-content: flex-start;
 
   & > * {
     // make all children have the same size - grow and shrink at the same rate
     flex: 1;
   }
+
+  @mixin column-widths($columns) {
+    $gaps: $columns - 1;
+    $width: calc((100% - ($gaps * g.$common-gap))/$columns);
+    max-width: $width;
+    min-width: $width;
+  }  
+
+  &.columns-2 > * {
+    @include column-widths(2);
+  }
+  
+  &.columns-3 > * {
+    @include column-widths(3);
+  }
+  
+  &.columns-4 > * {
+    @include column-widths(4);
+  }
+
+  &.columns-5 > * {
+    @include column-widths(5);
+  }
+  
+  &.columns-6 > * {
+    @include column-widths(6);
+  }
+  
+  &.columns-7 > * {
+    @include column-widths(7);
+  }
+
+  &.columns-8 > * {
+    @include column-widths(8);
+  }
+
+  // upper column limit is hardcoded in MenuComponent.jsx
 }
