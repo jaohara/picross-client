@@ -3,6 +3,7 @@ import React from 'react';
 import { 
   TbArrowBack,
   TbAward,
+  TbBolt,
   TbBomb,
   TbClock,
   TbCloudDownload,
@@ -55,7 +56,8 @@ const Icon = ({
     "delete": (<TbTrashX />),
     "diagnostic": (<TbStethoscope />), 
     "diagnostic-on": (<TbStethoscope />), 
-    "diagnostic-off": (<TbStethoscopeOff />), 
+    "diagnostic-off": (<TbStethoscopeOff />),
+    "fastest": (<TbBolt />), 
     "help": (<TbNews />),    
     "in-progress": (<TbPencil />),   
     "log-auth": (<TbUserCircle />),

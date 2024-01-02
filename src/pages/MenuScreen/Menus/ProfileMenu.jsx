@@ -17,15 +17,12 @@ import { DataContext } from '../../../contexts/DataContext';
 import Button from '../../../components/Button/Button';
 import DailyStreakVisualization from '../../../components/DailyStreakVisualization/DailyStreakVisualization';
 import MenuContent from '../../../components/MenuContent/MenuContent';
+import MenuContentGroup from '../../../components/MenuContentGroup/MenuContentGroup';
 import MenuHeader from '../../../components/MenuHeader/MenuHeader';
 import MenuSection from '../../../components/MenuSection/MenuSection';
 
 import convertMillisToMinutesAndSeconds from '../../../utils/convertMillisToMinutesAndSeconds';
 import convertFromFirestoreTimestampToDate from '../../../utils/convertFromFirestoreTimeStampToDate';
-
-// TODO: Remove flag after new menu is implemented
-// const OLD_IMPLEMENTATION = true;
-const OLD_IMPLEMENTATION = false;
 
 const processGameRecords = (records) => records.map((record) => ({
   ...record,
@@ -53,9 +50,11 @@ const ProfileMenu = () => {
 
   const stats = {
     "Completed Puzzles": {
-      value: 0
+      icon: "puzzle",
+      value: 0,
     },
     "Fastest Puzzle Time": {
+      icon: "fastest",
       isTime: true,
       value: null,
     },
@@ -91,54 +90,36 @@ const ProfileMenu = () => {
     />
   ));
 
-  const oldJsx = (
+  return ( 
     <div className="profile-menu menu">
-      <MenuHeader
-        iconType="profile"
-        title="User Profile"
-      />
-      <div className="menu-body-container">
-        <div className="menu-body">
-          <h1 className="profile-name">{userProfile.name}</h1>
-
-          <div className="profile-stats profile-container">
-            <h1>Stats</h1>
-            {/* TODO: Think of a better way to present this, probably not as a ul */}
-            <ul>
-              {recordLineItems}
-              <li>Account Age?</li>
-            </ul>
-          </div>
-
-          <div className="profile-daily-streak profile-container">
-            <h1>Daily Streak</h1>
-
-            <DailyStreakVisualization
-              gameRecords={gameRecords}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  return OLD_IMPLEMENTATION ? oldJsx : ( 
-    <div className="profile-menu menu">
-      <MenuSection>
+      <MenuSection 
+        noPaddingBottom
+        transparent
+      >
         <ProfileOverview 
+          stats={stats}
           userName={userProfile.name}
         />
       </MenuSection>
 
-      <MenuSection>
+      <MenuSection 
+        noPadding
+        transparent
+      >
         <MenuContent>
+          <MenuHeader
+            title={"Daily Streak"}
+          />
           <DailyStreakVisualization  
             gameRecords={gameRecords}
           />
         </MenuContent>
       </MenuSection>
 
-      <MenuSection>
+      <MenuSection 
+        noPaddingTop
+        transparent
+      >
         {/* TODO: map game records into ProfileGameRecord */}
         <ProfileGameRecord></ProfileGameRecord>
       </MenuSection>
@@ -151,17 +132,40 @@ const ProfileOverview = ({
   userName = "user name",
   stats,
 }) => {
+  const statKeys = Object.keys(stats);
+
   return (
     <MenuContent 
-      columns={2}
-      opaque={false}
+      // columns={2}
+      // firstChildSize={"200px"}
     >
-      <MenuContent opaque={false}>
-        <h1>{userName}</h1>
-      </MenuContent>
-      <MenuContent>
-        <h1>Stats display</h1>
-      </MenuContent>
+      <MenuHeader
+        title={"User Profile"}
+      />
+      <MenuContentGroup
+        columns={2}
+        firstChildSize={"200px"}
+      >
+        <MenuContent centered noPadding>
+          <h1>{userName}</h1>
+        </MenuContent>
+        <MenuContent 
+          columns={3} 
+          noPadding 
+          opaque={false}
+        >
+          {
+            statKeys.map((statKey) => (
+              <MenuContent centered>
+                <p>
+                  {stats[statKey].value}
+                </p>
+                <h4>{statKey}</h4>
+              </MenuContent>
+            ))
+          }
+        </MenuContent>
+      </MenuContentGroup>
     </MenuContent>
   )
 }

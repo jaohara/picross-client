@@ -12,17 +12,22 @@ const MenuContent = ({
   children,
   // the number of columns to use to display child content
   columns = 1,
+  // optional fixed-size for the first child in a MenuContentGroup
+  firstChildSize = null,
   // whether the MenuContent width is fixed and centered (default) or full and dynamic
   fullWidth = false,
   // whether the MenuContent indicates its hover state
   hoverHighlight = false,
   // whether or not the data that the content depends on is loaded 
   loading = false,
+  // whether or not to use internal padding
+  noPadding = false,
   onClick,
   onMouseDown,
   onMouseEnter,
   // whether the bg is opaque (replace with strings for degrees of opacity?)
   opaque = true,
+  style,
 }) => {
   const menuContentClassNames = `
     menu-content
@@ -31,6 +36,8 @@ const MenuContent = ({
     ${fullWidth ? "full-width" : "fixed-width"}
     ${hoverHighlight ? "hover-highlight" : ""}
     ${opaque ? "opaque-bg" : "transparent-bg" }
+    ${firstChildSize !== null ? "fixed-first-child" : ""}
+    ${noPadding ? "no-padding" : ""}
   `;
 
 
@@ -56,6 +63,8 @@ const MenuContent = ({
     return (
       <MenuContentGroup
         columns={columns}
+        firstChildSize={firstChildSize}
+        style={style}
       >
         {children}
       </MenuContentGroup>
@@ -68,6 +77,7 @@ const MenuContent = ({
       onClick={onClick}
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
+      style={style}
     >
       {content}
     </div>

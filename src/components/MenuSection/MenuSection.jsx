@@ -2,10 +2,12 @@ import React from 'react';
 
 import "./MenuSection.scss";
 
-const bgShadeTypes = ["dark", "normal", "light", "lighter", "darker"];
+const bgShadeTypes = ["dark", "normal", "light", "lighter", "darker", "transparent"];
 
 // hex codes for opacity for the color strings
 const bgShadeOpacities = {
+  // 0
+  "transparent": "00",
   // .1
   "lighter": "19",
   // .3
@@ -41,6 +43,10 @@ const MenuSection = ({
   bgTint,
   children,
   className = "",
+  noPadding = false,
+  noPaddingBottom = false,
+  noPaddingTop = false,
+  transparent = false,
   // one of these int values: 0 (none), 1 (default), 2 (double)
   verticalPadding = 1,
 }) => {
@@ -56,6 +62,10 @@ const MenuSection = ({
     menu-section
     ${parsedBgShade}-shade
     ${verticalPaddingClassName}
+    ${noPadding ? "no-padding" : ""}
+    ${noPaddingBottom ? "no-padding-bottom" : ""}
+    ${noPaddingTop ? "no-padding-top" : ""}
+    ${transparent ? "transparent-bg" : ""}
     ${className}
   `;
 

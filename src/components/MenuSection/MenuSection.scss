@@ -23,6 +23,15 @@ $darker-opacity: .8;
     padding: 0rem;
   }
 
+  &.no-padding-bottom {
+    padding-bottom: 0rem;
+  }
+
+  &.no-padding-top {
+    padding-top: 0rem;
+  }
+
+
   &.more-padding {
     padding: calc($vertical-padding * 2) 0rem;
   }
@@ -45,4 +54,8 @@ $darker-opacity: .8;
   &.darker-shade {
     background-color: rgba(g.$full-screen-panel-background-color, $darker-opacity);
   } 
+
+  &.transparent-bg {
+    background-color: rgba(0,0,0,0);
+  }
 }

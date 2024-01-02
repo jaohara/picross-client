@@ -24,16 +24,10 @@ const PuzzleIcon = ({
   className,
   // maybe not necessary - used to scale canvas and draw operations
   imageScale = 1.0,
-  // inProgress = false, // TODO: remove 
   // inProgressMoveList = null,
   // inProgressGrid = null,
-  // puzzleData, // TODO: remove
-
   // new approach using contexts just the puzzle id - assumes id is valid
   puzzleId,
-  
-  
-  // revealed = true, // TODO: remove
   // whether the revealed 
   revealedTakesPrecedence = false,
  }) => {
@@ -50,10 +44,6 @@ const PuzzleIcon = ({
     getIncompletePuzzleGridFromPuzzleData,
     inProgressPuzzleIds,
   } = useContext(UserContext);
-
-  // TODO: I don't think I need this approach
-  // const completedPuzzlesAreReady = puzzles && completedPuzzleIds;
-  // const inProgressPuzzlesAreReady = puzzles && inProgressPuzzleIds;
 
   const checkIfPuzzleIsCompleteById = (puzzleId) => completedPuzzleIds.includes(puzzleId);
   const checkIfPuzzleIsInProgressById = (puzzleId) => inProgressPuzzleIds.includes(puzzleId);

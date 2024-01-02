@@ -1,5 +1,14 @@
 @use "../../styles/globals.scss" as g;
 
 .menu-header-container {
+  // height: g.$menu-header-height;
   margin-bottom: g.$menu-header-margin;
+  padding-bottom: g.$common-padding;
+  border-bottom: g.$common-border-size solid g.$menu-header-border-color;
+}
+
+.menu-header {
+  font-size: 3rem;
+  line-height: 3rem;
+  margin: 0rem;
 }

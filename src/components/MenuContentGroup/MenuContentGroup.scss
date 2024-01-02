@@ -15,6 +15,7 @@
   @mixin column-widths($columns) {
     $gaps: $columns - 1;
     $width: calc((100% - ($gaps * g.$common-gap))/$columns);
+    margin-bottom: 0rem;
     max-width: $width;
     min-width: $width;
   }  
@@ -45,6 +46,11 @@
 
   &.columns-8 > * {
     @include column-widths(8);
+  }
+
+  &.fixed-first-child > *  {
+    max-width: 100%;
+    min-width: inherit;
   }
 
   // upper column limit is hardcoded in MenuComponent.jsx

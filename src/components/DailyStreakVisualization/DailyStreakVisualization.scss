@@ -2,10 +2,10 @@
 @use "../../styles/globals.scss" as g;
 
 .daily-streak-container {
-  @include g.content-container-visual-styling(g.$puzzle-group-border-color);
+  // @include g.content-container-visual-styling(g.$puzzle-group-border-color);
   display: flex;
   flex-wrap: wrap;
-  max-width: g.$content-container-max-width;
+  // max-width: g.$content-container-max-width;
   justify-content: space-between;
 }
 

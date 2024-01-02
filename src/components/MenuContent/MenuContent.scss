@@ -3,6 +3,8 @@
 .menu-content {
   border-radius: g.$common-border-radius;
   border: g.$common-border-size solid transparent;
+  display: flex;
+  flex-direction: column;
   padding: calc(g.$common-padding * 2);
   margin-bottom: g.$common-margin;
   
@@ -42,5 +44,9 @@
     align-items: center;
     display: flex;
     justify-content: center;
+  }
+
+  &.no-padding {
+    padding: 0rem;
   }
 }
