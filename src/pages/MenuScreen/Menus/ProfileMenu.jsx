@@ -178,6 +178,11 @@ const ProfileGameRecordContainer = ({
   const parsedGameRecords = (() => {
     if (!gameRecords) {
       // return a placeholder component in this case
+      return (
+        <MenuContent centered>
+          <p>PLACHEOLDER: No puzzles completed!</p>
+        </MenuContent>
+      )
     }
 
     // map each gameRecord to a ProfileGameRecord
@@ -190,6 +195,11 @@ const ProfileGameRecordContainer = ({
       noPaddingTop
       transparent
     >
+      <MenuContent>
+        <MenuHeader
+          title={"Puzzle Records"}
+        />
+      </MenuContent>
       {parsedGameRecords}
     </MenuSection>
   )
@@ -197,7 +207,7 @@ const ProfileGameRecordContainer = ({
 
 // TODO: Have this pull info from completed gameRecords
 const ProfileGameRecord = ({
-
+  gameRecord,
 }) => {
   return (
     <MenuContent columns={2}>
