@@ -121,7 +121,9 @@ const ProfileMenu = () => {
         transparent
       >
         {/* TODO: map game records into ProfileGameRecord */}
-        <ProfileGameRecord></ProfileGameRecord>
+        <ProfileGameRecord
+          
+        />
       </MenuSection>
     </div>
   );
@@ -169,6 +171,29 @@ const ProfileOverview = ({
     </MenuContent>
   )
 }
+
+const ProfileGameRecordContainer = ({
+  gameRecords,
+}) => {
+  const parsedGameRecords = (() => {
+    if (!gameRecords) {
+      // return a placeholder component in this case
+    }
+
+    // map each gameRecord to a ProfileGameRecord
+    //  - within ProfileGameRecord, print some data (id/completion time/whatever) from
+    //    each item in the collection
+  })();
+
+  return (
+    <MenuSection
+      noPaddingTop
+      transparent
+    >
+      {parsedGameRecords}
+    </MenuSection>
+  )
+};
 
 // TODO: Have this pull info from completed gameRecords
 const ProfileGameRecord = ({
